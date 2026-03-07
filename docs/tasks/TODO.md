@@ -10,7 +10,7 @@
 | 04 | Job キュー | [x] Done | 02 |
 | 05 | Asset Import API | [x] Done | 02, 03, 04 |
 | 06 | Backend テスト | [x] Done | 03, 04, 05 |
-| 07 | Frontend ホーム画面 | [ ] Not Started | 01, 02, 03 |
+| 07 | Frontend ホーム画面 | [x] Done | 01, 02, 03 |
 | 08 | Frontend エディタ画面 + アセットパネル | [ ] Not Started | 05, 07 |
 
 ## Tasks
@@ -76,15 +76,15 @@
 
 ### 07: Frontend ホーム画面
 
-- [ ] main.tsx (React root, QueryClient, BrowserRouter)
-- [ ] App.tsx (React Router ルート定義)
-- [ ] api/client.ts (fetch ラッパー)
-- [ ] api/projects.ts (useProjects, useProject, useCreateProject)
-- [ ] pages/HomePage.tsx (プロジェクト一覧)
-- [ ] components/ProjectCard.tsx
-- [ ] components/CreateProjectDialog.tsx
-- [ ] react-router-dom, @tanstack/react-query 追加
-- [ ] ホーム画面表示 + プロジェクト作成動作確認
+- [x] main.tsx (React root, QueryClient, BrowserRouter)
+- [x] App.tsx (React Router ルート定義)
+- [x] api/client.ts (fetch ラッパー)
+- [x] api/projects.ts (useProjects, useProject, useCreateProject)
+- [x] pages/HomePage.tsx (プロジェクト一覧)
+- [x] components/ProjectCard.tsx
+- [x] components/CreateProjectDialog.tsx
+- [x] react-router-dom, @tanstack/react-query 追加
+- [x] ホーム画面表示 + プロジェクト作成動作確認
 
 ### 08: Frontend エディタ画面 + アセットパネル
 
