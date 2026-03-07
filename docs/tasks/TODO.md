@@ -22,8 +22,8 @@
 | 16 | テロップ UI + タイムライン配置 | [x] Done | 11 |
 | 17 | BGM 追加 UI | [x] Done | 11 |
 | 18 | Export ダイアログ + ジョブログ | [x] Done | 15 |
-| 19 | 回転補正 + クロップ UI | [ ] Todo | 11 |
-| 20 | Phase 3 テスト | [ ] Todo | 15, 16, 17, 18, 19 |
+| 19 | 回転補正 + クロップ UI | [x] Done | 11 |
+| 20 | Phase 3 テスト | [x] Done | 15, 16, 17, 18, 19 |
 
 ## Phase 1 Tasks
 
@@ -204,16 +204,16 @@
 
 ### 19: 回転補正 + クロップ UI
 
-- [ ] InspectorPanel に回転コントロール (0/90/180/270)
-- [ ] shared types 更新 (Clip.transform.rotation)
-- [ ] InspectorPanel にクロップ入力 (x, y, width, height)
-- [ ] shared types 更新 (Clip.crop)
-- [ ] PreviewPlayer での回転・クロップ反映
+- [x] InspectorPanel に回転コントロール (0/90/180/270)
+- [x] shared types 更新 (Clip.transform.rotation) — 既存
+- [x] InspectorPanel にクロップ入力 (x, y, width, height)
+- [x] shared types 更新 (Clip.crop) — 既存
+- [x] PreviewPlayer での回転・クロップ反映
 
 ### 20: Phase 3 テスト
 
-- [ ] export-service filtergraph 生成のユニットテスト
-- [ ] routes/exports.test.ts
-- [ ] テロップ sequence-ops のユニットテスト
-- [ ] 回転・クロップ操作のユニットテスト
-- [ ] `bun test` 全パス
+- [x] export-service filtergraph 生成のユニットテスト (8 tests)
+- [x] routes/exports.test.ts (4 tests)
+- [x] テロップ sequence-ops のユニットテスト (4 tests)
+- [x] 回転・クロップ操作のユニットテスト (7 tests)
+- [x] `bun test` 全パス (97 pass, 5 ffmpeg integration skip)
