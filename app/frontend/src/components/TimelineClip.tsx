@@ -27,17 +27,25 @@ export function TimelineClip({
   const width = msToPx(clip.durationMs);
   const left = msToPx(clip.startMs);
   const isTextClip = !!clip.text;
+  const isAudioClip = asset?.kind === "audio";
   const label = isTextClip
     ? (clip.text?.value || "Text")
     : asset
       ? asset.originalPath.split("/").pop() ?? asset.kind
       : "clip";
-  const bgColor = isTextClip
-    ? (isSelected ? "#9b59b6" : "#8e44ad")
-    : (isSelected ? "#4a7fff" : "#3a6ad4");
-  const borderColor = isTextClip
-    ? (isSelected ? "#fff" : "#6c3483")
-    : (isSelected ? "#fff" : "#2a4a9a");
+
+  let bgColor: string;
+  let borderColor: string;
+  if (isTextClip) {
+    bgColor = isSelected ? "#9b59b6" : "#8e44ad";
+    borderColor = isSelected ? "#fff" : "#6c3483";
+  } else if (isAudioClip) {
+    bgColor = isSelected ? "#27ae60" : "#1e8449";
+    borderColor = isSelected ? "#fff" : "#145a32";
+  } else {
+    bgColor = isSelected ? "#4a7fff" : "#3a6ad4";
+    borderColor = isSelected ? "#fff" : "#2a4a9a";
+  }
   const dragRef = useRef<{ startX: number; startMs: number } | null>(null);
   const trimRef = useRef<{ startX: number; side: "left" | "right" } | null>(null);
 

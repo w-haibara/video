@@ -72,12 +72,21 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip }: Props)
         />
       )}
 
-      {clip.volume !== undefined && (
+      {trackKind === "audio" && onUpdateClip && (
         <div style={{ marginTop: "8px" }}>
           <label style={{ color: "#888", display: "block", marginBottom: "4px" }}>
-            Volume
+            Volume: {Math.round((clip.volume ?? 1) * 100)}%
           </label>
-          <span style={{ color: "#ccc" }}>{Math.round((clip.volume ?? 1) * 100)}%</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round((clip.volume ?? 1) * 100)}
+            onChange={(e) =>
+              onUpdateClip(clip.id, { volume: Number(e.target.value) / 100 })
+            }
+            style={{ width: "100%" }}
+          />
         </div>
       )}
     </div>
