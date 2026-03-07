@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
 import type { Clip, Asset } from "@video/shared";
 
 type Props = {
@@ -50,6 +50,8 @@ export function TimelineClip({
   }
   const dragRef = useRef<{ startX: number; startMs: number } | null>(null);
   const trimRef = useRef<{ startX: number; side: "left" | "right" } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [trimTooltip, setTrimTooltip] = useState<{ side: "left" | "right"; label: string } | null>(null);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -57,6 +59,8 @@ export function TimelineClip({
       e.preventDefault();
       onSelect(clip.id);
       dragRef.current = { startX: e.clientX, startMs: clip.startMs };
+      setIsDragging(true);
+      document.body.style.cursor = "grabbing";
 
       const handleMouseMove = (ev: MouseEvent) => {
         if (!dragRef.current) return;
@@ -67,6 +71,8 @@ export function TimelineClip({
 
       const handleMouseUp = () => {
         dragRef.current = null;
+        setIsDragging(false);
+        document.body.style.cursor = "";
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
       };
@@ -77,12 +83,22 @@ export function TimelineClip({
     [clip.id, clip.startMs, pxToMs, onSelect, onMove],
   );
 
+  const formatTrimLabel = useCallback(
+    (side: "left" | "right") => {
+      const val = side === "left" ? clip.inMs : clip.outMs;
+      return `${side === "left" ? "In" : "Out"}: ${(val / 1000).toFixed(1)}s`;
+    },
+    [clip.inMs, clip.outMs],
+  );
+
   const handleTrimMouseDown = useCallback(
     (side: "left" | "right", e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
       onSelect(clip.id);
       trimRef.current = { startX: e.clientX, side };
+      setTrimTooltip({ side, label: formatTrimLabel(side) });
+      document.body.style.cursor = "col-resize";
 
       const handleMouseMove = (ev: MouseEvent) => {
         if (!trimRef.current) return;
@@ -94,6 +110,8 @@ export function TimelineClip({
 
       const handleMouseUp = () => {
         trimRef.current = null;
+        setTrimTooltip(null);
+        document.body.style.cursor = "";
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
       };
@@ -101,8 +119,15 @@ export function TimelineClip({
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [clip.id, pxToMs, onSelect, onTrim],
+    [clip.id, pxToMs, onSelect, onTrim, formatTrimLabel],
   );
+
+  // Update tooltip value during trim drag
+  useEffect(() => {
+    if (trimTooltip) {
+      setTrimTooltip({ side: trimTooltip.side, label: formatTrimLabel(trimTooltip.side) });
+    }
+  }, [clip.inMs, clip.outMs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div
@@ -124,25 +149,17 @@ export function TimelineClip({
         borderRadius: "3px",
         border: `${isSelected ? 2 : 1}px solid ${borderColor}`,
         overflow: "hidden",
-        cursor: "grab",
+        cursor: isDragging ? "grabbing" : "grab",
         display: "flex",
         alignItems: "center",
         padding: `0 ${TRIM_HANDLE_WIDTH + 2}px`,
       }}
     >
       {/* Left trim handle */}
-      <div
+      <TrimHandle
+        side="left"
+        isSelected={isSelected}
         onMouseDown={(e) => handleTrimMouseDown("left", e)}
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: `${TRIM_HANDLE_WIDTH}px`,
-          cursor: "col-resize",
-          background: isSelected ? "rgba(255,255,255,0.2)" : "transparent",
-          borderRight: "1px solid rgba(255,255,255,0.3)",
-        }}
       />
 
       <span
@@ -160,19 +177,81 @@ export function TimelineClip({
       </span>
 
       {/* Right trim handle */}
-      <div
+      <TrimHandle
+        side="right"
+        isSelected={isSelected}
         onMouseDown={(e) => handleTrimMouseDown("right", e)}
-        style={{
-          position: "absolute",
-          right: 0,
-          top: 0,
-          bottom: 0,
-          width: `${TRIM_HANDLE_WIDTH}px`,
-          cursor: "col-resize",
-          background: isSelected ? "rgba(255,255,255,0.2)" : "transparent",
-          borderLeft: "1px solid rgba(255,255,255,0.3)",
-        }}
       />
+
+      {/* Trim tooltip */}
+      {trimTooltip && (
+        <div
+          style={{
+            position: "absolute",
+            top: "-22px",
+            [trimTooltip.side === "left" ? "left" : "right"]: 0,
+            background: "rgba(0,0,0,0.85)",
+            color: "#fff",
+            fontSize: "10px",
+            padding: "2px 6px",
+            borderRadius: "3px",
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+            zIndex: 10,
+          }}
+        >
+          {trimTooltip.label}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TrimHandle({
+  side,
+  isSelected,
+  onMouseDown,
+}: {
+  side: "left" | "right";
+  isSelected: boolean;
+  onMouseDown: (e: React.MouseEvent) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const active = isSelected || hovered;
+
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: "absolute",
+        [side === "left" ? "left" : "right"]: 0,
+        top: 0,
+        bottom: 0,
+        width: hovered ? "8px" : `${TRIM_HANDLE_WIDTH}px`,
+        cursor: "col-resize",
+        background: active ? "rgba(255,255,255,0.3)" : "transparent",
+        [side === "left" ? "borderRight" : "borderLeft"]: active
+          ? "1px solid rgba(255,255,255,0.5)"
+          : "1px solid rgba(255,255,255,0.15)",
+        transition: "width 0.1s, background 0.1s",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {active && (
+        <div
+          style={{
+            width: "2px",
+            height: "12px",
+            borderLeft: "1px solid rgba(255,255,255,0.5)",
+            borderRight: "1px solid rgba(255,255,255,0.5)",
+            pointerEvents: "none",
+          }}
+        />
+      )}
     </div>
   );
 }
