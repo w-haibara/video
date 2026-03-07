@@ -1,10 +1,13 @@
 import path from "node:path";
 
-const WORKSPACE_ROOT = path.resolve("workspace");
+export function getWorkspaceRoot(): string {
+  return path.resolve(process.env.WORKSPACE_DIR ?? "workspace");
+}
 
 export function resolveWorkspacePath(...segments: string[]): string {
-  const resolved = path.resolve(WORKSPACE_ROOT, ...segments);
-  if (!resolved.startsWith(WORKSPACE_ROOT + path.sep) && resolved !== WORKSPACE_ROOT) {
+  const root = getWorkspaceRoot();
+  const resolved = path.resolve(root, ...segments);
+  if (!resolved.startsWith(root + path.sep) && resolved !== root) {
     throw new Error(`Path traversal detected: ${segments.join("/")}`);
   }
   return resolved;
@@ -30,4 +33,5 @@ export function thumbnailDir(projectId: string): string {
   return resolveWorkspacePath("projects", projectId, "thumbnails");
 }
 
-export { WORKSPACE_ROOT };
+/** @deprecated Use getWorkspaceRoot() instead */
+export const WORKSPACE_ROOT = getWorkspaceRoot();

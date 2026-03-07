@@ -45,7 +45,14 @@ export async function importAsset(
   const dir = assetsDir(projectId);
   await mkdir(dir, { recursive: true });
   const destPath = path.join(dir, filename);
-  await Bun.write(destPath, body);
+  const chunks: Uint8Array[] = [];
+  const reader = body.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+  }
+  await Bun.write(destPath, new Blob(chunks));
 
   const asset: Asset = {
     id: generateId(),
