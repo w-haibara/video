@@ -1,12 +1,16 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import type { Project } from "@video/shared";
 import { useProject } from "../api/projects";
 import { EditorLayout } from "../components/EditorLayout";
 import { AssetPanel } from "../components/AssetPanel";
 import { Timeline } from "../components/Timeline";
 import { InspectorPanel } from "../components/InspectorPanel";
 import { PreviewPlayer } from "../components/PreviewPlayer";
+import { SaveIndicator } from "../components/SaveIndicator";
 import { useProjectEditor } from "../hooks/useProjectEditor";
+import { useUndoRedo } from "../hooks/useUndoRedo";
+import { useAutoSave } from "../hooks/useAutoSave";
 
 function EditorPageInner({ projectId }: { projectId: string }) {
   const { data: project, isLoading, error } = useProject(projectId);
@@ -37,8 +41,10 @@ function EditorPageLoaded({
   onSeek,
   selectedClipId,
   onSelectClip,
+  isPlaying,
+  onPlayPause,
 }: {
-  project: import("@video/shared").Project;
+  project: Project;
   currentTimeMs: number;
   onSeek: (ms: number) => void;
   selectedClipId: string | null;
@@ -46,20 +52,55 @@ function EditorPageLoaded({
   isPlaying: boolean;
   onPlayPause: () => void;
 }) {
+  const { sequence, pushState, undo, redo, canUndo, canRedo } = useUndoRedo(
+    project.sequence,
+  );
+
   const { addClipFromAsset, removeClip, moveClip, trimClip } =
-    useProjectEditor(project);
+    useProjectEditor(project, sequence, pushState);
+
+  const { saveStatus } = useAutoSave(project.id, sequence);
+
+  // Build a project view with the current (possibly unsaved) sequence
+  const currentProject: Project = { ...project, sequence };
 
   const handleDeleteClip = (clipId: string) => {
     removeClip(clipId);
     onSelectClip(null);
   };
 
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if (
+        (e.ctrlKey || e.metaKey) &&
+        ((e.key === "z" && e.shiftKey) || e.key === "y")
+      ) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo]);
+
   return (
     <EditorLayout
-      left={<AssetPanel project={project} onAddToTimeline={addClipFromAsset} />}
+      left={
+        <AssetPanel
+          project={currentProject}
+          onAddToTimeline={addClipFromAsset}
+        />
+      }
       center={
         <PreviewPlayer
-          project={project}
+          project={currentProject}
           currentTimeMs={currentTimeMs}
           onTimeUpdate={onSeek}
           isPlaying={isPlaying}
@@ -67,11 +108,23 @@ function EditorPageLoaded({
         />
       }
       right={
-        <InspectorPanel project={project} selectedClipId={selectedClipId} />
+        <div>
+          <SaveIndicator
+            status={saveStatus}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={undo}
+            onRedo={redo}
+          />
+          <InspectorPanel
+            project={currentProject}
+            selectedClipId={selectedClipId}
+          />
+        </div>
       }
       bottom={
         <Timeline
-          project={project}
+          project={currentProject}
           currentTimeMs={currentTimeMs}
           onSeek={onSeek}
           selectedClipId={selectedClipId}

@@ -1,19 +1,22 @@
 import { useCallback } from "react";
-import type { Project, Asset, Clip } from "@video/shared";
+import type { Project, Asset, Clip, Sequence } from "@video/shared";
 import { generateId, DEFAULT_IMAGE_DURATION_MS } from "@video/shared";
-import { useUpdateProject } from "../api/projects";
 
-export function useProjectEditor(project: Project) {
-  const updateProject = useUpdateProject(project.id);
+type MutateSequence = (
+  updater: (tracks: Sequence["tracks"]) => Sequence["tracks"],
+) => void;
 
-  const mutateSequence = useCallback(
-    (updater: (tracks: Project["sequence"]["tracks"]) => Project["sequence"]["tracks"]) => {
-      const tracks = updater(project.sequence.tracks);
-      updateProject.mutate({
-        sequence: { ...project.sequence, tracks },
-      });
+export function useProjectEditor(
+  project: Project,
+  sequence: Sequence,
+  pushState: (seq: Sequence) => void,
+) {
+  const mutateSequence: MutateSequence = useCallback(
+    (updater) => {
+      const tracks = updater(sequence.tracks);
+      pushState({ ...sequence, tracks });
     },
-    [project, updateProject],
+    [sequence, pushState],
   );
 
   const addClipFromAsset = useCallback(
@@ -113,11 +116,5 @@ export function useProjectEditor(project: Project) {
     [mutateSequence],
   );
 
-  return {
-    addClipFromAsset,
-    removeClip,
-    moveClip,
-    trimClip,
-    isSaving: updateProject.isPending,
-  };
+  return { addClipFromAsset, removeClip, moveClip, trimClip };
 }
