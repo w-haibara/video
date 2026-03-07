@@ -9,7 +9,7 @@
 | 03 | Backend Hono サーバー + Project CRUD | [x] Done | 01, 02 |
 | 04 | Job キュー | [x] Done | 02 |
 | 05 | Asset Import API | [x] Done | 02, 03, 04 |
-| 06 | Backend テスト | [ ] Not Started | 03, 04, 05 |
+| 06 | Backend テスト | [x] Done | 03, 04, 05 |
 | 07 | Frontend ホーム画面 | [ ] Not Started | 01, 02, 03 |
 | 08 | Frontend エディタ画面 + アセットパネル | [ ] Not Started | 05, 07 |
 
@@ -63,16 +63,16 @@
 
 ### 06: Backend テスト
 
-- [ ] utils/paths.test.ts
-- [ ] services/project-service.test.ts
-- [ ] services/asset-service.test.ts
-- [ ] routes/projects.test.ts
-- [ ] routes/assets.test.ts
-- [ ] routes/jobs.test.ts
-- [ ] pipeline/tools/ffmpeg.test.ts (integration)
-- [ ] pipeline/runner.test.ts
-- [ ] テスト用素材 (test/fixtures/)
-- [ ] `bun test` 全パス
+- [x] utils/paths.test.ts
+- [x] services/project-service.test.ts
+- [x] services/asset-service.test.ts
+- [x] routes/projects.test.ts
+- [x] routes/assets.test.ts
+- [x] routes/jobs.test.ts
+- [x] pipeline/tools/ffmpeg.test.ts (integration)
+- [x] pipeline/runner.test.ts
+- [x] テスト用素材 (test/fixtures/)
+- [x] `bun test` 全パス
 
 ### 07: Frontend ホーム画面
 
