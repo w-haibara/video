@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import type { Project, Clip, Asset, ClipCrop } from "@video/shared";
+import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
 
 type Props = {
   project: Project;
@@ -15,8 +15,12 @@ type ActiveClip = {
   clipTimeMs: number; // time relative to clip's source (inMs + offset)
 };
 
+type ActiveTextClip = {
+  clip: Clip;
+  text: ClipText;
+};
+
 function findActiveClip(project: Project, timeMs: number): ActiveClip | null {
-  // Find the video clip at the current time
   for (const track of project.sequence.tracks) {
     if (track.kind !== "video") continue;
     for (const clip of track.clips) {
@@ -30,6 +34,30 @@ function findActiveClip(project: Project, timeMs: number): ActiveClip | null {
     }
   }
   return null;
+}
+
+function findActiveTextClips(project: Project, timeMs: number): ActiveTextClip[] {
+  const result: ActiveTextClip[] = [];
+  for (const track of project.sequence.tracks) {
+    if (track.kind !== "title") continue;
+    for (const clip of track.clips) {
+      if (timeMs >= clip.startMs && timeMs < clip.startMs + clip.durationMs && clip.text) {
+        result.push({ clip, text: clip.text });
+      }
+    }
+  }
+  return result;
+}
+
+function getSequenceEndMs(project: Project): number {
+  let endMs = 0;
+  for (const track of project.sequence.tracks) {
+    for (const clip of track.clips) {
+      const clipEnd = clip.startMs + clip.durationMs;
+      if (clipEnd > endMs) endMs = clipEnd;
+    }
+  }
+  return endMs;
 }
 
 function getMediaUrl(asset: Asset, projectId: string): string {
@@ -57,7 +85,16 @@ export function PreviewPlayer({
   const currentTimeMsRef = useRef(currentTimeMs);
   currentTimeMsRef.current = currentTimeMs;
 
+  // Keep refs for values needed in tick() to avoid stale closures
+  const projectRef = useRef(project);
+  projectRef.current = project;
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+  onTimeUpdateRef.current = onTimeUpdate;
+  const onPlayPauseRef = useRef(onPlayPause);
+  onPlayPauseRef.current = onPlayPause;
+
   const activeClip = findActiveClip(project, currentTimeMs);
+  const activeTextClips = findActiveTextClips(project, currentTimeMs);
 
   const mediaUrl = activeClip
     ? getMediaUrl(activeClip.asset, project.id)
@@ -94,25 +131,62 @@ export function PreviewPlayer({
 
   // Sync video time back to timeline during playback
   useEffect(() => {
-    if (!isPlaying || !activeClip) return;
+    if (!isPlaying) return;
+
+    let lastFrameTime = performance.now();
 
     const tick = () => {
-      const video = videoRef.current;
-      if (video && activeClip.asset.kind === "video" && !video.paused) {
-        const videoTimeMs = video.currentTime * 1000;
-        const timelineMs =
-          activeClip.clip.startMs + (videoTimeMs - activeClip.clip.inMs);
-        onTimeUpdate(timelineMs);
-      } else if (activeClip.asset.kind === "image") {
-        // For images, advance time by frame (use ref to avoid stale closure)
-        onTimeUpdate(currentTimeMsRef.current + 1000 / 30);
+      const now = performance.now();
+      const deltaMs = now - lastFrameTime;
+      lastFrameTime = now;
+
+      const curTime = currentTimeMsRef.current;
+      const proj = projectRef.current;
+      const seqEnd = getSequenceEndMs(proj);
+
+      // Stop at end of sequence
+      if (curTime >= seqEnd) {
+        onPlayPauseRef.current();
+        return;
       }
+
+      const clip = findActiveClip(proj, curTime);
+
+      if (clip && clip.asset.kind === "video") {
+        const video = videoRef.current;
+        if (video && !video.paused) {
+          const videoTimeMs = video.currentTime * 1000;
+          const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs);
+          const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
+          // Clamp to clip end so we advance past boundary
+          onTimeUpdateRef.current(Math.min(timelineMs, clipEndMs));
+        } else {
+          // Video ended or paused — advance past clip boundary
+          const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
+          onTimeUpdateRef.current(clipEndMs);
+        }
+      } else if (clip && clip.asset.kind === "image") {
+        const newTime = curTime + deltaMs;
+        const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
+        onTimeUpdateRef.current(Math.min(newTime, clipEndMs));
+      } else {
+        // No active clip — advance time to find the next clip
+        const newTime = curTime + deltaMs;
+        if (newTime < seqEnd) {
+          onTimeUpdateRef.current(newTime);
+        } else {
+          onTimeUpdateRef.current(seqEnd);
+          onPlayPauseRef.current();
+          return;
+        }
+      }
+
       animFrameRef.current = requestAnimationFrame(tick);
     };
 
     animFrameRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [isPlaying, activeClip?.clip.id, activeClip?.asset.kind]);
+  }, [isPlaying]);
 
   // Seek video when timeline is scrubbed (not playing)
   useEffect(() => {
@@ -190,6 +264,40 @@ export function PreviewPlayer({
                 muted
               />
             )}
+          </div>
+        )}
+        {/* Text overlay layer */}
+        {activeTextClips.length > 0 && (
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            pointerEvents: "none",
+            padding: "16px",
+          }}>
+            {activeTextClips.map(({ clip, text }) => (
+              <div
+                key={clip.id}
+                style={{
+                  fontSize: `${text.fontSize ?? 48}px`,
+                  color: text.color ?? "#ffffff",
+                  backgroundColor: text.backgroundColor ?? "transparent",
+                  textAlign: (text.align as React.CSSProperties["textAlign"]) ?? "center",
+                  fontFamily: text.fontFamily ?? "sans-serif",
+                  padding: "4px 12px",
+                  borderRadius: "4px",
+                  marginBottom: "8px",
+                  maxWidth: "90%",
+                  wordBreak: "break-word",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {text.value}
+              </div>
+            ))}
           </div>
         )}
       </div>
