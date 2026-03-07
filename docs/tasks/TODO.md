@@ -13,7 +13,7 @@
 | 07 | Frontend ホーム画面 | [x] Done | 01, 02, 03 |
 | 08 | Frontend エディタ画面 + アセットパネル | [x] Done | 05, 07 |
 | 09 | タイムライン UI | [x] Done | 08 |
-| 10 | タイムラインへのクリップ追加 | [ ] Todo | 09 |
+| 10 | タイムラインへのクリップ追加 | [x] Done | 09 |
 | 11 | クリップ操作 (並べ替え・トリム) | [ ] Todo | 10 |
 | 12 | プレビュープレーヤー | [ ] Todo | 10 |
 | 13 | 自動保存 + Undo/Redo | [ ] Todo | 10 |
@@ -119,12 +119,12 @@
 
 ### 10: タイムラインへのクリップ追加
 
-- [ ] AssetPanel からタイムラインへのクリップ追加ボタン
-- [ ] api/projects.ts に useUpdateProject 追加
-- [ ] hooks/useProjectEditor.ts (project state 管理、クリップ追加/削除)
-- [ ] 動画クリップ追加 (durationMs = sourceOutMs - sourceInMs)
-- [ ] 静止画クリップ追加 (durationMs = DEFAULT_IMAGE_DURATION_MS)
-- [ ] クリップ追加後のタイムライン表示確認
+- [x] AssetPanel からタイムラインへのクリップ追加ボタン
+- [x] api/projects.ts に useUpdateProject 追加
+- [x] hooks/useProjectEditor.ts (project state 管理、クリップ追加/削除)
+- [x] 動画クリップ追加 (durationMs = sourceOutMs - sourceInMs)
+- [x] 静止画クリップ追加 (durationMs = DEFAULT_IMAGE_DURATION_MS)
+- [x] クリップ追加後のタイムライン表示確認
 
 ### 11: クリップ操作 (並べ替え・トリム)
 
