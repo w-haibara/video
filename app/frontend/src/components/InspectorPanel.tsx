@@ -1,4 +1,4 @@
-import type { Project, Clip, Asset, ClipText } from "@video/shared";
+import type { Project, Clip, Asset, ClipText, ClipTransform, ClipCrop } from "@video/shared";
 
 type Props = {
   project: Project;
@@ -67,6 +67,13 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip }: Props)
 
       {isTextClip && onUpdateClip && (
         <TextEditor
+          clip={clip}
+          onUpdate={(updates) => onUpdateClip(clip.id, updates)}
+        />
+      )}
+
+      {(trackKind === "video") && onUpdateClip && (
+        <TransformEditor
           clip={clip}
           onUpdate={(updates) => onUpdateClip(clip.id, updates)}
         />
@@ -187,6 +194,136 @@ function TextEditor({
           }}
         />
       </div>
+    </div>
+  );
+}
+
+const ROTATIONS = [0, 90, 180, 270] as const;
+
+function TransformEditor({
+  clip,
+  onUpdate,
+}: {
+  clip: Clip;
+  onUpdate: (updates: Partial<Clip>) => void;
+}) {
+  const transform = clip.transform ?? {};
+  const crop = clip.crop;
+  const currentRotation = transform.rotation ?? 0;
+
+  const updateTransform = (field: Partial<ClipTransform>) => {
+    onUpdate({ transform: { ...transform, ...field } });
+  };
+
+  const updateCrop = (field: Partial<ClipCrop>) => {
+    if (crop) {
+      onUpdate({ crop: { ...crop, ...field } });
+    } else {
+      onUpdate({ crop: { x: 0, y: 0, width: 100, height: 100, ...field } });
+    }
+  };
+
+  const btnStyle = (active: boolean): React.CSSProperties => ({
+    flex: 1,
+    padding: "4px",
+    background: active ? "#3a6ad4" : "#333",
+    color: active ? "#fff" : "#aaa",
+    border: "1px solid " + (active ? "#3a6ad4" : "#555"),
+    borderRadius: "3px",
+    cursor: "pointer",
+    fontSize: "11px",
+  });
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "#333",
+    color: "#fff",
+    border: "1px solid #555",
+    borderRadius: "3px",
+    padding: "2px 4px",
+    fontSize: "12px",
+    boxSizing: "border-box",
+  };
+
+  return (
+    <div style={{ marginTop: "8px" }}>
+      <label style={{ color: "#888", display: "block", marginBottom: "4px" }}>
+        Rotation
+      </label>
+      <div style={{ display: "flex", gap: "4px" }}>
+        {ROTATIONS.map((deg) => (
+          <button
+            key={deg}
+            onClick={() => updateTransform({ rotation: deg })}
+            style={btnStyle(currentRotation === deg)}
+          >
+            {deg}°
+          </button>
+        ))}
+      </div>
+
+      <label style={{ color: "#888", display: "block", marginTop: "8px", marginBottom: "4px" }}>
+        Crop {crop ? "(active)" : ""}
+      </label>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
+        <div>
+          <label style={{ color: "#666", fontSize: "10px" }}>X</label>
+          <input
+            type="number"
+            value={crop?.x ?? 0}
+            onChange={(e) => updateCrop({ x: Number(e.target.value) })}
+            min={0}
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={{ color: "#666", fontSize: "10px" }}>Y</label>
+          <input
+            type="number"
+            value={crop?.y ?? 0}
+            onChange={(e) => updateCrop({ y: Number(e.target.value) })}
+            min={0}
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={{ color: "#666", fontSize: "10px" }}>W</label>
+          <input
+            type="number"
+            value={crop?.width ?? 100}
+            onChange={(e) => updateCrop({ width: Number(e.target.value) })}
+            min={1}
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={{ color: "#666", fontSize: "10px" }}>H</label>
+          <input
+            type="number"
+            value={crop?.height ?? 100}
+            onChange={(e) => updateCrop({ height: Number(e.target.value) })}
+            min={1}
+            style={inputStyle}
+          />
+        </div>
+      </div>
+      {crop && (
+        <button
+          onClick={() => onUpdate({ crop: undefined })}
+          style={{
+            marginTop: "4px",
+            padding: "2px 8px",
+            background: "#333",
+            color: "#888",
+            border: "1px solid #555",
+            borderRadius: "3px",
+            cursor: "pointer",
+            fontSize: "11px",
+          }}
+        >
+          Reset Crop
+        </button>
+      )}
     </div>
   );
 }

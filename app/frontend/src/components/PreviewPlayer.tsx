@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import type { Project, Clip, Asset } from "@video/shared";
+import type { Project, Clip, Asset, ClipCrop } from "@video/shared";
 
 type Props = {
   project: Project;
@@ -121,6 +121,9 @@ export function PreviewPlayer({
     }
   }, [currentTimeMs, isPlaying]);
 
+  const rotation = activeClip?.clip.transform?.rotation ?? 0;
+  const crop = activeClip?.clip.crop;
+
   const isImage = activeClip?.asset.kind === "image";
   const thumbnailUrl = activeClip
     ? (() => {
@@ -152,18 +155,40 @@ export function PreviewPlayer({
       >
         {!activeClip ? (
           <span style={{ color: "#555", fontSize: "14px" }}>No clip at playhead</span>
-        ) : isImage ? (
-          <img
-            src={thumbnailUrl}
-            alt=""
-            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-          />
         ) : (
-          <video
-            ref={videoRef}
-            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-            muted
-          />
+          <div style={{
+            overflow: "hidden",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            maxWidth: "100%",
+            maxHeight: "100%",
+            ...cropContainerStyle(crop, activeClip.asset),
+          }}>
+            {isImage ? (
+              <img
+                src={thumbnailUrl}
+                alt=""
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                }}
+              />
+            ) : (
+              <video
+                ref={videoRef}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                }}
+                muted
+              />
+            )}
+          </div>
         )}
       </div>
 
@@ -201,6 +226,17 @@ export function PreviewPlayer({
       </div>
     </div>
   );
+}
+
+function cropContainerStyle(crop: ClipCrop | undefined, asset: Asset | undefined): React.CSSProperties {
+  if (!crop || !asset?.width || !asset?.height) return {};
+  const top = (crop.y / asset.height) * 100;
+  const left = (crop.x / asset.width) * 100;
+  const right = ((asset.width - crop.x - crop.width) / asset.width) * 100;
+  const bottom = ((asset.height - crop.y - crop.height) / asset.height) * 100;
+  return {
+    clipPath: `inset(${top}% ${right}% ${bottom}% ${left}%)`,
+  };
 }
 
 function formatTime(ms: number): string {
