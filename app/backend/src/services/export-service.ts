@@ -6,6 +6,13 @@ import { assetsDir, exportDir } from "../utils/paths";
 import * as jobQueue from "./job-queue";
 import * as projectService from "./project-service";
 
+function sanitizeColor(value: string): string {
+  // Allow hex (#rgb, #rrggbb, #rrggbbaa), named colors, and color@opacity
+  if (/^#[0-9a-fA-F]{3,8}$/.test(value)) return value;
+  if (/^[a-zA-Z]+(@[0-9.]+)?$/.test(value)) return value;
+  return "white";
+}
+
 /**
  * Build FFmpeg arguments for exporting a project.
  * Pure function for testability.
@@ -79,9 +86,9 @@ export function buildExportArgs(
       const escapedText = textClip.text.value
         .replace(/'/g, "'\\''")
         .replace(/:/g, "\\:");
-      const fontSize = textClip.text.fontSize ?? 48;
-      const fontColor = textClip.text.color ?? "white";
-      const bgColor = textClip.text.backgroundColor ?? "black@0.5";
+      const fontSize = Math.max(8, Math.min(500, Math.round(textClip.text.fontSize ?? 48)));
+      const fontColor = sanitizeColor(textClip.text.color ?? "white");
+      const bgColor = sanitizeColor(textClip.text.backgroundColor ?? "black@0.5");
       const prevOut = i === 0 ? "[outv]" : `[txt${i - 1}]`;
       const curOut = `[txt${i}]`;
 
@@ -116,10 +123,32 @@ export function buildExportArgs(
 
       if (hasVideoAudio) {
         // Mix video audio with BGM
-        // Concat all video audio first
-        const audioConcat = clips
-          .map((_, i) => `[${i}:a]`)
-          .join("");
+        // Only include clips that actually have audio streams
+        const audioClipIndices = clips
+          .map((clip, i) => {
+            const a = project.assets.find((a) => a.id === clip.assetId);
+            return a?.kind === "video" && a.hasAudio ? i : -1;
+          })
+          .filter((i) => i >= 0);
+
+        // For clips without audio, generate silence; for those with audio, use their stream
+        const audioParts: string[] = [];
+        clips.forEach((clip, i) => {
+          const a = project.assets.find((a) => a.id === clip.assetId);
+          if (a?.kind === "video" && a.hasAudio) {
+            audioParts.push(`[${i}:a]`);
+          } else {
+            const dur = clip.durationMs / 1000;
+            filterParts.push(
+              `anullsrc=r=48000:cl=stereo[sil${i}]`,
+            );
+            filterParts.push(
+              `[sil${i}]atrim=duration=${dur}[sa${i}]`,
+            );
+            audioParts.push(`[sa${i}]`);
+          }
+        });
+        const audioConcat = audioParts.join("");
         filterParts.push(
           `${audioConcat}concat=n=${clips.length}:v=0:a=1[va]`,
         );
@@ -140,8 +169,20 @@ export function buildExportArgs(
       }
     }
   } else if (hasVideoAudio) {
-    // Just concat video audio
-    const audioConcat = clips.map((_, i) => `[${i}:a]`).join("");
+    // Just concat video audio, generating silence for clips without audio
+    const audioParts: string[] = [];
+    clips.forEach((clip, i) => {
+      const a = project.assets.find((a) => a.id === clip.assetId);
+      if (a?.kind === "video" && a.hasAudio) {
+        audioParts.push(`[${i}:a]`);
+      } else {
+        const dur = clip.durationMs / 1000;
+        filterParts.push(`anullsrc=r=48000:cl=stereo[sil${i}]`);
+        filterParts.push(`[sil${i}]atrim=duration=${dur}[sa${i}]`);
+        audioParts.push(`[sa${i}]`);
+      }
+    });
+    const audioConcat = audioParts.join("");
     filterParts.push(
       `${audioConcat}concat=n=${clips.length}:v=0:a=1[outa]`,
     );

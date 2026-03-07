@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import type { Project } from "@video/shared";
 import { useProject } from "../api/projects";
@@ -67,10 +67,10 @@ function EditorPageLoaded({
   // Build a project view with the current (possibly unsaved) sequence
   const currentProject: Project = { ...project, sequence };
 
-  const handleDeleteClip = (clipId: string) => {
+  const handleDeleteClip = useCallback((clipId: string) => {
     removeClip(clipId);
     onSelectClip(null);
-  };
+  }, [removeClip, onSelectClip]);
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {

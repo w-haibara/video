@@ -54,6 +54,8 @@ export function PreviewPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const animFrameRef = useRef<number>(0);
   const lastClipIdRef = useRef<string | null>(null);
+  const currentTimeMsRef = useRef(currentTimeMs);
+  currentTimeMsRef.current = currentTimeMs;
 
   const activeClip = findActiveClip(project, currentTimeMs);
 
@@ -76,7 +78,7 @@ export function PreviewPlayer({
         }
       }
     }
-  }, [activeClip?.clip.id, mediaUrl]);
+  }, [activeClip?.clip.id, mediaUrl, isPlaying]);
 
   // Handle play/pause
   useEffect(() => {
@@ -102,8 +104,8 @@ export function PreviewPlayer({
           activeClip.clip.startMs + (videoTimeMs - activeClip.clip.inMs);
         onTimeUpdate(timelineMs);
       } else if (activeClip.asset.kind === "image") {
-        // For images, advance time by frame
-        onTimeUpdate(currentTimeMs + 1000 / 30);
+        // For images, advance time by frame (use ref to avoid stale closure)
+        onTimeUpdate(currentTimeMsRef.current + 1000 / 30);
       }
       animFrameRef.current = requestAnimationFrame(tick);
     };
