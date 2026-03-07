@@ -44,15 +44,39 @@ export function Timeline({
   const totalWidth = msToPx(durationMs);
   const playheadPx = msToPx(currentTimeMs);
 
-  const handleRulerClick = useCallback(
-    (e: React.MouseEvent) => {
-      const rect = e.currentTarget.getBoundingClientRect();
+  const rulerRef = useRef<HTMLDivElement>(null);
+
+  const seekFromMouseEvent = useCallback(
+    (clientX: number) => {
+      const ruler = rulerRef.current;
+      if (!ruler) return;
+      const rect = ruler.getBoundingClientRect();
       const scrollLeft = scrollRef.current?.scrollLeft ?? 0;
-      const x = e.clientX - rect.left + scrollLeft;
+      const x = clientX - rect.left + scrollLeft;
       const ms = Math.max(0, pxToMs(x));
       onSeek(ms);
     },
     [pxToMs, onSeek],
+  );
+
+  const handleRulerMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      seekFromMouseEvent(e.clientX);
+
+      const handleMouseMove = (ev: MouseEvent) => {
+        seekFromMouseEvent(ev.clientX);
+      };
+      const handleMouseUp = () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.body.style.cursor = "";
+      };
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "col-resize";
+    },
+    [seekFromMouseEvent],
   );
 
   const handleMove = useCallback(
@@ -147,8 +171,9 @@ export function Timeline({
         <div style={{ position: "relative", minWidth: `${totalWidth + 32}px` }}>
           {/* Ruler */}
           <div
-            onClick={handleRulerClick}
-            style={{ cursor: "pointer", paddingLeft: "32px" }}
+            ref={rulerRef}
+            onMouseDown={handleRulerMouseDown}
+            style={{ cursor: "col-resize", paddingLeft: "32px" }}
           >
             <TimelineRuler durationMs={durationMs} msToPx={msToPx} />
           </div>

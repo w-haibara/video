@@ -316,7 +316,16 @@ export function PreviewPlayer({
         }}
       >
         <button
-          onClick={onPlayPause}
+          onClick={() => {
+            // If at the end of sequence, reset to start before playing
+            if (!isPlaying) {
+              const seqEnd = getSequenceEndMs(project);
+              if (seqEnd > 0 && currentTimeMs >= seqEnd) {
+                onTimeUpdate(0);
+              }
+            }
+            onPlayPause();
+          }}
           style={{
             background: "none",
             border: "1px solid #555",
