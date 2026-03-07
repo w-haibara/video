@@ -26,7 +26,7 @@ export function assetsDir(projectId: string): string {
 }
 
 export function proxyDir(projectId: string): string {
-  return resolveWorkspacePath("projects", projectId, "proxy");
+  return resolveWorkspacePath("projects", projectId, "proxies");
 }
 
 export function thumbnailDir(projectId: string): string {

@@ -35,7 +35,7 @@ describe("project-service", () => {
     const entries = await readdir(dir);
     expect(entries).toContain("project.json");
     expect(entries).toContain("assets");
-    expect(entries).toContain("proxy");
+    expect(entries).toContain("proxies");
     expect(entries).toContain("thumbnails");
   });
 

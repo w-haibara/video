@@ -44,7 +44,8 @@ export async function importAsset(
 ): Promise<ImportAssetResponse> {
   const dir = assetsDir(projectId);
   await mkdir(dir, { recursive: true });
-  const destPath = path.join(dir, filename);
+  const safeName = path.basename(filename);
+  const destPath = path.join(dir, safeName);
   const chunks: Uint8Array[] = [];
   const reader = body.getReader();
   while (true) {
@@ -57,7 +58,7 @@ export async function importAsset(
   const asset: Asset = {
     id: generateId(),
     kind: detectKind(filename),
-    originalPath: `assets/${filename}`,
+    originalPath: `assets/${safeName}`,
   };
 
   const project = await getProject(projectId);

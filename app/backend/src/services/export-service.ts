@@ -95,7 +95,6 @@ export function buildExportArgs(
   }
 
   // Handle audio
-  const audioArgs: string[] = [];
   let audioFilter = "";
 
   // Check if any video clip has audio
@@ -189,7 +188,7 @@ export async function startExport(
   const expDir = exportDir(projectId);
   await mkdir(expDir, { recursive: true });
 
-  const outputPath = path.join(expDir, filename);
+  const outputPath = path.join(expDir, path.basename(filename));
   const assetsBase = assetsDir(projectId);
 
   // Validate

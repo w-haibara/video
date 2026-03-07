@@ -28,7 +28,7 @@ describe("paths", () => {
   });
 
   test("proxyDir returns correct path", () => {
-    expect(proxyDir("test-id")).toContain("workspace/projects/test-id/proxy");
+    expect(proxyDir("test-id")).toContain("workspace/projects/test-id/proxies");
   });
 
   test("thumbnailDir returns correct path", () => {
