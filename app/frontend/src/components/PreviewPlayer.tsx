@@ -178,9 +178,15 @@ export function PreviewPlayer({
       if (clip && clip.asset.kind === "video") {
         const video = videoRef.current;
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
+        const videoReady = clip.clip.id === lastClipIdRef.current;
 
         if (!video) {
           // No video element — skip
+        } else if (!videoReady) {
+          // Video source not yet updated for this clip (effect hasn't run).
+          // Use deltaMs-based advancement to avoid reading stale video.currentTime.
+          const newTime = curTime + deltaMs;
+          onTimeUpdateRef.current(Math.min(newTime, clipEndMs));
         } else if (video.ended || videoEndedRef.current) {
           // Video file finished but clip may still have remaining time
           // Advance gradually (last frame stays visible)
