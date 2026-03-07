@@ -192,8 +192,21 @@ export function Timeline({
             <TimelineRuler durationMs={durationMs} msToPx={msToPx} />
           </div>
 
-          {/* Tracks */}
+          {/* Seek bar + Tracks wrapper (shared position parent for Playhead) */}
           <div style={{ position: "relative" }}>
+            {/* Seek bar row */}
+            <div
+              onMouseDown={handleRulerMouseDown}
+              style={{
+                height: "16px",
+                background: "#252525",
+                borderBottom: "1px solid #444",
+                cursor: "col-resize",
+                paddingLeft: "32px",
+              }}
+            />
+
+            {/* Tracks */}
             {project.sequence.tracks.length === 0 ? (
               <div
                 style={{
@@ -222,7 +235,7 @@ export function Timeline({
               ))
             )}
 
-            {/* Playhead */}
+            {/* Playhead (spans seek bar + tracks) */}
             <Playhead positionPx={playheadPx + 32} />
           </div>
         </div>
