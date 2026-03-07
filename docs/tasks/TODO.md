@@ -18,6 +18,12 @@
 | 12 | プレビュープレーヤー | [x] Done | 10 |
 | 13 | 自動保存 + Undo/Redo | [x] Done | 10 |
 | 14 | Phase 2 テスト | [x] Done | 09, 10, 11, 12, 13 |
+| 15 | Export API (Backend) | [ ] Todo | 05 |
+| 16 | テロップ UI + タイムライン配置 | [ ] Todo | 11 |
+| 17 | BGM 追加 UI | [ ] Todo | 11 |
+| 18 | Export ダイアログ + ジョブログ | [ ] Todo | 15 |
+| 19 | 回転補正 + クロップ UI | [ ] Todo | 11 |
+| 20 | Phase 3 テスト | [ ] Todo | 15, 16, 17, 18, 19 |
 
 ## Phase 1 Tasks
 
@@ -157,3 +163,57 @@
 - [x] timeline-utils (msToPx, pxToMs, clampZoomIndex) ユニットテスト (6 tests)
 - [x] 純粋ロジックを lib/ に抽出、hooks はラッパーに簡素化
 - [x] `bun test` 新規31テスト全パス
+
+## Phase 3 Tasks
+
+### 15: Export API (Backend)
+
+- [ ] services/export-service.ts (project.json → FFmpeg filtergraph 組み立て)
+- [ ] クリップの trim / scale / rotate 処理
+- [ ] concat filter でクリップ結合
+- [ ] テロップ drawtext filter 生成
+- [ ] BGM amix 合成
+- [ ] routes/exports.ts (POST /api/projects/:id/export, GET /api/projects/:id/exports)
+- [ ] Export job 進捗 (FFmpeg stderr パース)
+- [ ] app.ts ルートマウント追加
+
+### 16: テロップ UI + タイムライン配置
+
+- [ ] shared types 更新 (Clip.text フィールド、Track kind="text")
+- [ ] components/TextClipEditor.tsx (テキスト入力、フォントサイズ、色、背景色)
+- [ ] タイムライン上のテキストトラック表示
+- [ ] テロップクリップの追加・削除
+- [ ] InspectorPanel にテロップ編集 UI 追加
+- [ ] sequence-ops にテロップ操作追加
+
+### 17: BGM 追加 UI
+
+- [ ] BGM ファイルインポート (audio asset)
+- [ ] タイムライン上の audio トラック表示
+- [ ] 音量スライダー (InspectorPanel)
+- [ ] BGM クリップの開始位置・長さ調整
+
+### 18: Export ダイアログ + ジョブログ
+
+- [ ] components/ExportDialog.tsx (解像度選択、アスペクト比、ファイル名)
+- [ ] api/exports.ts (useExport, useExports hooks)
+- [ ] Export 進捗表示 (JobProgress 再利用)
+- [ ] pages/JobLogPage.tsx (全ジョブ一覧、ステータス、エラー詳細)
+- [ ] App.tsx ルート追加
+- [ ] Export 済みファイルダウンロードリンク
+
+### 19: 回転補正 + クロップ UI
+
+- [ ] InspectorPanel に回転コントロール (0/90/180/270)
+- [ ] shared types 更新 (Clip.transform.rotation)
+- [ ] InspectorPanel にクロップ入力 (x, y, width, height)
+- [ ] shared types 更新 (Clip.crop)
+- [ ] PreviewPlayer での回転・クロップ反映
+
+### 20: Phase 3 テスト
+
+- [ ] export-service filtergraph 生成のユニットテスト
+- [ ] routes/exports.test.ts
+- [ ] テロップ sequence-ops のユニットテスト
+- [ ] 回転・クロップ操作のユニットテスト
+- [ ] `bun test` 全パス
