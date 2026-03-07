@@ -11,6 +11,7 @@ type Props = {
   onSelectClip: (clipId: string) => void;
   onMoveClip: (clipId: string, newStartMs: number) => void;
   onTrimClip: (clipId: string, side: "left" | "right", deltaMs: number) => void;
+  onContextMenu?: (clipId: string, position: { x: number; y: number }) => void;
 };
 
 const TRACK_LABEL: Record<string, string> = {
@@ -29,6 +30,7 @@ export function TimelineTrack({
   onSelectClip,
   onMoveClip,
   onTrimClip,
+  onContextMenu,
 }: Props) {
   const assetMap = new Map(assets.map((a) => [a.id, a]));
 
@@ -71,6 +73,7 @@ export function TimelineTrack({
             onSelect={onSelectClip}
             onMove={onMoveClip}
             onTrim={onTrimClip}
+            onContextMenu={onContextMenu}
           />
         ))}
       </div>

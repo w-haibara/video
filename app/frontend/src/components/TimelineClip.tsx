@@ -10,6 +10,7 @@ type Props = {
   onSelect: (clipId: string) => void;
   onMove: (clipId: string, newStartMs: number) => void;
   onTrim: (clipId: string, side: "left" | "right", deltaMs: number) => void;
+  onContextMenu?: (clipId: string, position: { x: number; y: number }) => void;
 };
 
 const TRIM_HANDLE_WIDTH = 6;
@@ -23,6 +24,7 @@ export function TimelineClip({
   onSelect,
   onMove,
   onTrim,
+  onContextMenu,
 }: Props) {
   const width = msToPx(clip.durationMs);
   const left = msToPx(clip.startMs);
@@ -105,6 +107,12 @@ export function TimelineClip({
   return (
     <div
       onMouseDown={handleMouseDown}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect(clip.id);
+        onContextMenu?.(clip.id, { x: e.clientX, y: e.clientY });
+      }}
       style={{
         position: "absolute",
         left: `${left}px`,

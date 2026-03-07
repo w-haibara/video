@@ -1,8 +1,9 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { Project } from "@video/shared";
 import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTrack } from "./TimelineTrack";
 import { Playhead } from "./Playhead";
+import { ContextMenu } from "./ContextMenu";
 import { useTimelineZoom } from "../hooks/useTimelineZoom";
 
 type Props = {
@@ -40,6 +41,18 @@ export function Timeline({
   const { msToPx, pxToMs, zoomIn, zoomOut } = useTimelineZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    clipId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const handleClipContextMenu = useCallback(
+    (clipId: string, position: { x: number; y: number }) => {
+      setContextMenu({ clipId, x: position.x, y: position.y });
+    },
+    [],
+  );
   const durationMs = getTimelineDuration(project);
   const totalWidth = msToPx(durationMs);
   const playheadPx = msToPx(currentTimeMs);
@@ -204,6 +217,7 @@ export function Timeline({
                   onSelectClip={onSelectClip}
                   onMoveClip={handleMove}
                   onTrimClip={handleTrim}
+                  onContextMenu={handleClipContextMenu}
                 />
               ))
             )}
@@ -213,6 +227,22 @@ export function Timeline({
           </div>
         </div>
       </div>
+
+      {contextMenu && onDeleteClip && (
+        <ContextMenu
+          position={{ x: contextMenu.x, y: contextMenu.y }}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              label: "Delete",
+              onClick: () => {
+                onDeleteClip(contextMenu.clipId);
+                onSelectClip(null);
+              },
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }
