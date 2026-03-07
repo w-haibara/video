@@ -21,7 +21,7 @@
 | 15 | Export API (Backend) | [x] Done | 05 |
 | 16 | テロップ UI + タイムライン配置 | [x] Done | 11 |
 | 17 | BGM 追加 UI | [x] Done | 11 |
-| 18 | Export ダイアログ + ジョブログ | [ ] Todo | 15 |
+| 18 | Export ダイアログ + ジョブログ | [x] Done | 15 |
 | 19 | 回転補正 + クロップ UI | [ ] Todo | 11 |
 | 20 | Phase 3 テスト | [ ] Todo | 15, 16, 17, 18, 19 |
 
@@ -195,12 +195,12 @@
 
 ### 18: Export ダイアログ + ジョブログ
 
-- [ ] components/ExportDialog.tsx (解像度選択、アスペクト比、ファイル名)
-- [ ] api/exports.ts (useExport, useExports hooks)
-- [ ] Export 進捗表示 (JobProgress 再利用)
-- [ ] pages/JobLogPage.tsx (全ジョブ一覧、ステータス、エラー詳細)
-- [ ] App.tsx ルート追加
-- [ ] Export 済みファイルダウンロードリンク
+- [x] components/ExportDialog.tsx (ファイル名入力、エクスポート開始、進捗表示)
+- [x] api/exports.ts (useExport, useExports hooks)
+- [x] Export 進捗表示 (JobProgress 再利用)
+- [x] pages/JobLogPage.tsx (全ジョブ一覧、ステータス、エラー詳細)
+- [x] App.tsx ルート追加 (/projects/:id/jobs)
+- [x] Export 済みファイルダウンロードリンク
 
 ### 19: 回転補正 + クロップ UI
 
