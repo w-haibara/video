@@ -26,7 +26,7 @@
 | 20 | Phase 3 テスト | [x] Done | 15, 16, 17, 18, 19 |
 | 21 | ホーム画面デザイン改善 | [x] Done | - |
 | 22 | エディタ画面の余白除去とフルスクリーン化 | [x] Done | 21 |
-| 23 | エディタ画面レイアウト再構成 | [ ] Todo | 22 |
+| 23 | エディタ画面レイアウト再構成 | [x] Done | 22 |
 
 ## Phase 1 Tasks
 
@@ -258,15 +258,15 @@
 └───────────────────────────────────────────┘
 ```
 
-- [ ] EditorLayout の CSS Grid を再設計:
+- [x] EditorLayout の CSS Grid を再設計:
   - gridTemplateColumns: "240px 1fr 240px"
   - gridTemplateRows: "1fr 220px"
   - left (Assets): row 1, col 1
   - center (Preview): row 1, col 2
   - right (Inspector): row 1, col 3
   - bottom (Timeline): row 2, col 1〜3 (全幅)
-- [ ] left パネルを row 1 のみに変更 (現状 row 1-2 にまたがっている)
-- [ ] right パネルを row 1 のみに変更 (現状 row 1-2 にまたがっている)
-- [ ] bottom (Timeline) の gridColumn を "1 / -1" に変更して全幅表示
-- [ ] 各パネルの overflow 設定を調整 (左右: overflow-y auto, タイムライン: overflow-x auto)
-- [ ] ブラウザで表示確認: タイムラインが画面下部に左右いっぱい表示されること
+- [x] left パネルを row 1 のみに変更 (現状 row 1-2 にまたがっている)
+- [x] right パネルを row 1 のみに変更 (現状 row 1-2 にまたがっている)
+- [x] bottom (Timeline) の gridColumn を "1 / -1" に変更して全幅表示
+- [x] 各パネルの overflow 設定を調整 (左右: overflow-y auto, タイムライン: overflow-x auto)
+- [x] ブラウザで表示確認: タイムラインが画面下部に左右いっぱい表示されること
