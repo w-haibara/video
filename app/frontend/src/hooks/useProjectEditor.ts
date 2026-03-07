@@ -30,9 +30,22 @@ export function useProjectEditor(
 
   const trimClip = useCallback(
     (clipId: string, side: "left" | "right", deltaMs: number) => {
-      pushState(SeqOps.trimClip(sequence, clipId, side, deltaMs));
+      // Find the clip's asset to get source duration constraint
+      let maxSourceDurationMs: number | undefined;
+      for (const track of sequence.tracks) {
+        const clip = track.clips.find((c) => c.id === clipId);
+        if (clip) {
+          const asset = project.assets.find((a) => a.id === clip.assetId);
+          // Only constrain video/audio clips with known duration (not images)
+          if (asset && asset.kind !== "image" && asset.durationMs) {
+            maxSourceDurationMs = asset.durationMs;
+          }
+          break;
+        }
+      }
+      pushState(SeqOps.trimClip(sequence, clipId, side, deltaMs, maxSourceDurationMs));
     },
-    [sequence, pushState],
+    [sequence, project.assets, pushState],
   );
 
   const addTextClip = useCallback(

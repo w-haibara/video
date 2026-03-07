@@ -158,6 +158,41 @@ describe("trimClip", () => {
     const clip = seq.tracks[0].clips[0];
     expect(clip.inMs).toBe(0); // clamped
   });
+
+  test("right trim clamps to maxSourceDurationMs", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset); // duration 5000, inMs 0
+    const clipId = seq.tracks[0].clips[0].id;
+    // First trim right to reduce to 3000
+    seq = trimClip(seq, clipId, "right", -2000);
+    expect(seq.tracks[0].clips[0].durationMs).toBe(3000);
+    // Now try to expand beyond source (5000) with maxSourceDurationMs constraint
+    seq = trimClip(seq, clipId, "right", 5000, 5000);
+    const clip = seq.tracks[0].clips[0];
+    expect(clip.durationMs).toBe(5000); // clamped to maxSource - inMs
+    expect(clip.outMs).toBe(5000);
+  });
+
+  test("right trim without maxSourceDurationMs allows any duration", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset); // duration 5000
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = trimClip(seq, clipId, "right", 10000); // no constraint
+    expect(seq.tracks[0].clips[0].durationMs).toBe(15000);
+  });
+
+  test("right trim with inMs offset respects maxSourceDurationMs", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset); // duration 5000, inMs 0
+    const clipId = seq.tracks[0].clips[0].id;
+    // Left trim to move inMs to 2000
+    seq = trimClip(seq, clipId, "left", 2000);
+    expect(seq.tracks[0].clips[0].inMs).toBe(2000);
+    expect(seq.tracks[0].clips[0].durationMs).toBe(3000);
+    // Try to expand right beyond source length
+    seq = trimClip(seq, clipId, "right", 5000, 5000);
+    const clip = seq.tracks[0].clips[0];
+    // maxSource(5000) - inMs(2000) = 3000 max duration
+    expect(clip.durationMs).toBe(3000);
+    expect(clip.outMs).toBe(5000);
+  });
 });
 
 describe("addTextClip", () => {

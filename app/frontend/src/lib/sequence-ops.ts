@@ -108,6 +108,7 @@ export function trimClip(
   clipId: string,
   side: "left" | "right",
   deltaMs: number,
+  maxSourceDurationMs?: number,
 ): Sequence {
   const tracks = sequence.tracks.map((track) => ({
     ...track,
@@ -123,7 +124,10 @@ export function trimClip(
           inMs: c.inMs + clampedDelta,
         };
       } else {
-        const newDuration = Math.max(100, c.durationMs + deltaMs);
+        let newDuration = Math.max(100, c.durationMs + deltaMs);
+        if (maxSourceDurationMs != null) {
+          newDuration = Math.min(newDuration, maxSourceDurationMs - c.inMs);
+        }
         return {
           ...c,
           durationMs: newDuration,
