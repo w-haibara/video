@@ -20,7 +20,7 @@
 | 14 | Phase 2 テスト | [x] Done | 09, 10, 11, 12, 13 |
 | 15 | Export API (Backend) | [x] Done | 05 |
 | 16 | テロップ UI + タイムライン配置 | [x] Done | 11 |
-| 17 | BGM 追加 UI | [ ] Todo | 11 |
+| 17 | BGM 追加 UI | [x] Done | 11 |
 | 18 | Export ダイアログ + ジョブログ | [ ] Todo | 15 |
 | 19 | 回転補正 + クロップ UI | [ ] Todo | 11 |
 | 20 | Phase 3 テスト | [ ] Todo | 15, 16, 17, 18, 19 |
@@ -188,10 +188,10 @@
 
 ### 17: BGM 追加 UI
 
-- [ ] BGM ファイルインポート (audio asset)
-- [ ] タイムライン上の audio トラック表示
-- [ ] 音量スライダー (InspectorPanel)
-- [ ] BGM クリップの開始位置・長さ調整
+- [x] BGM ファイルインポート (audio asset, 既存の import フローで対応)
+- [x] タイムライン上の audio トラック表示 (緑色クリップ)
+- [x] 音量スライダー (InspectorPanel, 0-100%)
+- [x] BGM クリップの開始位置・長さ調整 (ドラッグ移動・トリム)
 
 ### 18: Export ダイアログ + ジョブログ
 
