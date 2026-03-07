@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import type { Project, Clip, Asset, ClipText, ClipTransform, ClipCrop } from "@video/shared";
 
 type Props = {
@@ -55,15 +56,21 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip }: Props)
           {!isTextClip && <Row label="File" value={fileName} />}
           <Row label="Type" value={isTextClip ? "text" : (asset?.kind ?? "—")} />
           <Row label="Start" value={formatMs(clip.startMs)} />
-          <Row label="Duration" value={formatMs(clip.durationMs)} />
-          {!isTextClip && <Row label="In" value={formatMs(clip.inMs)} />}
-          {!isTextClip && <Row label="Out" value={formatMs(clip.outMs)} />}
           {asset?.width && asset?.height && (
             <Row label="Size" value={`${asset.width}x${asset.height}`} />
           )}
           {asset?.codec && <Row label="Codec" value={asset.codec} />}
         </tbody>
       </table>
+
+      {onUpdateClip && (
+        <TrimEditor
+          clip={clip}
+          asset={asset}
+          trackKind={trackKind}
+          onUpdate={(updates) => onUpdateClip(clip.id, updates)}
+        />
+      )}
 
       {isTextClip && onUpdateClip && (
         <TextEditor
@@ -96,6 +103,157 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip }: Props)
           />
         </div>
       )}
+    </div>
+  );
+}
+
+const MIN_DURATION_MS = 100;
+
+function msToSec(ms: number): string {
+  return (ms / 1000).toFixed(1);
+}
+
+function secToMs(sec: string): number {
+  return Math.round(parseFloat(sec) * 1000);
+}
+
+function TrimEditor({
+  clip,
+  asset,
+  trackKind,
+  onUpdate,
+}: {
+  clip: Clip;
+  asset: Asset | undefined;
+  trackKind: string;
+  onUpdate: (updates: Partial<Clip>) => void;
+}) {
+  const isTextOrImage = trackKind === "title" || asset?.kind === "image";
+  const hasSourceTrim = trackKind !== "title";
+  const maxSourceMs = asset?.durationMs;
+
+  const [durationVal, setDurationVal] = useState(msToSec(clip.durationMs));
+  const [inVal, setInVal] = useState(msToSec(clip.inMs));
+  const [outVal, setOutVal] = useState(msToSec(clip.outMs));
+
+  useEffect(() => {
+    setDurationVal(msToSec(clip.durationMs));
+    setInVal(msToSec(clip.inMs));
+    setOutVal(msToSec(clip.outMs));
+  }, [clip.durationMs, clip.inMs, clip.outMs]);
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "#333",
+    color: "#fff",
+    border: "1px solid #555",
+    borderRadius: "3px",
+    padding: "2px 4px",
+    fontSize: "12px",
+    boxSizing: "border-box",
+  };
+
+  const handleDurationCommit = () => {
+    const newDurationMs = secToMs(durationVal);
+    if (isNaN(newDurationMs) || newDurationMs < MIN_DURATION_MS) {
+      setDurationVal(msToSec(clip.durationMs));
+      return;
+    }
+    if (!isTextOrImage && maxSourceMs) {
+      const clampedDuration = Math.min(newDurationMs, maxSourceMs - clip.inMs);
+      if (clampedDuration < MIN_DURATION_MS) {
+        setDurationVal(msToSec(clip.durationMs));
+        return;
+      }
+      onUpdate({ durationMs: clampedDuration, outMs: clip.inMs + clampedDuration });
+    } else {
+      onUpdate({ durationMs: newDurationMs, outMs: clip.inMs + newDurationMs });
+    }
+  };
+
+  const handleInCommit = () => {
+    const newInMs = secToMs(inVal);
+    if (isNaN(newInMs) || newInMs < 0) {
+      setInVal(msToSec(clip.inMs));
+      return;
+    }
+    if (newInMs >= clip.outMs - MIN_DURATION_MS) {
+      setInVal(msToSec(clip.inMs));
+      return;
+    }
+    const newDuration = clip.outMs - newInMs;
+    onUpdate({ inMs: newInMs, durationMs: newDuration, startMs: clip.startMs + (newInMs - clip.inMs) });
+  };
+
+  const handleOutCommit = () => {
+    const newOutMs = secToMs(outVal);
+    if (isNaN(newOutMs)) {
+      setOutVal(msToSec(clip.outMs));
+      return;
+    }
+    if (newOutMs <= clip.inMs + MIN_DURATION_MS) {
+      setOutVal(msToSec(clip.outMs));
+      return;
+    }
+    const clampedOut = maxSourceMs && !isTextOrImage ? Math.min(newOutMs, maxSourceMs) : newOutMs;
+    const newDuration = clampedOut - clip.inMs;
+    if (newDuration < MIN_DURATION_MS) {
+      setOutVal(msToSec(clip.outMs));
+      return;
+    }
+    onUpdate({ outMs: clampedOut, durationMs: newDuration });
+  };
+
+  return (
+    <div style={{ marginTop: "8px" }}>
+      <label style={{ color: "#888", display: "block", marginBottom: "4px" }}>
+        Trim
+      </label>
+      <div style={{ display: "grid", gridTemplateColumns: hasSourceTrim ? "1fr 1fr 1fr" : "1fr", gap: "4px" }}>
+        {hasSourceTrim && (
+          <div>
+            <label style={{ color: "#666", fontSize: "10px" }}>In (s)</label>
+            <input
+              type="number"
+              value={inVal}
+              onChange={(e) => setInVal(e.target.value)}
+              onBlur={handleInCommit}
+              onKeyDown={(e) => { if (e.key === "Enter") handleInCommit(); }}
+              min={0}
+              step={0.1}
+              style={inputStyle}
+            />
+          </div>
+        )}
+        {hasSourceTrim && (
+          <div>
+            <label style={{ color: "#666", fontSize: "10px" }}>Out (s)</label>
+            <input
+              type="number"
+              value={outVal}
+              onChange={(e) => setOutVal(e.target.value)}
+              onBlur={handleOutCommit}
+              onKeyDown={(e) => { if (e.key === "Enter") handleOutCommit(); }}
+              min={0}
+              step={0.1}
+              style={inputStyle}
+            />
+          </div>
+        )}
+        <div>
+          <label style={{ color: "#666", fontSize: "10px" }}>Duration (s)</label>
+          <input
+            type="number"
+            value={durationVal}
+            onChange={(e) => setDurationVal(e.target.value)}
+            onBlur={handleDurationCommit}
+            onKeyDown={(e) => { if (e.key === "Enter") handleDurationCommit(); }}
+            min={0.1}
+            step={0.1}
+            style={inputStyle}
+          />
+        </div>
+      </div>
     </div>
   );
 }
