@@ -39,6 +39,7 @@
 | 33 | トリムハンドルの UX 改善 | [x] Done | 11 |
 | 34 | トリム範囲のバリデーション強化 | [x] Done | 11 |
 | 35 | 同一アセットの連続クリップ再生バグ修正 | [x] Done | 12, 24 |
+| 36 | 異なるアセットの連続クリップ再生バグ修正 | [ ] Todo | 12, 24, 35 |
 
 ## Phase 1 Tasks
 
@@ -564,3 +565,34 @@
 - [ ] `video.currentTime` から計算した `timelineMs` が現在のクリップ範囲 (`clip.startMs` 〜 `clipEndMs`) を逸脱しないようクランプ
   - `timelineMs = Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs))`
 - [ ] これにより、動画リロード中の `currentTime=0` による巻き戻りを防止
+
+### 36: 異なるアセットの連続クリップ再生バグ修正
+
+現状: 異なるアセット (例: A.mp4 をトリミングしたクリップ + B.mp4 をトリミングしたクリップ) を連続配置して再生すると、2つ目のクリップが一瞬で終わってしまう。
+
+原因:
+- クリップ切り替え時、React の re-render 後に `tick()` が Effect（`video.src` 変更）**より先に**実行される
+- この時点で `video` 要素はまだクリップ1の古い動画を保持しており:
+  - `video.readyState >= 2` (クリップ1のデータが残っている)
+  - `video.currentTime` はクリップ1の再生終了位置（例: 8秒）
+- tick() が `timelineMs = clip2.startMs + (video.currentTime*1000 - clip2.inMs)` を計算
+  - クリップ1の `currentTime` (高い値) をクリップ2の計算に使うため、`timelineMs` がクリップ2の範囲を大幅超過
+- 上限クランプにより `onTimeUpdate(clip2EndMs)` が呼ばれ、クリップ2が即座に終了する
+- タスク35の下限クランプ (`Math.max(clip.startMs, ...)`) は `currentTime=0` のケースを防ぐが、上限方向の誤算は防げない
+
+修正方針:
+
+**A. tick() でクリップ切替の過渡期を検出してフォールバック** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [ ] tick() 内で `clip.clip.id !== lastClipIdRef.current` をチェック
+  - `lastClipIdRef` は "Handle video source changes" Effect 内で更新されるため、Effect 実行前は前クリップの ID のまま
+  - 不一致 = video 要素がまだ新クリップ用に設定されていない (過渡期)
+- [ ] 過渡期の場合、`video.currentTime` に基づく計算を**スキップ**し、代わりに `deltaMs` ベースで時間を進める (静止画クリップと同じ方式)
+  - `const newTime = curTime + deltaMs; onTimeUpdate(Math.min(newTime, clipEndMs))`
+  - これにより、古い動画の `currentTime` が新クリップの計算を汚染しない
+- [ ] `video.ended` / `videoEndedRef.current` のチェックも同様にスキップ
+  - クリップ1の `ended` 状態がクリップ2の再生を即終了させるのを防止
+
+**B. video.src 変更後の readyState チェック強化**
+- [ ] "Handle video source changes" Effect で `video.src` を変更した後、`video.readyState` が 0 にリセットされることを利用
+  - tick() の既存条件 `video.readyState >= 2` が自然にガードとして機能する
+  - 過渡期検出 (A) と組み合わせることで、二重の安全策となる
