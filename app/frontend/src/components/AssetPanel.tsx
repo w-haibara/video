@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import type { Project, Asset } from "@video/shared";
-import { useImportAsset } from "../api/assets";
+import { useImportAsset, useDeleteAsset } from "../api/assets";
 import { AssetThumbnail } from "./AssetThumbnail";
 
 type Props = {
@@ -11,6 +11,18 @@ type Props = {
 export function AssetPanel({ project, onAddToTimeline }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importAsset = useImportAsset(project.id);
+  const deleteAsset = useDeleteAsset(project.id);
+
+  // Track which assets are in use on the timeline
+  const inUseAssetIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const track of project.sequence.tracks) {
+      for (const clip of track.clips) {
+        if (clip.assetId) ids.add(clip.assetId);
+      }
+    }
+    return ids;
+  }, [project.sequence]);
   const [activeJobIds, setActiveJobIds] = useState<Map<string, string>>(
     new Map(),
   );
@@ -75,6 +87,8 @@ export function AssetPanel({ project, onAddToTimeline }: Props) {
             projectId={project.id}
             jobId={activeJobIds.get(asset.id) ?? null}
             onAddToTimeline={onAddToTimeline}
+            onDelete={(assetId) => deleteAsset.mutate(assetId)}
+            isInUse={inUseAssetIds.has(asset.id)}
           />
         ))}
       </div>

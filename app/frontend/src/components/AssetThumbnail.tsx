@@ -7,9 +7,11 @@ type Props = {
   projectId: string;
   jobId: string | null;
   onAddToTimeline?: (asset: Asset) => void;
+  onDelete?: (assetId: string) => void;
+  isInUse?: boolean;
 };
 
-export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline }: Props) {
+export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDelete, isInUse }: Props) {
   const { data: job } = useJob(jobId);
   const retryJob = useRetryJob();
 
@@ -64,30 +66,53 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline }: Pro
           <JobProgress job={job} />
         </div>
       )}
-      {!isProcessing && job?.status !== "failed" && onAddToTimeline && (
-        <button
-          onClick={() => onAddToTimeline(asset)}
-          style={{
-            position: "absolute",
-            top: "2px",
-            right: "2px",
-            background: "rgba(0,0,0,0.7)",
-            border: "none",
-            color: "#fff",
-            fontSize: "14px",
-            width: "22px",
-            height: "22px",
-            borderRadius: "3px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-          }}
-          title="Add to timeline"
-        >
-          +
-        </button>
+      {!isProcessing && job?.status !== "failed" && (
+        <div style={{ position: "absolute", top: "2px", right: "2px", display: "flex", gap: "2px" }}>
+          {onDelete && !isInUse && (
+            <button
+              onClick={() => onDelete(asset.id)}
+              style={{
+                background: "rgba(0,0,0,0.7)",
+                border: "none",
+                color: "#f66",
+                fontSize: "14px",
+                width: "22px",
+                height: "22px",
+                borderRadius: "3px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+              }}
+              title="Delete asset"
+            >
+              ×
+            </button>
+          )}
+          {onAddToTimeline && (
+            <button
+              onClick={() => onAddToTimeline(asset)}
+              style={{
+                background: "rgba(0,0,0,0.7)",
+                border: "none",
+                color: "#fff",
+                fontSize: "14px",
+                width: "22px",
+                height: "22px",
+                borderRadius: "3px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+              }}
+              title="Add to timeline"
+            >
+              +
+            </button>
+          )}
+        </div>
       )}
       {job?.status === "failed" && (
         <div

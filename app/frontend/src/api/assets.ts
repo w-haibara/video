@@ -21,3 +21,20 @@ export function useImportAsset(projectId: string) {
     },
   });
 }
+
+export function useDeleteAsset(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (assetId: string) => {
+      const res = await fetch(
+        `/api/assets/${assetId}?projectId=${projectId}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
+    },
+  });
+}

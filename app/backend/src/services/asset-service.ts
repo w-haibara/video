@@ -2,11 +2,11 @@ import type { Asset, ImportAssetResponse } from "@video/shared";
 import { generateId } from "@video/shared";
 import type { PipelineContext } from "../pipeline/types";
 import { runPipeline } from "../pipeline";
-import { assetsDir, projectDir as getProjectDir } from "../utils/paths";
+import { assetsDir, projectDir as getProjectDir, proxyDir, thumbnailDir } from "../utils/paths";
 import { getProject, saveProject } from "./project-service";
 import { enqueue } from "./job-queue";
 import path from "node:path";
-import { mkdir } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 
 function detectKind(filename: string): Asset["kind"] {
   const ext = path.extname(filename).toLowerCase();
@@ -78,4 +78,34 @@ export async function importAsset(
   });
 
   return { asset, jobId: job.id };
+}
+
+export async function deleteAsset(
+  projectId: string,
+  assetId: string,
+): Promise<void> {
+  const project = await getProject(projectId);
+  const asset = project.assets.find((a) => a.id === assetId);
+  if (!asset) {
+    throw new Error(`Asset not found: ${assetId}`);
+  }
+
+  // Remove related files (ignore errors if files don't exist)
+  const projDir = getProjectDir(projectId);
+  const filesToDelete: string[] = [
+    path.join(projDir, asset.originalPath),
+  ];
+  if (asset.thumbnailPath) {
+    filesToDelete.push(path.join(projDir, asset.thumbnailPath));
+  }
+  if (asset.proxyPath) {
+    filesToDelete.push(path.join(projDir, asset.proxyPath));
+  }
+  for (const f of filesToDelete) {
+    await rm(f, { force: true }).catch(() => {});
+  }
+
+  // Remove asset from project
+  project.assets = project.assets.filter((a) => a.id !== assetId);
+  await saveProject(project);
 }
