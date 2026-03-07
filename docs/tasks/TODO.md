@@ -4,7 +4,7 @@
 
 | # | Task | Status | Dependencies |
 |---|------|--------|-------------|
-| 01 | プロジェクトスキャフォールド | [ ] Not Started | - |
+| 01 | プロジェクトスキャフォールド | [x] Done | - |
 | 02 | 共有型定義 (shared) | [ ] Not Started | 01 |
 | 03 | Backend Hono サーバー + Project CRUD | [ ] Not Started | 01, 02 |
 | 04 | Job キュー | [ ] Not Started | 02 |
@@ -17,14 +17,14 @@
 
 ### 01: プロジェクトスキャフォールド
 
-- [ ] ルート package.json (workspaces, dev/test スクリプト)
-- [ ] ルート tsconfig.json (project references)
-- [ ] .gitignore
-- [ ] app/shared/ パッケージ構成
-- [ ] app/backend/ パッケージ構成 + 最小 Hono サーバー
-- [ ] app/frontend/ パッケージ構成 + Vite + React セットアップ
-- [ ] `bun install` 成功
-- [ ] `bun run dev` で backend/frontend 同時起動
+- [x] ルート package.json (workspaces, dev/test スクリプト)
+- [x] ルート tsconfig.json (project references)
+- [x] .gitignore
+- [x] app/shared/ パッケージ構成
+- [x] app/backend/ パッケージ構成 + 最小 Hono サーバー
+- [x] app/frontend/ パッケージ構成 + Vite + React セットアップ
+- [x] `bun install` 成功
+- [x] `bun run dev` で backend/frontend 同時起動
 
 ### 02: 共有型定義 (shared)
 
