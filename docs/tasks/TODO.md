@@ -5,7 +5,7 @@
 | # | Task | Status | Dependencies |
 |---|------|--------|-------------|
 | 01 | プロジェクトスキャフォールド | [x] Done | - |
-| 02 | 共有型定義 (shared) | [ ] Not Started | 01 |
+| 02 | 共有型定義 (shared) | [x] Done | 01 |
 | 03 | Backend Hono サーバー + Project CRUD | [ ] Not Started | 01, 02 |
 | 04 | Job キュー | [ ] Not Started | 02 |
 | 05 | Asset Import API | [ ] Not Started | 02, 03, 04 |
@@ -28,13 +28,13 @@
 
 ### 02: 共有型定義 (shared)
 
-- [ ] types/project.ts (Project, Sequence, Track, Clip, ExportPreset)
-- [ ] types/job.ts (Job, JobStatus)
-- [ ] types/api.ts (API リクエスト/レスポンス型)
-- [ ] utils/id.ts (generateId)
-- [ ] utils/constants.ts (定数定義)
-- [ ] index.ts re-export 更新
-- [ ] backend/frontend から import 可能
+- [x] types/project.ts (Project, Sequence, Track, Clip, ExportPreset)
+- [x] types/job.ts (Job, JobStatus)
+- [x] types/api.ts (API リクエスト/レスポンス型)
+- [x] utils/id.ts (generateId)
+- [x] utils/constants.ts (定数定義)
+- [x] index.ts re-export 更新
+- [x] backend/frontend から import 可能
 
 ### 03: Backend Hono サーバー + Project CRUD
 
