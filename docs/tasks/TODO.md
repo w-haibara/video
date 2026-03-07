@@ -35,6 +35,9 @@
 | 29 | アセット削除機能 | [x] Done | 05, 08 |
 | 30 | タイムラインクリップの右クリックメニュー | [x] Done | 11 |
 | 31 | シークバー専用行の追加 | [x] Done | 09, 26 |
+| 32 | インスペクタでのトリムポイント編集 | [x] Done | 11, 19 |
+| 33 | トリムハンドルの UX 改善 | [ ] Todo | 11 |
+| 34 | トリム範囲のバリデーション強化 | [ ] Todo | 11 |
 
 ## Phase 1 Tasks
 
@@ -452,3 +455,87 @@
   - 現在: Playhead はトラック div 内に `position: absolute` で配置
   - 変更: シークバー行 + トラック div を囲む共通の `position: relative` 親を作り、Playhead をそこに配置
 - [ ] Playhead の三角形マーカーがシークバー行の中央に位置するよう調整
+
+## Phase 8 Tasks — 動画トリミング機能強化
+
+### 32: インスペクタでのトリムポイント編集
+
+現状: インスペクタパネルの In/Out ポイントは読み取り専用テキストで表示されており、数値を直接編集できない。タイムライン上のドラッグトリムハンドル (6px) でのみトリムが可能だが、正確な秒数を指定するのが困難。
+
+目標: インスペクタパネルで In/Out ポイントを数値入力で編集できるようにし、正確なトリミングを可能にする。
+
+修正方針:
+
+**A. InspectorPanel の In/Out 行を編集可能に** (`app/frontend/src/components/InspectorPanel.tsx`)
+- [ ] 読み取り専用の `<Row label="In" value={formatMs(clip.inMs)} />` を数値入力フィールドに変更
+  - `<input type="number">` で秒単位の入力 (小数第1位まで、step=0.1)
+  - In 値変更時: `inMs` を更新し、`durationMs` を `outMs - newInMs` に再計算
+- [ ] 読み取り専用の `<Row label="Out" value={formatMs(clip.outMs)} />` を数値入力フィールドに変更
+  - Out 値変更時: `outMs` を更新し、`durationMs` を `newOutMs - inMs` に再計算
+- [ ] Duration 行も編集可能にする
+  - Duration 変更時: `durationMs` を更新し、`outMs` を `inMs + newDurationMs` に再計算
+- [ ] `TrimEditor` コンポーネントを新規作成 (In/Out/Duration の3フィールドを連動管理)
+  - `onUpdateClip` を使用してクリップの `inMs`, `outMs`, `durationMs` を同時に更新
+
+**B. バリデーション**
+- [ ] In >= 0 (ソースの先頭より前には設定不可)
+- [ ] Out <= ソースメディアの総再生時間 (`asset.durationMs`)
+- [ ] In < Out (In が Out を超えない)
+- [ ] Duration >= 100ms (最小クリップ長)
+- [ ] 不正な値の場合は入力を元の値に戻す
+
+**C. 動画以外のクリップへの対応**
+- [ ] 音声クリップ (audio) でも In/Out/Duration 編集を有効にする
+- [ ] テキストクリップ (title) では Duration のみ編集可能 (In/Out は非表示のまま)
+- [ ] 静止画クリップ (image) では Duration のみ編集可能 (ソース長の制約なし)
+
+### 33: トリムハンドルの UX 改善
+
+現状: タイムラインクリップの左右トリムハンドルは幅 6px で、ホバー時の視覚フィードバックがない。ハンドルの存在に気づきにくく、ドラッグ操作が困難。
+
+目標: トリムハンドルの視認性を向上させ、ドラッグ中に現在のトリム位置をリアルタイム表示する。
+
+修正方針:
+
+**A. ホバー時のハイライト表示** (`app/frontend/src/components/TimelineClip.tsx`)
+- [ ] トリムハンドルにホバー状態を追加
+  - ホバー時: 背景色を `rgba(255,255,255,0.3)` に変更
+  - ホバー時: ハンドル幅を 6px → 8px に拡大 (transition: 0.1s)
+- [ ] ハンドル上に縦線グリップインジケータ (2本線) を表示
+  - `border-left` / `border-right` ではなく、CSS で `⋮` 風のドットパターンを描画
+
+**B. ドラッグ中のツールチップ表示**
+- [ ] ドラッグ開始時にツールチップを表示 (クリップ上部にフローティング)
+  - 左ハンドル: `In: X.Xs` (現在の inMs を秒表示)
+  - 右ハンドル: `Out: X.Xs` (現在の outMs を秒表示)
+- [ ] ドラッグ中にツールチップの値をリアルタイム更新
+- [ ] ドラッグ終了時にツールチップを非表示
+
+**C. クリップのマウスカーソル改善**
+- [ ] クリップ本体: `cursor: grab` → ドラッグ中: `cursor: grabbing`
+- [ ] トリムハンドル: `cursor: col-resize` (既存、維持)
+
+### 34: トリム範囲のバリデーション強化
+
+現状: `trimClip()` (sequence-ops.ts) は最小 duration (100ms) と inMs >= 0 の制約を適用しているが、ソースメディアの長さを超えたトリムを防止していない。右トリムハンドルをドラッグすると、元の動画の再生時間を超えた outMs が設定可能。
+
+目標: トリム操作時にソースメディアの長さを上限として適用し、不正なトリム範囲を防止する。
+
+修正方針:
+
+**A. sequence-ops の trimClip にソース長制約を追加** (`app/frontend/src/lib/sequence-ops.ts`)
+- [ ] `trimClip()` の引数にオプショナルな `maxSourceDurationMs?: number` を追加
+- [ ] 右トリム時: `outMs` が `maxSourceDurationMs` を超えないようクランプ
+  - `newDuration = Math.min(newDuration, maxSourceDurationMs - c.inMs)`
+- [ ] 左トリム時: `inMs` が 0 未満にならないことは既存で担保 (変更不要)
+
+**B. Timeline から asset 情報を伝播** (`app/frontend/src/components/Timeline.tsx`, `TimelineTrack.tsx`, `TimelineClip.tsx`)
+- [ ] `onTrimClip` のコールバックに `maxSourceDurationMs` を含める、または
+- [ ] `useProjectEditor.trimClip()` 内で該当クリップの asset を検索し `asset.durationMs` を取得して制約に使う
+  - 静止画アセットの場合は制約なし (任意の長さに設定可能)
+  - 音声アセットの場合は `asset.durationMs` で制約
+
+**C. テストの追加** (`app/frontend/src/lib/sequence-ops.test.ts`)
+- [ ] ソース長を超えた右トリムがクランプされることを検証
+- [ ] ソース長制約なしの場合は従来通り制約なしで動作することを検証
+- [ ] 静止画クリップではソース長制約が適用されないことを検証
