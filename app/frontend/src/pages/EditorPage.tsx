@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import type { Project } from "@video/shared";
 import { useProject } from "../api/projects";
 import { EditorLayout } from "../components/EditorLayout";
@@ -8,6 +8,7 @@ import { Timeline } from "../components/Timeline";
 import { InspectorPanel } from "../components/InspectorPanel";
 import { PreviewPlayer } from "../components/PreviewPlayer";
 import { SaveIndicator } from "../components/SaveIndicator";
+import { ExportDialog } from "../components/ExportDialog";
 import { useProjectEditor } from "../hooks/useProjectEditor";
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { useAutoSave } from "../hooks/useAutoSave";
@@ -52,6 +53,8 @@ function EditorPageLoaded({
   isPlaying: boolean;
   onPlayPause: () => void;
 }) {
+  const [showExport, setShowExport] = useState(false);
+
   const { sequence, pushState, undo, redo, canUndo, canRedo } = useUndoRedo(
     project.sequence,
   );
@@ -142,11 +145,52 @@ function EditorPageLoaded({
             onUndo={undo}
             onRedo={redo}
           />
+          <div style={{ padding: "4px 8px", display: "flex", gap: "4px" }}>
+            <button
+              onClick={() => setShowExport(true)}
+              style={{
+                flex: 1,
+                padding: "5px",
+                background: "#3a6ad4",
+                color: "#fff",
+                border: "none",
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "12px",
+              }}
+            >
+              Export
+            </button>
+            <Link
+              to={`/projects/${project.id}/jobs`}
+              style={{
+                flex: 1,
+                padding: "5px",
+                background: "#444",
+                color: "#ccc",
+                border: "none",
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "12px",
+                textDecoration: "none",
+                textAlign: "center",
+                display: "block",
+              }}
+            >
+              Jobs
+            </Link>
+          </div>
           <InspectorPanel
             project={currentProject}
             selectedClipId={selectedClipId}
             onUpdateClip={updateClip}
           />
+          {showExport && (
+            <ExportDialog
+              projectId={project.id}
+              onClose={() => setShowExport(false)}
+            />
+          )}
         </div>
       }
       bottom={

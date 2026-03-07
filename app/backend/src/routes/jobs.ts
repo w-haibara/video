@@ -1,7 +1,12 @@
 import { Hono } from "hono";
-import { getJob, retry } from "../services/job-queue";
+import { getJob, getJobsByProject, retry } from "../services/job-queue";
 
 const jobsRouter = new Hono();
+
+jobsRouter.get("/by-project/:projectId", (c) => {
+  const jobs = getJobsByProject(c.req.param("projectId"));
+  return c.json({ jobs });
+});
 
 jobsRouter.get("/:id", (c) => {
   const job = getJob(c.req.param("id"));
