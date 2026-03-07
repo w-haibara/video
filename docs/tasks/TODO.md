@@ -12,8 +12,14 @@
 | 06 | Backend テスト | [x] Done | 03, 04, 05 |
 | 07 | Frontend ホーム画面 | [x] Done | 01, 02, 03 |
 | 08 | Frontend エディタ画面 + アセットパネル | [x] Done | 05, 07 |
+| 09 | タイムライン UI | [ ] Todo | 08 |
+| 10 | タイムラインへのクリップ追加 | [ ] Todo | 09 |
+| 11 | クリップ操作 (並べ替え・トリム) | [ ] Todo | 10 |
+| 12 | プレビュープレーヤー | [ ] Todo | 10 |
+| 13 | 自動保存 + Undo/Redo | [ ] Todo | 10 |
+| 14 | Phase 2 テスト | [ ] Todo | 09, 10, 11, 12, 13 |
 
-## Tasks
+## Phase 1 Tasks
 
 ### 01: プロジェクトスキャフォールド
 
@@ -97,3 +103,57 @@
 - [x] api/jobs.ts (useJob + ポーリング)
 - [x] App.tsx ルート追加
 - [x] フルフロー確認: プロジェクト作成 → インポート → サムネイル表示
+
+## Phase 2 Tasks
+
+### 09: タイムライン UI
+
+- [ ] components/Timeline.tsx (タイムラインコンテナ、トラック表示)
+- [ ] components/TimelineTrack.tsx (1トラック分の描画)
+- [ ] components/TimelineClip.tsx (クリップ矩形、サムネイル表示)
+- [ ] components/TimelineRuler.tsx (時間目盛り表示)
+- [ ] components/Playhead.tsx (再生ヘッド縦線)
+- [ ] hooks/useTimelineZoom.ts (ズームレベル管理、ms→px変換)
+- [ ] EditorPage にタイムライン組み込み (bottom スロット)
+- [ ] 空のタイムライン表示確認
+
+### 10: タイムラインへのクリップ追加
+
+- [ ] AssetPanel からタイムラインへのクリップ追加ボタン
+- [ ] api/projects.ts に useUpdateProject 追加
+- [ ] hooks/useProjectEditor.ts (project state 管理、クリップ追加/削除)
+- [ ] 動画クリップ追加 (durationMs = sourceOutMs - sourceInMs)
+- [ ] 静止画クリップ追加 (durationMs = DEFAULT_IMAGE_DURATION_MS)
+- [ ] クリップ追加後のタイムライン表示確認
+
+### 11: クリップ操作 (並べ替え・トリム)
+
+- [ ] クリップのドラッグ並べ替え (同一トラック内)
+- [ ] クリップのトリム (左右端のドラッグ)
+- [ ] クリップの選択状態 UI
+- [ ] クリップの削除 (Delete キー)
+- [ ] インスペクターパネル (選択クリップの情報表示)
+
+### 12: プレビュープレーヤー
+
+- [ ] components/PreviewPlayer.tsx (proxy 動画の再生)
+- [ ] 再生 / 一時停止ボタン
+- [ ] シークバー (タイムライン playhead と連動)
+- [ ] 現在の再生時間に基づくクリップ切り替え
+- [ ] 静止画クリップのプレビュー表示
+- [ ] EditorPage の center スロットに組み込み
+
+### 13: 自動保存 + Undo/Redo
+
+- [ ] hooks/useAutoSave.ts (debounce 付き PUT /api/projects/:id)
+- [ ] hooks/useUndoRedo.ts (JSON スナップショットスタック)
+- [ ] Ctrl+Z / Ctrl+Shift+Z キーバインド
+- [ ] 保存状態インジケーター (保存中 / 保存済み)
+
+### 14: Phase 2 テスト
+
+- [ ] useProjectEditor フックのユニットテスト
+- [ ] useUndoRedo フックのユニットテスト
+- [ ] useAutoSave フックのユニットテスト
+- [ ] タイムライン ms→px 変換のユニットテスト
+- [ ] `bun test` 全パス

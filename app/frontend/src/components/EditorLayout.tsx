@@ -41,8 +41,7 @@ export function EditorLayout({ left, center, bottom }: Props) {
       <div
         style={{
           background: "#1a1a1a",
-          padding: "8px",
-          overflow: "auto",
+          overflow: "hidden",
         }}
       >
         {bottom}
