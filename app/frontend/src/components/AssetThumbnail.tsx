@@ -131,21 +131,39 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
           title={job.error ?? "Import failed"}
         >
           <span>Failed</span>
-          <button
-            onClick={() => retryJob.mutate(job.id)}
-            disabled={retryJob.isPending}
-            style={{
-              background: "rgba(255,255,255,0.2)",
-              border: "1px solid rgba(255,255,255,0.5)",
-              color: "#fff",
-              fontSize: "10px",
-              padding: "2px 8px",
-              borderRadius: "3px",
-              cursor: "pointer",
-            }}
-          >
-            {retryJob.isPending ? "..." : "Retry"}
-          </button>
+          <div style={{ display: "flex", gap: "4px" }}>
+            <button
+              onClick={() => retryJob.mutate(job.id)}
+              disabled={retryJob.isPending}
+              style={{
+                background: "rgba(255,255,255,0.2)",
+                border: "1px solid rgba(255,255,255,0.5)",
+                color: "#fff",
+                fontSize: "10px",
+                padding: "2px 8px",
+                borderRadius: "3px",
+                cursor: "pointer",
+              }}
+            >
+              {retryJob.isPending ? "..." : "Retry"}
+            </button>
+            {onDelete && (
+              <button
+                onClick={() => onDelete(asset.id)}
+                style={{
+                  background: "rgba(255,255,255,0.2)",
+                  border: "1px solid rgba(255,255,255,0.5)",
+                  color: "#f66",
+                  fontSize: "10px",
+                  padding: "2px 8px",
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                }}
+              >
+                Delete
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
