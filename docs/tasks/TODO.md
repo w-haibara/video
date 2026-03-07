@@ -24,8 +24,8 @@
 | 18 | Export ダイアログ + ジョブログ | [x] Done | 15 |
 | 19 | 回転補正 + クロップ UI | [x] Done | 11 |
 | 20 | Phase 3 テスト | [x] Done | 15, 16, 17, 18, 19 |
-| 21 | ホーム画面デザイン改善 | [ ] Todo | - |
-| 22 | エディタ画面の余白除去とフルスクリーン化 | [ ] Todo | 21 |
+| 21 | ホーム画面デザイン改善 | [x] Done | - |
+| 22 | エディタ画面の余白除去とフルスクリーン化 | [x] Done | 21 |
 | 23 | エディタ画面レイアウト再構成 | [ ] Todo | 22 |
 
 ## Phase 1 Tasks
@@ -227,21 +227,21 @@
 
 現状: スタイル未適用の素の HTML。エディタ画面はダーク系だがホーム画面は白背景でデザインが統一されていない。
 
-- [ ] body/html にグローバル CSS リセット追加 (margin:0, padding:0, box-sizing, ダーク背景, フォント設定)
-- [ ] HomePage をダークテーマに統一 (背景 #111, テキスト #eee)
-- [ ] ヘッダーバー実装 (アプリ名 + "New Project" ボタン、背景 #1a1a1a、下線)
-- [ ] ProjectCard をカード UI に (背景 #1e1e1e, border-radius, hover エフェクト, padding)
-- [ ] プロジェクト一覧をグリッドレイアウトで表示 (repeat(auto-fill, minmax(280px, 1fr)))
-- [ ] 空状態 (No projects yet) の見た目改善
-- [ ] Loading / Error 状態のスタイル統一
+- [x] body/html にグローバル CSS リセット追加 (margin:0, padding:0, box-sizing, ダーク背景, フォント設定)
+- [x] HomePage をダークテーマに統一 (背景 #111, テキスト #eee)
+- [x] ヘッダーバー実装 (アプリ名 + "New Project" ボタン、背景 #1a1a1a、下線)
+- [x] ProjectCard をカード UI に (背景 #1e1e1e, border-radius, hover エフェクト, padding)
+- [x] プロジェクト一覧をグリッドレイアウトで表示 (repeat(auto-fill, minmax(280px, 1fr)))
+- [x] 空状態 (No projects yet) の見た目改善
+- [x] Loading / Error 状態のスタイル統一
 
 ### 22: エディタ画面の余白除去とフルスクリーン化
 
 現状: body のデフォルト margin (8px) により外周に白い枠が表示されている。
 
-- [ ] グローバル CSS で body { margin: 0; padding: 0; overflow: hidden } を設定
-- [ ] html, body, #root に height: 100%; width: 100% を設定
-- [ ] EditorLayout の height: 100vh がビューポート全体を覆うことを確認
+- [x] グローバル CSS で body { margin: 0; padding: 0; overflow: hidden } を設定
+- [x] html, body, #root に height: 100%; width: 100% を設定
+- [x] EditorLayout の height: 100vh がビューポート全体を覆うことを確認
 
 ### 23: エディタ画面レイアウト再構成
 
