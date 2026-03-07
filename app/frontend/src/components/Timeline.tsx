@@ -52,7 +52,8 @@ export function Timeline({
       if (!ruler) return;
       const rect = ruler.getBoundingClientRect();
       const scrollLeft = scrollRef.current?.scrollLeft ?? 0;
-      const x = clientX - rect.left + scrollLeft;
+      // Subtract 32px paddingLeft (track label area)
+      const x = clientX - rect.left + scrollLeft - 32;
       const ms = Math.max(0, pxToMs(x));
       onSeek(ms);
     },

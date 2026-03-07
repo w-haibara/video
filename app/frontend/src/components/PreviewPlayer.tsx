@@ -82,6 +82,7 @@ export function PreviewPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const animFrameRef = useRef<number>(0);
   const lastClipIdRef = useRef<string | null>(null);
+  const videoEndedRef = useRef(false);
   const currentTimeMsRef = useRef(currentTimeMs);
   currentTimeMsRef.current = currentTimeMs;
 
@@ -92,6 +93,8 @@ export function PreviewPlayer({
   onTimeUpdateRef.current = onTimeUpdate;
   const onPlayPauseRef = useRef(onPlayPause);
   onPlayPauseRef.current = onPlayPause;
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
 
   const activeClip = findActiveClip(project, currentTimeMs);
   const activeTextClips = findActiveTextClips(project, currentTimeMs);
@@ -105,8 +108,12 @@ export function PreviewPlayer({
     const video = videoRef.current;
     if (!video || !activeClip) return;
 
-    if (lastClipIdRef.current !== activeClip.clip.id) {
+    const clipChanged = lastClipIdRef.current !== activeClip.clip.id;
+    const srcMissing = activeClip.asset.kind === "video" && !video.src;
+
+    if (clipChanged || srcMissing) {
       lastClipIdRef.current = activeClip.clip.id;
+      videoEndedRef.current = false;
       if (activeClip.asset.kind === "video") {
         video.src = mediaUrl;
         video.currentTime = activeClip.clipTimeMs / 1000;
@@ -116,6 +123,17 @@ export function PreviewPlayer({
       }
     }
   }, [activeClip?.clip.id, mediaUrl, isPlaying]);
+
+  // Listen for video ended event to advance clips
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const onEnded = () => {
+      videoEndedRef.current = true;
+    };
+    video.addEventListener("ended", onEnded);
+    return () => video.removeEventListener("ended", onEnded);
+  }, []);
 
   // Handle play/pause
   useEffect(() => {
@@ -145,7 +163,7 @@ export function PreviewPlayer({
       const seqEnd = getSequenceEndMs(proj);
 
       // Stop at end of sequence
-      if (curTime >= seqEnd) {
+      if (seqEnd <= 0 || curTime >= seqEnd) {
         onPlayPauseRef.current();
         return;
       }
@@ -154,17 +172,23 @@ export function PreviewPlayer({
 
       if (clip && clip.asset.kind === "video") {
         const video = videoRef.current;
-        if (video && !video.paused) {
+        const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
+
+        if (!video) {
+          // No video element — skip
+        } else if (video.ended || videoEndedRef.current) {
+          // Video file finished but clip may still have remaining time
+          // Advance gradually (last frame stays visible)
+          videoEndedRef.current = false;
+          const newTime = curTime + deltaMs;
+          onTimeUpdateRef.current(Math.min(newTime, clipEndMs));
+        } else if (video.readyState >= 2 && !video.paused) {
+          // Video is playing and has data
           const videoTimeMs = video.currentTime * 1000;
           const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs);
-          const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
-          // Clamp to clip end so we advance past boundary
           onTimeUpdateRef.current(Math.min(timelineMs, clipEndMs));
-        } else {
-          // Video ended or paused — advance past clip boundary
-          const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
-          onTimeUpdateRef.current(clipEndMs);
         }
+        // else: video still loading or buffering — wait, don't skip
       } else if (clip && clip.asset.kind === "image") {
         const newTime = curTime + deltaMs;
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
