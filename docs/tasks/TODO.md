@@ -6,7 +6,7 @@
 |---|------|--------|-------------|
 | 01 | プロジェクトスキャフォールド | [x] Done | - |
 | 02 | 共有型定義 (shared) | [x] Done | 01 |
-| 03 | Backend Hono サーバー + Project CRUD | [ ] Not Started | 01, 02 |
+| 03 | Backend Hono サーバー + Project CRUD | [x] Done | 01, 02 |
 | 04 | Job キュー | [ ] Not Started | 02 |
 | 05 | Asset Import API | [ ] Not Started | 02, 03, 04 |
 | 06 | Backend テスト | [ ] Not Started | 03, 04, 05 |
@@ -38,12 +38,12 @@
 
 ### 03: Backend Hono サーバー + Project CRUD
 
-- [ ] utils/paths.ts (workspace パス解決, path traversal 防止)
-- [ ] services/project-service.ts (CRUD 操作)
-- [ ] routes/projects.ts (Hono Router)
-- [ ] app.ts (ミドルウェア, ルートマウント)
-- [ ] index.ts (FFmpeg チェック, workspace 初期化)
-- [ ] 全 CRUD エンドポイント動作確認
+- [x] utils/paths.ts (workspace パス解決, path traversal 防止)
+- [x] services/project-service.ts (CRUD 操作)
+- [x] routes/projects.ts (Hono Router)
+- [x] app.ts (ミドルウェア, ルートマウント)
+- [x] index.ts (FFmpeg チェック, workspace 初期化)
+- [x] 全 CRUD エンドポイント動作確認
 
 ### 04: Job キュー
 
