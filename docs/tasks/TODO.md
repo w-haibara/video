@@ -12,7 +12,7 @@
 | 06 | Backend テスト | [x] Done | 03, 04, 05 |
 | 07 | Frontend ホーム画面 | [x] Done | 01, 02, 03 |
 | 08 | Frontend エディタ画面 + アセットパネル | [x] Done | 05, 07 |
-| 09 | タイムライン UI | [ ] Todo | 08 |
+| 09 | タイムライン UI | [x] Done | 08 |
 | 10 | タイムラインへのクリップ追加 | [ ] Todo | 09 |
 | 11 | クリップ操作 (並べ替え・トリム) | [ ] Todo | 10 |
 | 12 | プレビュープレーヤー | [ ] Todo | 10 |
@@ -108,14 +108,14 @@
 
 ### 09: タイムライン UI
 
-- [ ] components/Timeline.tsx (タイムラインコンテナ、トラック表示)
-- [ ] components/TimelineTrack.tsx (1トラック分の描画)
-- [ ] components/TimelineClip.tsx (クリップ矩形、サムネイル表示)
-- [ ] components/TimelineRuler.tsx (時間目盛り表示)
-- [ ] components/Playhead.tsx (再生ヘッド縦線)
-- [ ] hooks/useTimelineZoom.ts (ズームレベル管理、ms→px変換)
-- [ ] EditorPage にタイムライン組み込み (bottom スロット)
-- [ ] 空のタイムライン表示確認
+- [x] components/Timeline.tsx (タイムラインコンテナ、トラック表示)
+- [x] components/TimelineTrack.tsx (1トラック分の描画)
+- [x] components/TimelineClip.tsx (クリップ矩形、サムネイル表示)
+- [x] components/TimelineRuler.tsx (時間目盛り表示)
+- [x] components/Playhead.tsx (再生ヘッド縦線)
+- [x] hooks/useTimelineZoom.ts (ズームレベル管理、ms→px変換)
+- [x] EditorPage にタイムライン組み込み (bottom スロット)
+- [x] 空のタイムライン表示確認
 
 ### 10: タイムラインへのクリップ追加
 
