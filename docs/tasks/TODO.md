@@ -7,7 +7,7 @@
 | 01 | プロジェクトスキャフォールド | [x] Done | - |
 | 02 | 共有型定義 (shared) | [x] Done | 01 |
 | 03 | Backend Hono サーバー + Project CRUD | [x] Done | 01, 02 |
-| 04 | Job キュー | [ ] Not Started | 02 |
+| 04 | Job キュー | [x] Done | 02 |
 | 05 | Asset Import API | [ ] Not Started | 02, 03, 04 |
 | 06 | Backend テスト | [ ] Not Started | 03, 04, 05 |
 | 07 | Frontend ホーム画面 | [ ] Not Started | 01, 02, 03 |
@@ -47,10 +47,10 @@
 
 ### 04: Job キュー
 
-- [ ] services/job-queue.ts (インメモリキュー, 逐次実行)
-- [ ] enqueue / getJob / retry 実装
-- [ ] services/job-queue.test.ts
-- [ ] テスト全パス
+- [x] services/job-queue.ts (インメモリキュー, 逐次実行)
+- [x] enqueue / getJob / retry 実装
+- [x] services/job-queue.test.ts
+- [x] テスト全パス
 
 ### 05: Asset Import API
 
