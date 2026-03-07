@@ -17,7 +17,7 @@
 | 11 | クリップ操作 (並べ替え・トリム) | [x] Done | 10 |
 | 12 | プレビュープレーヤー | [x] Done | 10 |
 | 13 | 自動保存 + Undo/Redo | [x] Done | 10 |
-| 14 | Phase 2 テスト | [ ] Todo | 09, 10, 11, 12, 13 |
+| 14 | Phase 2 テスト | [x] Done | 09, 10, 11, 12, 13 |
 
 ## Phase 1 Tasks
 
@@ -152,8 +152,8 @@
 
 ### 14: Phase 2 テスト
 
-- [ ] useProjectEditor フックのユニットテスト
-- [ ] useUndoRedo フックのユニットテスト
-- [ ] useAutoSave フックのユニットテスト
-- [ ] タイムライン ms→px 変換のユニットテスト
-- [ ] `bun test` 全パス
+- [x] sequence-ops (addClip, removeClip, moveClip, trimClip) ユニットテスト (16 tests)
+- [x] undo-redo (push, undo, redo, history limit) ユニットテスト (9 tests)
+- [x] timeline-utils (msToPx, pxToMs, clampZoomIndex) ユニットテスト (6 tests)
+- [x] 純粋ロジックを lib/ に抽出、hooks はラッパーに簡素化
+- [x] `bun test` 新規31テスト全パス
