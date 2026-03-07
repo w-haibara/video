@@ -18,7 +18,7 @@
 | 12 | プレビュープレーヤー | [x] Done | 10 |
 | 13 | 自動保存 + Undo/Redo | [x] Done | 10 |
 | 14 | Phase 2 テスト | [x] Done | 09, 10, 11, 12, 13 |
-| 15 | Export API (Backend) | [ ] Todo | 05 |
+| 15 | Export API (Backend) | [x] Done | 05 |
 | 16 | テロップ UI + タイムライン配置 | [ ] Todo | 11 |
 | 17 | BGM 追加 UI | [ ] Todo | 11 |
 | 18 | Export ダイアログ + ジョブログ | [ ] Todo | 15 |
@@ -168,14 +168,14 @@
 
 ### 15: Export API (Backend)
 
-- [ ] services/export-service.ts (project.json → FFmpeg filtergraph 組み立て)
-- [ ] クリップの trim / scale / rotate 処理
-- [ ] concat filter でクリップ結合
-- [ ] テロップ drawtext filter 生成
-- [ ] BGM amix 合成
-- [ ] routes/exports.ts (POST /api/projects/:id/export, GET /api/projects/:id/exports)
-- [ ] Export job 進捗 (FFmpeg stderr パース)
-- [ ] app.ts ルートマウント追加
+- [x] services/export-service.ts (project.json → FFmpeg filtergraph 組み立て)
+- [x] クリップの trim / scale / rotate 処理
+- [x] concat filter でクリップ結合
+- [x] テロップ drawtext filter 生成
+- [x] BGM amix 合成
+- [x] routes/exports.ts (POST /api/projects/:id/export, GET /api/projects/:id/exports)
+- [x] Export job 進捗 (FFmpeg stderr パース)
+- [x] app.ts ルートマウント追加
 
 ### 16: テロップ UI + タイムライン配置
 
