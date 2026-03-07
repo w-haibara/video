@@ -12,8 +12,8 @@ export function EditorLayout({ left, center, right, bottom }: Props) {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: right ? "280px 1fr 220px" : "280px 1fr",
-        gridTemplateRows: "1fr 200px",
+        gridTemplateColumns: right ? "240px 1fr 240px" : "240px 1fr",
+        gridTemplateRows: "1fr 220px",
         height: "100vh",
         gap: "1px",
         background: "#222",
@@ -21,7 +21,6 @@ export function EditorLayout({ left, center, right, bottom }: Props) {
     >
       <div
         style={{
-          gridRow: "1 / 3",
           overflow: "auto",
           background: "#1a1a1a",
           padding: "8px",
@@ -35,6 +34,7 @@ export function EditorLayout({ left, center, right, bottom }: Props) {
           alignItems: "center",
           justifyContent: "center",
           background: "#111",
+          overflow: "hidden",
         }}
       >
         {center}
@@ -42,7 +42,6 @@ export function EditorLayout({ left, center, right, bottom }: Props) {
       {right && (
         <div
           style={{
-            gridRow: "1 / 3",
             overflow: "auto",
             background: "#1a1a1a",
             borderLeft: "1px solid #333",
@@ -55,7 +54,7 @@ export function EditorLayout({ left, center, right, bottom }: Props) {
         style={{
           background: "#1a1a1a",
           overflow: "hidden",
-          gridColumn: right ? "2 / 3" : "2 / -1",
+          gridColumn: "1 / -1",
         }}
       >
         {bottom}
