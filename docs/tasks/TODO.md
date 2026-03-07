@@ -8,7 +8,7 @@
 | 02 | 共有型定義 (shared) | [x] Done | 01 |
 | 03 | Backend Hono サーバー + Project CRUD | [x] Done | 01, 02 |
 | 04 | Job キュー | [x] Done | 02 |
-| 05 | Asset Import API | [ ] Not Started | 02, 03, 04 |
+| 05 | Asset Import API | [x] Done | 02, 03, 04 |
 | 06 | Backend テスト | [ ] Not Started | 03, 04, 05 |
 | 07 | Frontend ホーム画面 | [ ] Not Started | 01, 02, 03 |
 | 08 | Frontend エディタ画面 + アセットパネル | [ ] Not Started | 05, 07 |
@@ -54,12 +54,12 @@
 
 ### 05: Asset Import API
 
-- [ ] routes/assets.ts (POST /api/assets/import)
-- [ ] routes/jobs.ts (GET /api/jobs/:id, POST /api/jobs/:id/retry)
-- [ ] routes/media.ts (静的ファイル配信)
-- [ ] services/asset-service.ts 更新 (importAsset 統合)
-- [ ] app.ts ルートマウント追加
-- [ ] ファイルアップロード → パイプライン実行のフルフロー動作確認
+- [x] routes/assets.ts (POST /api/assets/import)
+- [x] routes/jobs.ts (GET /api/jobs/:id, POST /api/jobs/:id/retry)
+- [x] routes/media.ts (静的ファイル配信)
+- [x] services/asset-service.ts 更新 (importAsset 統合)
+- [x] app.ts ルートマウント追加
+- [x] ファイルアップロード → パイプライン実行のフルフロー動作確認
 
 ### 06: Backend テスト
 
