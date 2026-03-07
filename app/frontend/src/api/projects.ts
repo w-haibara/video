@@ -5,6 +5,8 @@ import type {
   GetProjectResponse,
   CreateProjectRequest,
   CreateProjectResponse,
+  UpdateProjectRequest,
+  UpdateProjectResponse,
 } from "@video/shared";
 
 export function useProjects() {
@@ -31,6 +33,20 @@ export function useCreateProject() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}
+
+export function useUpdateProject(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateProjectRequest) =>
+      apiFetch<UpdateProjectResponse>(`/api/projects/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["projects", id], updated);
     },
   });
 }

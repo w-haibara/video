@@ -1,11 +1,14 @@
 import { useRef, useState } from "react";
-import type { Project } from "@video/shared";
+import type { Project, Asset } from "@video/shared";
 import { useImportAsset } from "../api/assets";
 import { AssetThumbnail } from "./AssetThumbnail";
 
-type Props = { project: Project };
+type Props = {
+  project: Project;
+  onAddToTimeline?: (asset: Asset) => void;
+};
 
-export function AssetPanel({ project }: Props) {
+export function AssetPanel({ project, onAddToTimeline }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importAsset = useImportAsset(project.id);
   const [activeJobIds, setActiveJobIds] = useState<Map<string, string>>(
@@ -60,6 +63,7 @@ export function AssetPanel({ project }: Props) {
             asset={asset}
             projectId={project.id}
             jobId={activeJobIds.get(asset.id) ?? null}
+            onAddToTimeline={onAddToTimeline}
           />
         ))}
       </div>

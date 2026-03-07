@@ -6,9 +6,10 @@ type Props = {
   asset: Asset;
   projectId: string;
   jobId: string | null;
+  onAddToTimeline?: (asset: Asset) => void;
 };
 
-export function AssetThumbnail({ asset, projectId, jobId }: Props) {
+export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline }: Props) {
   const { data: job } = useJob(jobId);
 
   const thumbnailUrl = asset.thumbnailPath
@@ -61,6 +62,31 @@ export function AssetThumbnail({ asset, projectId, jobId }: Props) {
         >
           <JobProgress job={job} />
         </div>
+      )}
+      {!isProcessing && job?.status !== "failed" && onAddToTimeline && (
+        <button
+          onClick={() => onAddToTimeline(asset)}
+          style={{
+            position: "absolute",
+            top: "2px",
+            right: "2px",
+            background: "rgba(0,0,0,0.7)",
+            border: "none",
+            color: "#fff",
+            fontSize: "14px",
+            width: "22px",
+            height: "22px",
+            borderRadius: "3px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+          }}
+          title="Add to timeline"
+        >
+          +
+        </button>
       )}
       {job?.status === "failed" && (
         <div
