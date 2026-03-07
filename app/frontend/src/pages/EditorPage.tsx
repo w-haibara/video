@@ -1,16 +1,18 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { useProject } from "../api/projects";
 import { EditorLayout } from "../components/EditorLayout";
 import { AssetPanel } from "../components/AssetPanel";
 import { Timeline } from "../components/Timeline";
 import { InspectorPanel } from "../components/InspectorPanel";
+import { PreviewPlayer } from "../components/PreviewPlayer";
 import { useProjectEditor } from "../hooks/useProjectEditor";
 
 function EditorPageInner({ projectId }: { projectId: string }) {
   const { data: project, isLoading, error } = useProject(projectId);
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
@@ -23,6 +25,8 @@ function EditorPageInner({ projectId }: { projectId: string }) {
       onSeek={setCurrentTimeMs}
       selectedClipId={selectedClipId}
       onSelectClip={setSelectedClipId}
+      isPlaying={isPlaying}
+      onPlayPause={() => setIsPlaying((p) => !p)}
     />
   );
 }
@@ -39,6 +43,8 @@ function EditorPageLoaded({
   onSeek: (ms: number) => void;
   selectedClipId: string | null;
   onSelectClip: (id: string | null) => void;
+  isPlaying: boolean;
+  onPlayPause: () => void;
 }) {
   const { addClipFromAsset, removeClip, moveClip, trimClip } =
     useProjectEditor(project);
@@ -51,7 +57,15 @@ function EditorPageLoaded({
   return (
     <EditorLayout
       left={<AssetPanel project={project} onAddToTimeline={addClipFromAsset} />}
-      center={<div style={{ color: "#888" }}>Preview (Phase 2)</div>}
+      center={
+        <PreviewPlayer
+          project={project}
+          currentTimeMs={currentTimeMs}
+          onTimeUpdate={onSeek}
+          isPlaying={isPlaying}
+          onPlayPause={onPlayPause}
+        />
+      }
       right={
         <InspectorPanel project={project} selectedClipId={selectedClipId} />
       }
