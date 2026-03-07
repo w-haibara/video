@@ -5,7 +5,7 @@ const media = new Hono();
 
 media.get("/projects/:projectId/:type/:filename", async (c) => {
   const { projectId, type, filename } = c.req.param();
-  if (!["proxy", "thumbnails", "assets"].includes(type)) {
+  if (!["proxy", "thumbnails", "assets", "exports"].includes(type)) {
     return c.json({ error: "Invalid media type" }, 400);
   }
   const filePath = resolveWorkspacePath("projects", projectId, type, filename);

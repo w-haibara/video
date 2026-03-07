@@ -4,6 +4,7 @@ import { projects } from "./routes/projects";
 import { assets } from "./routes/assets";
 import { jobsRouter } from "./routes/jobs";
 import { media } from "./routes/media";
+import { exports } from "./routes/exports";
 
 const app = new Hono();
 
@@ -15,6 +16,7 @@ app.onError((err, c) => {
 });
 
 app.route("/api/projects", projects);
+app.route("/api/projects", exports);
 app.route("/api/assets", assets);
 app.route("/api/jobs", jobsRouter);
 app.route("/media", media);

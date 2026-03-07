@@ -7,6 +7,7 @@ export type Project = {
   updatedAt: string; // ISO 8601
   assets: Asset[];
   sequence: Sequence;
+  exportPreset?: ExportPreset;
 };
 
 export type Sequence = {
@@ -19,6 +20,29 @@ export type Track = {
   clips: Clip[];
 };
 
+export type ClipText = {
+  value: string;
+  fontFamily?: string;
+  fontSize?: number;
+  align?: "left" | "center" | "right";
+  color?: string;
+  backgroundColor?: string;
+};
+
+export type ClipTransform = {
+  x?: number;
+  y?: number;
+  scale?: number;
+  rotation?: number;
+};
+
+export type ClipCrop = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 export type Clip = {
   id: string;
   assetId: string;
@@ -26,6 +50,10 @@ export type Clip = {
   durationMs: number; // クリップの表示/再生時間
   inMs: number; // 素材のトリムイン
   outMs: number; // 素材のトリムアウト
+  text?: ClipText;
+  volume?: number; // 0.0 - 1.0
+  transform?: ClipTransform;
+  crop?: ClipCrop;
 };
 
 export type ExportPreset = {
@@ -34,4 +62,5 @@ export type ExportPreset = {
   fps: number;
   videoBitrate: string;
   audioBitrate: string;
+  aspectRatio?: "16:9" | "9:16" | "1:1";
 };
