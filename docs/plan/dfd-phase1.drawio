@@ -1,0 +1,240 @@
+<mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+
+    <!-- External Entities -->
+    <mxCell id="user" value="User&#xa;(Browser)" style="shape=doubleRectangle;rounded=0;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="360" width="140" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="ffmpeg" value="FFmpeg&#xa;/ ffprobe" style="shape=doubleRectangle;rounded=0;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="1380" y="360" width="140" height="60" as="geometry"/>
+    </mxCell>
+
+    <!-- Processes -->
+    <mxCell id="p1" value="1.0&#xa;Frontend&#xa;(React + Vite)" style="ellipse;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="300" y="340" width="160" height="100" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="p2" value="2.0&#xa;Project API&#xa;(Hono Router)" style="ellipse;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="600" y="120" width="160" height="100" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="p3" value="3.0&#xa;Asset Import&#xa;(Hono Router)" style="ellipse;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="600" y="340" width="160" height="100" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="p4" value="4.0&#xa;Job Queue&#xa;(In-Memory)" style="ellipse;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="900" y="340" width="160" height="100" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="p5" value="5.0&#xa;Media Server&#xa;(Static Files)" style="ellipse;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="600" y="580" width="160" height="100" as="geometry"/>
+    </mxCell>
+
+    <!-- Data Stores -->
+    <mxCell id="d1" value="D1  project.json" style="shape=partialRectangle;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=13;fontStyle=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="840" y="140" width="200" height="40" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="d2" value="D2  assets/" style="shape=partialRectangle;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=13;fontStyle=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="840" y="540" width="200" height="40" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="d3" value="D3  proxies/ + thumbnails/" style="shape=partialRectangle;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=13;fontStyle=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="840" y="620" width="200" height="40" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="d4" value="D4  Job Store (Memory)" style="shape=partialRectangle;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=13;fontStyle=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="1100" y="230" width="200" height="40" as="geometry"/>
+    </mxCell>
+
+    <!-- Flows: User to Frontend -->
+    <mxCell id="f1" value="File select&#xa;+ project ops" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;fontSize=11;exitX=1;exitY=0.3;entryX=0;entryY=0.4;" edge="1" parent="1" source="user" target="p1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="f2" value="UI render&#xa;(thumbnails, status)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;fontSize=11;exitX=0;exitY=0.6;entryX=1;entryY=0.7;" edge="1" parent="1" source="p1" target="user">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- Flows: Frontend to Project API -->
+    <mxCell id="f3" value="POST/GET/PUT/DELETE&#xa;/api/projects" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;fontSize=11;exitX=0.7;exitY=0;entryX=0;entryY=0.5;" edge="1" parent="1" source="p1" target="p2">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="412" y="290"/>
+          <mxPoint x="540" y="290"/>
+          <mxPoint x="540" y="170"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="f4" value="Project JSON" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;fontSize=11;dashed=1;exitX=0;exitY=0.8;entryX=0.5;entryY=0;" edge="1" parent="1" source="p2" target="p1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="560" y="200"/>
+          <mxPoint x="560" y="310"/>
+          <mxPoint x="380" y="310"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Flows: Frontend to Asset Import -->
+    <mxCell id="f5" value="POST /api/assets/import&#xa;(octet-stream)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="p1" target="p3">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="f6" value="{ asset, jobId }" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontSize=11;dashed=1;exitX=0;exitY=0.8;entryX=1;entryY=0.8;" edge="1" parent="1" source="p3" target="p1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="520" y="420"/>
+          <mxPoint x="520" y="420"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Flows: Frontend to Media Server -->
+    <mxCell id="f7" value="GET /media/thumbnails/*&#xa;GET /media/proxies/*" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#b85450;fontSize=11;exitX=0.5;exitY=1;entryX=0;entryY=0.3;" edge="1" parent="1" source="p1" target="p5">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="380" y="500"/>
+          <mxPoint x="380" y="610"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="f8" value="JPEG / MP4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#b85450;fontSize=11;dashed=1;exitX=0;exitY=0.7;entryX=0.3;entryY=1;" edge="1" parent="1" source="p5" target="p1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="348" y="656"/>
+          <mxPoint x="348" y="500"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Flows: Frontend to Job (polling) -->
+    <mxCell id="f9" value="GET /api/jobs/:id&#xa;(poll 1s)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;fontSize=11;exitX=1;exitY=0.2;entryX=0;entryY=0.8;" edge="1" parent="1" source="p1" target="p4">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="480" y="360"/>
+          <mxPoint x="480" y="260"/>
+          <mxPoint x="880" y="260"/>
+          <mxPoint x="880" y="420"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Flows: Project API to D1 -->
+    <mxCell id="f10" value="read / write" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="p2" target="d1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- Flows: Asset Import to D2 -->
+    <mxCell id="f11" value="save original file" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontSize=11;exitX=0.8;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="p3" target="d2">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="728" y="480"/>
+          <mxPoint x="810" y="480"/>
+          <mxPoint x="810" y="560"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Flows: Asset Import to Job Queue -->
+    <mxCell id="f12" value="enqueue job" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="p3" target="p4">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- Flows: Job Queue to D4 -->
+    <mxCell id="f13" value="store / update status" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;fontSize=11;exitX=1;exitY=0.2;entryX=0;entryY=0.5;" edge="1" parent="1" source="p4" target="d4">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1080" y="360"/>
+          <mxPoint x="1080" y="250"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Flows: Job Queue to FFmpeg -->
+    <mxCell id="f14" value="probe / thumbnail&#xa;/ proxy / HEIC convert" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="p4" target="ffmpeg">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="f15" value="metadata / files / exit code" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontSize=11;dashed=1;exitX=0;exitY=0.8;entryX=1;entryY=0.8;" edge="1" parent="1" source="ffmpeg" target="p4">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1340" y="438"/>
+          <mxPoint x="1340" y="460"/>
+          <mxPoint x="1080" y="460"/>
+          <mxPoint x="1080" y="420"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Flows: Job Queue to D1 (update project.json with metadata) -->
+    <mxCell id="f16" value="update asset metadata&#xa;(proxyPath, thumbnailPath, ...)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;fontSize=11;exitX=0.5;exitY=0;entryX=1;entryY=0.5;" edge="1" parent="1" source="p4" target="d1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="980" y="310"/>
+          <mxPoint x="1060" y="310"/>
+          <mxPoint x="1060" y="160"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Flows: Job Queue to D3 (write proxy/thumbnail files) -->
+    <mxCell id="f17" value="write proxy / thumbnail" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontSize=11;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" parent="1" source="p4" target="d3">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="980" y="480"/>
+          <mxPoint x="1080" y="480"/>
+          <mxPoint x="1080" y="640"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Flows: Media Server to D3 -->
+    <mxCell id="f18" value="read" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#b85450;fontSize=11;exitX=1;exitY=0.7;entryX=0;entryY=0.5;" edge="1" parent="1" source="p5" target="d3">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="810" y="656"/>
+          <mxPoint x="810" y="640"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Legend -->
+    <mxCell id="legend" value="" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=12;swimlaneLine=0;" vertex="1" parent="1">
+      <mxGeometry x="1160" y="520" width="280" height="200" as="geometry">
+        <mxRectangle x="1160" y="520" width="120" height="30" as="alternateBounds"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="leg_title" value="Legend" style="text;fontSize=13;fontStyle=1;align=center;" vertex="1" parent="legend">
+      <mxGeometry x="0" y="0" width="280" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg1" value="External Entity" style="shape=doubleRectangle;rounded=0;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="legend">
+      <mxGeometry x="20" y="40" width="110" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg2" value="Process" style="ellipse;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="legend">
+      <mxGeometry x="150" y="35" width="110" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg3" value="D  Data Store" style="shape=partialRectangle;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="legend">
+      <mxGeometry x="20" y="85" width="240" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg4a" value="" style="endArrow=classic;strokeColor=#666666;" edge="1" parent="legend">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="20" y="140" as="sourcePoint"/>
+        <mxPoint x="90" y="140" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="leg4b" value="Data flow (request)" style="text;fontSize=11;align=left;" vertex="1" parent="legend">
+      <mxGeometry x="100" y="128" width="160" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg5a" value="" style="endArrow=classic;strokeColor=#666666;dashed=1;" edge="1" parent="legend">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="20" y="168" as="sourcePoint"/>
+        <mxPoint x="90" y="168" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="leg5b" value="Data flow (response)" style="text;fontSize=11;align=left;" vertex="1" parent="legend">
+      <mxGeometry x="100" y="156" width="160" height="24" as="geometry"/>
+    </mxCell>
+
+  </root>
+</mxGraphModel>
