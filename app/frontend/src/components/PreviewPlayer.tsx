@@ -120,10 +120,23 @@ export function PreviewPlayer({
         if (urlChanged || srcMissing) {
           lastMediaUrlRef.current = mediaUrl;
           video.src = mediaUrl;
-        }
-        video.currentTime = activeClip.clipTimeMs / 1000;
-        if (isPlaying) {
-          video.play().catch(() => {});
+          // Wait for load before seeking when source changes
+          const seekTarget = activeClip.clipTimeMs / 1000;
+          const onLoadedData = () => {
+            video.removeEventListener("loadeddata", onLoadedData);
+            video.currentTime = seekTarget;
+            if (isPlayingRef.current) {
+              video.play().catch(() => {});
+            }
+          };
+          video.addEventListener("loadeddata", onLoadedData);
+          return () => video.removeEventListener("loadeddata", onLoadedData);
+        } else {
+          // Same URL — can seek immediately
+          video.currentTime = activeClip.clipTimeMs / 1000;
+          if (isPlaying) {
+            video.play().catch(() => {});
+          }
         }
       }
     }
@@ -196,9 +209,17 @@ export function PreviewPlayer({
         } else if (video.readyState >= 2 && !video.paused) {
           // Video is playing and has data
           const videoTimeMs = video.currentTime * 1000;
-          const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs);
-          const clampedMs = Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
-          onTimeUpdateRef.current(clampedMs);
+          const expectedVideoTime = clip.clip.inMs + (curTime - clip.clip.startMs);
+          // If video.currentTime is far from expected, seek hasn't completed yet
+          // (e.g. after source change). Use deltaMs-based advancement instead.
+          if (Math.abs(videoTimeMs - expectedVideoTime) > 500) {
+            const newTime = curTime + deltaMs;
+            onTimeUpdateRef.current(Math.min(newTime, clipEndMs));
+          } else {
+            const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs);
+            const clampedMs = Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
+            onTimeUpdateRef.current(clampedMs);
+          }
         }
         // else: video still loading or buffering — wait, don't skip
       } else if (clip && clip.asset.kind === "image") {
