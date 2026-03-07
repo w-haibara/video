@@ -24,6 +24,9 @@
 | 18 | Export ダイアログ + ジョブログ | [x] Done | 15 |
 | 19 | 回転補正 + クロップ UI | [x] Done | 11 |
 | 20 | Phase 3 テスト | [x] Done | 15, 16, 17, 18, 19 |
+| 21 | ホーム画面デザイン改善 | [ ] Todo | - |
+| 22 | エディタ画面の余白除去とフルスクリーン化 | [ ] Todo | 21 |
+| 23 | エディタ画面レイアウト再構成 | [ ] Todo | 22 |
 
 ## Phase 1 Tasks
 
@@ -217,3 +220,53 @@
 - [x] テロップ sequence-ops のユニットテスト (4 tests)
 - [x] 回転・クロップ操作のユニットテスト (7 tests)
 - [x] `bun test` 全パス (97 pass, 5 ffmpeg integration skip)
+
+## Phase 4 Tasks — UI/レイアウト改善
+
+### 21: ホーム画面デザイン改善
+
+現状: スタイル未適用の素の HTML。エディタ画面はダーク系だがホーム画面は白背景でデザインが統一されていない。
+
+- [ ] body/html にグローバル CSS リセット追加 (margin:0, padding:0, box-sizing, ダーク背景, フォント設定)
+- [ ] HomePage をダークテーマに統一 (背景 #111, テキスト #eee)
+- [ ] ヘッダーバー実装 (アプリ名 + "New Project" ボタン、背景 #1a1a1a、下線)
+- [ ] ProjectCard をカード UI に (背景 #1e1e1e, border-radius, hover エフェクト, padding)
+- [ ] プロジェクト一覧をグリッドレイアウトで表示 (repeat(auto-fill, minmax(280px, 1fr)))
+- [ ] 空状態 (No projects yet) の見た目改善
+- [ ] Loading / Error 状態のスタイル統一
+
+### 22: エディタ画面の余白除去とフルスクリーン化
+
+現状: body のデフォルト margin (8px) により外周に白い枠が表示されている。
+
+- [ ] グローバル CSS で body { margin: 0; padding: 0; overflow: hidden } を設定
+- [ ] html, body, #root に height: 100%; width: 100% を設定
+- [ ] EditorLayout の height: 100vh がビューポート全体を覆うことを確認
+
+### 23: エディタ画面レイアウト再構成
+
+現状: タイムラインが center 列のみに配置 (左パネル・右パネルの間)。プレビューとインスペクタの配置が見づらい。
+
+目標レイアウト:
+```
+┌──────────┬─────────────────────┬──────────┐
+│  Assets  │   Preview Player    │Inspector │
+│  Panel   │                     │  Panel   │
+│          │                     │          │
+├──────────┴─────────────────────┴──────────┤
+│              Timeline (左右いっぱい)        │
+└───────────────────────────────────────────┘
+```
+
+- [ ] EditorLayout の CSS Grid を再設計:
+  - gridTemplateColumns: "240px 1fr 240px"
+  - gridTemplateRows: "1fr 220px"
+  - left (Assets): row 1, col 1
+  - center (Preview): row 1, col 2
+  - right (Inspector): row 1, col 3
+  - bottom (Timeline): row 2, col 1〜3 (全幅)
+- [ ] left パネルを row 1 のみに変更 (現状 row 1-2 にまたがっている)
+- [ ] right パネルを row 1 のみに変更 (現状 row 1-2 にまたがっている)
+- [ ] bottom (Timeline) の gridColumn を "1 / -1" に変更して全幅表示
+- [ ] 各パネルの overflow 設定を調整 (左右: overflow-y auto, タイムライン: overflow-x auto)
+- [ ] ブラウザで表示確認: タイムラインが画面下部に左右いっぱい表示されること
