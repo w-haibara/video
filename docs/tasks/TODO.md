@@ -19,7 +19,7 @@
 | 13 | 自動保存 + Undo/Redo | [x] Done | 10 |
 | 14 | Phase 2 テスト | [x] Done | 09, 10, 11, 12, 13 |
 | 15 | Export API (Backend) | [x] Done | 05 |
-| 16 | テロップ UI + タイムライン配置 | [ ] Todo | 11 |
+| 16 | テロップ UI + タイムライン配置 | [x] Done | 11 |
 | 17 | BGM 追加 UI | [ ] Todo | 11 |
 | 18 | Export ダイアログ + ジョブログ | [ ] Todo | 15 |
 | 19 | 回転補正 + クロップ UI | [ ] Todo | 11 |
@@ -179,12 +179,12 @@
 
 ### 16: テロップ UI + タイムライン配置
 
-- [ ] shared types 更新 (Clip.text フィールド、Track kind="text")
-- [ ] components/TextClipEditor.tsx (テキスト入力、フォントサイズ、色、背景色)
-- [ ] タイムライン上のテキストトラック表示
-- [ ] テロップクリップの追加・削除
-- [ ] InspectorPanel にテロップ編集 UI 追加
-- [ ] sequence-ops にテロップ操作追加
+- [x] shared types 更新 (Clip.text, ClipText, ClipTransform, ClipCrop)
+- [x] InspectorPanel にテキスト編集 UI (textarea, fontSize, color, bgColor)
+- [x] タイムライン上のテキストトラック表示 (紫色クリップ)
+- [x] テロップクリップの追加・削除 (+ Add Text ボタン)
+- [x] InspectorPanel にテロップ編集 UI 追加
+- [x] sequence-ops に addTextClip, updateClip 追加
 
 ### 17: BGM 追加 UI
 
