@@ -16,7 +16,7 @@
 | 10 | タイムラインへのクリップ追加 | [x] Done | 09 |
 | 11 | クリップ操作 (並べ替え・トリム) | [x] Done | 10 |
 | 12 | プレビュープレーヤー | [x] Done | 10 |
-| 13 | 自動保存 + Undo/Redo | [ ] Todo | 10 |
+| 13 | 自動保存 + Undo/Redo | [x] Done | 10 |
 | 14 | Phase 2 テスト | [ ] Todo | 09, 10, 11, 12, 13 |
 
 ## Phase 1 Tasks
@@ -145,10 +145,10 @@
 
 ### 13: 自動保存 + Undo/Redo
 
-- [ ] hooks/useAutoSave.ts (debounce 付き PUT /api/projects/:id)
-- [ ] hooks/useUndoRedo.ts (JSON スナップショットスタック)
-- [ ] Ctrl+Z / Ctrl+Shift+Z キーバインド
-- [ ] 保存状態インジケーター (保存中 / 保存済み)
+- [x] hooks/useAutoSave.ts (debounce 付き PUT /api/projects/:id)
+- [x] hooks/useUndoRedo.ts (JSON スナップショットスタック)
+- [x] Ctrl+Z / Ctrl+Shift+Z キーバインド
+- [x] 保存状態インジケーター (保存中 / 保存済み)
 
 ### 14: Phase 2 テスト
 
