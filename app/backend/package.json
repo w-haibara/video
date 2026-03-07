@@ -1,0 +1,13 @@
+{
+  "name": "@video/backend",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "hono": "^4",
+    "@video/shared": "workspace:*"
+  }
+}
