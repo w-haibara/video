@@ -38,7 +38,18 @@ export function AssetPanel({ project, onAddToTimeline }: Props) {
         }}
       >
         <h3 style={{ margin: 0, color: "#fff" }}>Assets</h3>
-        <button onClick={() => fileInputRef.current?.click()}>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            padding: "4px 12px",
+            background: "#3a6ad4",
+            color: "#fff",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontSize: "12px",
+          }}
+        >
           + Import
         </button>
       </div>

@@ -31,6 +31,10 @@
 | 25 | プレビューのテキストオーバーレイ表示 | [x] Done | 16, 24 |
 | 26 | プレイヘッドのドラッグシーク | [x] Done | 09 |
 | 27 | 再生終了後の再再生で先頭から開始 | [x] Done | 24 |
+| 28 | アセットインポートの信頼性改善 | [ ] Todo | 05 |
+| 29 | アセット削除機能 | [ ] Todo | 05, 08 |
+| 30 | タイムラインクリップの右クリックメニュー | [ ] Todo | 11 |
+| 31 | シークバー専用行の追加 | [ ] Todo | 09, 26 |
 
 ## Phase 1 Tasks
 
@@ -339,3 +343,112 @@
   - Play が押された時点で `currentTimeMs >= seqEnd` であれば、`onTimeUpdate(0)` を呼んで先頭にリセットしてから再生を開始
 - [ ] `getSequenceEndMs()` は既存の関数を再利用
 - [ ] 末尾以外の位置で一時停止→再開した場合は、従来通りその位置から再生を継続
+
+## Phase 7 Tasks — インポート信頼性改善
+
+### 28: アセットインポートの信頼性改善
+
+現状: "+ Import" ボタンでファイルを選択してアップロードすると、ファイル自体は正常にサーバーに保存されるが、バックグラウンドの処理パイプライン (ffprobe による解析) が "JSON Parse error: Expected '}'" で失敗することがある。Bun の `Bun.spawn` でパイプ経由の stdout 読み取りが不完全になるケースがあり、ffprobe の JSON 出力が途中で切れる。
+
+原因:
+- `ffmpegTool.probe()` の `spawn()` 関数が `Bun.spawn` の stdout を `new Response(proc.stdout).text()` で読み取っている
+- Bun のホットリロード (`bun run --hot`) 環境下やサーバー負荷時に、パイプの読み取りが不完全になり JSON が途中で切れる
+- ffprobe 自体は正常に動作しており (exit code 0)、ファイルも正しく書き込まれている
+- サーバーを再起動すると問題が解消される (一時的な状態の問題)
+
+修正方針:
+
+**A. ffprobe 出力読み取りの堅牢化** (`app/backend/src/pipeline/tools/ffmpeg.ts`)
+- [ ] `probe()` に JSON パースのリトライロジックを追加 (最大 3 回)
+  - JSON.parse が失敗した場合、ffprobe を再実行して再試行
+  - リトライ間に短い待機 (100ms) を入れる
+- [ ] `spawn()` 関数の stdout 読み取りを手動チャンク読み取りに変更
+  - `new Response(proc.stdout).text()` の代わりに ReadableStream を直接 chunk ごとに読む
+  - 全チャンクを結合してから文字列化する (パイプバッファの不完全読み取りを防止)
+
+**B. 失敗時のリトライ UI** (`app/frontend/src/components/AssetThumbnail.tsx`)
+- [ ] "Failed" オーバーレイにリトライボタンを追加
+  - `POST /api/jobs/:id/retry` を呼び出す
+  - リトライ後は再びポーリングでジョブ状態を監視
+- [ ] AssetPanel に `jobId` を失敗アセットにも紐づけて表示する (現在はセッション中のインポートのみ追跡)
+
+**C. エラーメッセージの改善**
+- [ ] JSON パース失敗時にエラーメッセージに詳細情報を含める (stdout 長、先頭 200 文字)
+- [ ] AssetThumbnail の "Failed" オーバーレイにエラー詳細のツールチップを追加
+
+### 29: アセット削除機能
+
+現状: インポートしたアセットを削除する手段がない。バックエンドにアセット削除 API が存在せず、フロントエンドにも削除 UI がない。
+
+修正方針:
+
+**A. バックエンド: アセット削除 API** (`app/backend/src`)
+- [ ] `services/asset-service.ts` に `deleteAsset(projectId, assetId)` を追加
+  - `project.assets` から該当アセットを除去
+  - アセットのファイルを削除 (`assets/`, `thumbnails/`, `proxies/` 内の関連ファイル)
+  - `saveProject()` でプロジェクト JSON を更新
+- [ ] `routes/assets.ts` に `DELETE /api/assets/:assetId?projectId=xxx` を追加
+  - projectId, assetId を受け取りバリデーション
+  - `deleteAsset()` を呼び出して 200 を返す
+
+**B. フロントエンド: アセット削除 UI** (`app/frontend/src`)
+- [ ] `api/assets.ts` に `useDeleteAsset(projectId)` mutation を追加
+  - `DELETE /api/assets/:assetId?projectId=xxx` を呼び出す
+  - `onSuccess` で `queryClient.invalidateQueries` でプロジェクトを再取得
+- [ ] `AssetThumbnail.tsx` に削除ボタンを追加
+  - サムネイル右上の "+" ボタンの隣に "×" ボタンを配置
+  - クリック時に確認なしで即削除 (Undo/Redo で復元は非対応)
+- [ ] `AssetPanel.tsx` に `onDeleteAsset` prop を追加し、EditorPage から `useDeleteAsset` を渡す
+- [ ] タイムラインで使用中のアセットは削除ボタンをグレーアウトまたは非表示にする
+
+### 30: タイムラインクリップの右クリックメニュー
+
+現状: タイムライン上のクリップを削除するには、クリップを選択して Delete キーを押す必要がある。右クリックメニューがなく、直感的な操作ができない。
+
+修正方針:
+
+**A. コンテキストメニューコンポーネント** (`app/frontend/src/components`)
+- [ ] `ContextMenu.tsx` を新規作成
+  - `items: { label: string; onClick: () => void; disabled?: boolean }[]` を受け取る
+  - `position: { x: number; y: number }` で表示位置を指定
+  - メニュー外クリックまたは Escape キーで閉じる
+  - ダークテーマ (背景 #2a2a2a, ボーダー #555, テキスト #ccc)
+
+**B. TimelineClip に右クリックハンドラを追加** (`app/frontend/src/components/TimelineClip.tsx`)
+- [ ] `onContextMenu` prop を追加 (`(clipId: string, position: {x: number, y: number}) => void`)
+- [ ] クリップの `div` に `onContextMenu` イベントを追加
+  - `e.preventDefault()` でブラウザデフォルトメニューを抑制
+  - クリップを選択状態にする
+  - 親コンポーネントに位置情報を通知
+
+**C. Timeline にコンテキストメニュー状態管理を追加** (`app/frontend/src/components/Timeline.tsx`)
+- [ ] `contextMenu` state を追加: `{ clipId: string; x: number; y: number } | null`
+- [ ] TimelineTrack → TimelineClip に `onContextMenu` を伝播
+- [ ] メニュー項目:
+  - 「削除」: `onDeleteClip(clipId)` を呼び出す
+  - 将来の拡張用に「複製」等も追加可能
+- [ ] メニュー外クリックで閉じる
+- [ ] `ContextMenu` コンポーネントを条件付きレンダリング
+
+### 31: シークバー専用行の追加
+
+現状: タイムラインのシーク操作はルーラー (時間目盛り) 上でのマウスドラッグで行う。しかしルーラーは高さ 24px と狭く、トラック (V, T) の上に位置しているため操作しにくい。
+
+目標: ルーラーとトラックの間にシークバー専用の行 (高さ 16px 程度) を追加し、そこでもドラッグシークを行えるようにする。プレイヘッドの三角形マーカーがこの行に位置する。
+
+修正方針:
+
+**A. シークバー行の追加** (`app/frontend/src/components/Timeline.tsx`)
+- [ ] ルーラーとトラックの間に新しい div を追加
+  - 高さ: 16px
+  - 背景: #252525 (トラックラベルと同系色)
+  - 左端 32px: トラックラベル列と揃えるためのパディング
+  - カーソル: `col-resize`
+- [ ] この行にも `onMouseDown` でドラッグシークハンドラ (`handleRulerMouseDown`) を適用
+  - 既存の `seekFromMouseEvent` を再利用
+
+**B. Playhead の表示範囲調整** (`app/frontend/src/components/Timeline.tsx`)
+- [ ] Playhead がシークバー行からトラック最下部まで表示されるよう、position の親要素を調整
+  - 現在: Playhead はトラック div 内に `position: absolute` で配置
+  - 変更: シークバー行 + トラック div を囲む共通の `position: relative` 親を作り、Playhead をそこに配置
+- [ ] Playhead の三角形マーカーがシークバー行の中央に位置するよう調整

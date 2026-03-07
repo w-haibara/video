@@ -8,9 +8,23 @@ async function spawn(
     stdout: "pipe",
     stderr: "pipe",
   });
+
+  // Read streams by collecting chunks manually to avoid truncation issues
+  async function readStream(stream: ReadableStream<Uint8Array> | null): Promise<string> {
+    if (!stream) return "";
+    const reader = stream.getReader();
+    const chunks: Uint8Array[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+    return new TextDecoder().decode(Buffer.concat(chunks));
+  }
+
   const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
+    readStream(proc.stdout),
+    readStream(proc.stderr),
   ]);
   const exitCode = await proc.exited;
   return { stdout, stderr, exitCode };
@@ -25,6 +39,37 @@ function assertSuccess(
   }
 }
 
+async function probeJson(inputPath: string): Promise<any> {
+  const maxRetries = 3;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, 100 * attempt));
+    }
+
+    const result = await spawn("ffprobe", [
+      "-v", "quiet",
+      "-print_format", "json",
+      "-show_format",
+      "-show_streams",
+      inputPath,
+    ]);
+    assertSuccess(result, "ffprobe");
+
+    try {
+      return JSON.parse(result.stdout);
+    } catch {
+      lastError = new Error(
+        `ffprobe JSON parse failed (attempt ${attempt + 1}/${maxRetries}, ` +
+        `stdout ${result.stdout.length} bytes): ${result.stdout.slice(0, 200)}`
+      );
+    }
+  }
+
+  throw lastError;
+}
+
 export const ffmpegTool: FfmpegTool = {
   async checkInstalled() {
     const [ffmpeg, ffprobe] = await Promise.all([
@@ -36,16 +81,7 @@ export const ffmpegTool: FfmpegTool = {
   },
 
   async probe(inputPath) {
-    const result = await spawn("ffprobe", [
-      "-v", "quiet",
-      "-print_format", "json",
-      "-show_format",
-      "-show_streams",
-      inputPath,
-    ]);
-    assertSuccess(result, "ffprobe");
-
-    const data = JSON.parse(result.stdout);
+    const data = await probeJson(inputPath);
     const videoStream = data.streams?.find(
       (s: { codec_type: string }) => s.codec_type === "video",
     );

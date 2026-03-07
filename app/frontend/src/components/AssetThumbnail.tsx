@@ -1,5 +1,5 @@
 import type { Asset } from "@video/shared";
-import { useJob } from "../api/jobs";
+import { useJob, useRetryJob } from "../api/jobs";
 import { JobProgress } from "./JobProgress";
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
 
 export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline }: Props) {
   const { data: job } = useJob(jobId);
+  const retryJob = useRetryJob();
 
   const thumbnailUrl = asset.thumbnailPath
     ? `/media/projects/${projectId}/thumbnails/${asset.thumbnailPath.split("/").pop()}`
@@ -95,13 +96,31 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline }: Pro
             inset: 0,
             background: "rgba(200,0,0,0.5)",
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
+            gap: "4px",
             color: "#fff",
             fontSize: "12px",
           }}
+          title={job.error ?? "Import failed"}
         >
-          Failed
+          <span>Failed</span>
+          <button
+            onClick={() => retryJob.mutate(job.id)}
+            disabled={retryJob.isPending}
+            style={{
+              background: "rgba(255,255,255,0.2)",
+              border: "1px solid rgba(255,255,255,0.5)",
+              color: "#fff",
+              fontSize: "10px",
+              padding: "2px 8px",
+              borderRadius: "3px",
+              cursor: "pointer",
+            }}
+          >
+            {retryJob.isPending ? "..." : "Retry"}
+          </button>
         </div>
       )}
     </div>
