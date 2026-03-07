@@ -11,7 +11,7 @@
 | 05 | Asset Import API | [x] Done | 02, 03, 04 |
 | 06 | Backend テスト | [x] Done | 03, 04, 05 |
 | 07 | Frontend ホーム画面 | [x] Done | 01, 02, 03 |
-| 08 | Frontend エディタ画面 + アセットパネル | [ ] Not Started | 05, 07 |
+| 08 | Frontend エディタ画面 + アセットパネル | [x] Done | 05, 07 |
 
 ## Tasks
 
@@ -88,12 +88,12 @@
 
 ### 08: Frontend エディタ画面 + アセットパネル
 
-- [ ] pages/EditorPage.tsx (3カラムレイアウト)
-- [ ] components/EditorLayout.tsx (CSS Grid)
-- [ ] components/AssetPanel.tsx (アセット一覧 + インポート)
-- [ ] components/AssetThumbnail.tsx (サムネイル + Job 状態)
-- [ ] components/JobProgress.tsx (プログレスバー)
-- [ ] api/assets.ts (useImportAsset)
-- [ ] api/jobs.ts (useJob + ポーリング)
-- [ ] App.tsx ルート追加
-- [ ] フルフロー確認: プロジェクト作成 → インポート → サムネイル表示
+- [x] pages/EditorPage.tsx (3カラムレイアウト)
+- [x] components/EditorLayout.tsx (CSS Grid)
+- [x] components/AssetPanel.tsx (アセット一覧 + インポート)
+- [x] components/AssetThumbnail.tsx (サムネイル + Job 状態)
+- [x] components/JobProgress.tsx (プログレスバー)
+- [x] api/assets.ts (useImportAsset)
+- [x] api/jobs.ts (useJob + ポーリング)
+- [x] App.tsx ルート追加
+- [x] フルフロー確認: プロジェクト作成 → インポート → サムネイル表示
