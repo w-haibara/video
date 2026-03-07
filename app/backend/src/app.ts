@@ -1,6 +1,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { projects } from "./routes/projects";
+import { assets } from "./routes/assets";
+import { jobsRouter } from "./routes/jobs";
+import { media } from "./routes/media";
 
 const app = new Hono();
 
@@ -12,6 +15,9 @@ app.onError((err, c) => {
 });
 
 app.route("/api/projects", projects);
+app.route("/api/assets", assets);
+app.route("/api/jobs", jobsRouter);
+app.route("/media", media);
 
 app.get("/api/health", (c) => c.json({ ok: true }));
 
