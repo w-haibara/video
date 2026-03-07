@@ -5,9 +5,12 @@ type Props = {
   track: Track;
   assets: Asset[];
   msToPx: (ms: number) => number;
+  pxToMs: (px: number) => number;
   totalWidth: number;
   selectedClipId: string | null;
   onSelectClip: (clipId: string) => void;
+  onMoveClip: (clipId: string, newStartMs: number) => void;
+  onTrimClip: (clipId: string, side: "left" | "right", deltaMs: number) => void;
 };
 
 const TRACK_LABEL: Record<string, string> = {
@@ -20,9 +23,12 @@ export function TimelineTrack({
   track,
   assets,
   msToPx,
+  pxToMs,
   totalWidth,
   selectedClipId,
   onSelectClip,
+  onMoveClip,
+  onTrimClip,
 }: Props) {
   const assetMap = new Map(assets.map((a) => [a.id, a]));
 
@@ -60,8 +66,11 @@ export function TimelineTrack({
             clip={clip}
             asset={assetMap.get(clip.assetId)}
             msToPx={msToPx}
+            pxToMs={pxToMs}
             isSelected={selectedClipId === clip.id}
             onSelect={onSelectClip}
+            onMove={onMoveClip}
+            onTrim={onTrimClip}
           />
         ))}
       </div>

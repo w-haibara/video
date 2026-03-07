@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import type { Project } from "@video/shared";
 import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTrack } from "./TimelineTrack";
@@ -10,7 +10,10 @@ type Props = {
   currentTimeMs: number;
   onSeek: (ms: number) => void;
   selectedClipId: string | null;
-  onSelectClip: (clipId: string) => void;
+  onSelectClip: (clipId: string | null) => void;
+  onDeleteClip?: (clipId: string) => void;
+  onMoveClip?: (clipId: string, newStartMs: number) => void;
+  onTrimClip?: (clipId: string, side: "left" | "right", deltaMs: number) => void;
 };
 
 function getTimelineDuration(project: Project): number {
@@ -21,7 +24,6 @@ function getTimelineDuration(project: Project): number {
       if (end > maxMs) maxMs = end;
     }
   }
-  // Add 5 seconds padding for empty space at end
   return Math.max(maxMs + 5000, 10000);
 }
 
@@ -31,9 +33,13 @@ export function Timeline({
   onSeek,
   selectedClipId,
   onSelectClip,
+  onDeleteClip,
+  onMoveClip,
+  onTrimClip,
 }: Props) {
   const { msToPx, pxToMs, zoomIn, zoomOut } = useTimelineZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const durationMs = getTimelineDuration(project);
   const totalWidth = msToPx(durationMs);
   const playheadPx = msToPx(currentTimeMs);
@@ -49,8 +55,45 @@ export function Timeline({
     [pxToMs, onSeek],
   );
 
+  const handleMove = useCallback(
+    (clipId: string, newStartMs: number) => {
+      onMoveClip?.(clipId, newStartMs);
+    },
+    [onMoveClip],
+  );
+
+  const handleTrim = useCallback(
+    (clipId: string, side: "left" | "right", deltaMs: number) => {
+      onTrimClip?.(clipId, side, deltaMs);
+    },
+    [onTrimClip],
+  );
+
+  // Handle Delete key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.key === "Delete" || e.key === "Backspace") &&
+        selectedClipId &&
+        onDeleteClip
+      ) {
+        // Don't delete if user is typing in an input
+        const target = e.target as HTMLElement;
+        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+        e.preventDefault();
+        onDeleteClip(selectedClipId);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [selectedClipId, onDeleteClip]);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <div
+      ref={containerRef}
+      style={{ display: "flex", flexDirection: "column", height: "100%" }}
+      tabIndex={-1}
+    >
       {/* Toolbar */}
       <div
         style={{
@@ -129,9 +172,12 @@ export function Timeline({
                   track={track}
                   assets={project.assets}
                   msToPx={msToPx}
+                  pxToMs={pxToMs}
                   totalWidth={totalWidth}
                   selectedClipId={selectedClipId}
                   onSelectClip={onSelectClip}
+                  onMoveClip={handleMove}
+                  onTrimClip={handleTrim}
                 />
               ))
             )}

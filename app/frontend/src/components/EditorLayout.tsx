@@ -3,15 +3,16 @@ import type { ReactNode } from "react";
 type Props = {
   left: ReactNode;
   center: ReactNode;
+  right?: ReactNode;
   bottom: ReactNode;
 };
 
-export function EditorLayout({ left, center, bottom }: Props) {
+export function EditorLayout({ left, center, right, bottom }: Props) {
   return (
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "280px 1fr",
+        gridTemplateColumns: right ? "280px 1fr 220px" : "280px 1fr",
         gridTemplateRows: "1fr 200px",
         height: "100vh",
         gap: "1px",
@@ -38,10 +39,23 @@ export function EditorLayout({ left, center, bottom }: Props) {
       >
         {center}
       </div>
+      {right && (
+        <div
+          style={{
+            gridRow: "1 / 3",
+            overflow: "auto",
+            background: "#1a1a1a",
+            borderLeft: "1px solid #333",
+          }}
+        >
+          {right}
+        </div>
+      )}
       <div
         style={{
           background: "#1a1a1a",
           overflow: "hidden",
+          gridColumn: right ? "2 / 3" : "2 / -1",
         }}
       >
         {bottom}
