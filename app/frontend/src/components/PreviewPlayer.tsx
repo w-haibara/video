@@ -82,6 +82,7 @@ export function PreviewPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const animFrameRef = useRef<number>(0);
   const lastClipIdRef = useRef<string | null>(null);
+  const lastMediaUrlRef = useRef<string>("");
   const videoEndedRef = useRef(false);
   const currentTimeMsRef = useRef(currentTimeMs);
   currentTimeMsRef.current = currentTimeMs;
@@ -115,7 +116,11 @@ export function PreviewPlayer({
       lastClipIdRef.current = activeClip.clip.id;
       videoEndedRef.current = false;
       if (activeClip.asset.kind === "video") {
-        video.src = mediaUrl;
+        const urlChanged = lastMediaUrlRef.current !== mediaUrl;
+        if (urlChanged || srcMissing) {
+          lastMediaUrlRef.current = mediaUrl;
+          video.src = mediaUrl;
+        }
         video.currentTime = activeClip.clipTimeMs / 1000;
         if (isPlaying) {
           video.play().catch(() => {});
@@ -186,7 +191,8 @@ export function PreviewPlayer({
           // Video is playing and has data
           const videoTimeMs = video.currentTime * 1000;
           const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs);
-          onTimeUpdateRef.current(Math.min(timelineMs, clipEndMs));
+          const clampedMs = Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
+          onTimeUpdateRef.current(clampedMs);
         }
         // else: video still loading or buffering — wait, don't skip
       } else if (clip && clip.asset.kind === "image") {
