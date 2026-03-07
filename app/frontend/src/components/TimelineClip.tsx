@@ -26,9 +26,18 @@ export function TimelineClip({
 }: Props) {
   const width = msToPx(clip.durationMs);
   const left = msToPx(clip.startMs);
-  const label = asset
-    ? asset.originalPath.split("/").pop() ?? asset.kind
-    : "clip";
+  const isTextClip = !!clip.text;
+  const label = isTextClip
+    ? (clip.text?.value || "Text")
+    : asset
+      ? asset.originalPath.split("/").pop() ?? asset.kind
+      : "clip";
+  const bgColor = isTextClip
+    ? (isSelected ? "#9b59b6" : "#8e44ad")
+    : (isSelected ? "#4a7fff" : "#3a6ad4");
+  const borderColor = isTextClip
+    ? (isSelected ? "#fff" : "#6c3483")
+    : (isSelected ? "#fff" : "#2a4a9a");
   const dragRef = useRef<{ startX: number; startMs: number } | null>(null);
   const trimRef = useRef<{ startX: number; side: "left" | "right" } | null>(null);
 
@@ -95,9 +104,9 @@ export function TimelineClip({
         bottom: "2px",
         width: `${width}px`,
         minWidth: "4px",
-        background: isSelected ? "#4a7fff" : "#3a6ad4",
+        background: bgColor,
         borderRadius: "3px",
-        border: isSelected ? "2px solid #fff" : "1px solid #2a4a9a",
+        border: `${isSelected ? 2 : 1}px solid ${borderColor}`,
         overflow: "hidden",
         cursor: "grab",
         display: "flex",

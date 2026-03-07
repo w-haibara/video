@@ -1,4 +1,4 @@
-import type { Asset, Clip, Sequence } from "@video/shared";
+import type { Asset, Clip, ClipText, Sequence } from "@video/shared";
 import { generateId, DEFAULT_IMAGE_DURATION_MS } from "@video/shared";
 
 export function addClipFromAsset(
@@ -57,6 +57,48 @@ export function moveClip(
     clips: track.clips
       .map((c) => (c.id === clipId ? { ...c, startMs } : c))
       .sort((a, b) => a.startMs - b.startMs),
+  }));
+  return { ...sequence, tracks };
+}
+
+export function addTextClip(
+  sequence: Sequence,
+  startMs: number,
+  durationMs: number,
+  text: ClipText,
+): Sequence {
+  const tracks = sequence.tracks.map((t) => ({ ...t, clips: [...t.clips] }));
+  let track = tracks.find((t) => t.kind === "title");
+  if (!track) {
+    track = { id: generateId(), kind: "title", clips: [] };
+    tracks.push(track);
+  }
+
+  const clip: Clip = {
+    id: generateId(),
+    assetId: "",
+    startMs,
+    durationMs,
+    inMs: 0,
+    outMs: durationMs,
+    text,
+  };
+
+  track.clips.push(clip);
+  track.clips.sort((a, b) => a.startMs - b.startMs);
+  return { ...sequence, tracks };
+}
+
+export function updateClip(
+  sequence: Sequence,
+  clipId: string,
+  updates: Partial<Clip>,
+): Sequence {
+  const tracks = sequence.tracks.map((track) => ({
+    ...track,
+    clips: track.clips.map((c) =>
+      c.id === clipId ? { ...c, ...updates } : c,
+    ),
   }));
   return { ...sequence, tracks };
 }

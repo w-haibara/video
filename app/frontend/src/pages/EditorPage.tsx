@@ -56,7 +56,7 @@ function EditorPageLoaded({
     project.sequence,
   );
 
-  const { addClipFromAsset, removeClip, moveClip, trimClip } =
+  const { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip } =
     useProjectEditor(project, sequence, pushState);
 
   const { saveStatus } = useAutoSave(project.id, sequence);
@@ -93,10 +93,36 @@ function EditorPageLoaded({
   return (
     <EditorLayout
       left={
-        <AssetPanel
-          project={currentProject}
-          onAddToTimeline={addClipFromAsset}
-        />
+        <div>
+          <AssetPanel
+            project={currentProject}
+            onAddToTimeline={addClipFromAsset}
+          />
+          <div style={{ padding: "8px", borderTop: "1px solid #333", marginTop: "8px" }}>
+            <button
+              onClick={() => {
+                addTextClip(currentTimeMs, 3000, {
+                  value: "Text",
+                  fontSize: 48,
+                  color: "#ffffff",
+                  backgroundColor: "#000000",
+                });
+              }}
+              style={{
+                width: "100%",
+                padding: "6px",
+                background: "#8e44ad",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
+              }}
+            >
+              + Add Text
+            </button>
+          </div>
+        </div>
       }
       center={
         <PreviewPlayer
@@ -119,6 +145,7 @@ function EditorPageLoaded({
           <InspectorPanel
             project={currentProject}
             selectedClipId={selectedClipId}
+            onUpdateClip={updateClip}
           />
         </div>
       }

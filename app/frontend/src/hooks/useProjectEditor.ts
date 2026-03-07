@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { Project, Asset, Sequence } from "@video/shared";
+import type { Project, Asset, Clip, ClipText, Sequence } from "@video/shared";
 import * as SeqOps from "../lib/sequence-ops";
 
 export function useProjectEditor(
@@ -35,5 +35,26 @@ export function useProjectEditor(
     [sequence, pushState],
   );
 
-  return { addClipFromAsset, removeClip, moveClip, trimClip };
+  const addTextClip = useCallback(
+    (startMs: number, durationMs: number, text: ClipText) => {
+      pushState(SeqOps.addTextClip(sequence, startMs, durationMs, text));
+    },
+    [sequence, pushState],
+  );
+
+  const updateClip = useCallback(
+    (clipId: string, updates: Partial<Clip>) => {
+      pushState(SeqOps.updateClip(sequence, clipId, updates));
+    },
+    [sequence, pushState],
+  );
+
+  return {
+    addClipFromAsset,
+    removeClip,
+    moveClip,
+    trimClip,
+    addTextClip,
+    updateClip,
+  };
 }
