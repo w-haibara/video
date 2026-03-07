@@ -582,17 +582,18 @@
 
 修正方針:
 
-**A. tick() でクリップ切替の過渡期を検出してフォールバック** (`app/frontend/src/components/PreviewPlayer.tsx`)
-- [ ] tick() 内で `clip.clip.id !== lastClipIdRef.current` をチェック
-  - `lastClipIdRef` は "Handle video source changes" Effect 内で更新されるため、Effect 実行前は前クリップの ID のまま
-  - 不一致 = video 要素がまだ新クリップ用に設定されていない (過渡期)
-- [ ] 過渡期の場合、`video.currentTime` に基づく計算を**スキップ**し、代わりに `deltaMs` ベースで時間を進める (静止画クリップと同じ方式)
-  - `const newTime = curTime + deltaMs; onTimeUpdate(Math.min(newTime, clipEndMs))`
-  - これにより、古い動画の `currentTime` が新クリップの計算を汚染しない
-- [ ] `video.ended` / `videoEndedRef.current` のチェックも同様にスキップ
-  - クリップ1の `ended` 状態がクリップ2の再生を即終了させるのを防止
+**A. video.src 変更後に loadeddata を待ってからシーク** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [x] "Handle video source changes" Effect で `video.src` 変更時、`loadeddata` イベントリスナーを登録
+  - `loadeddata` 発火後に `video.currentTime` を設定し、`video.play()` を呼ぶ
+  - ソース変更前に `video.currentTime` を設定しても無視されるブラウザの挙動に対応
+- [x] 同一 URL の場合 (同一アセット) は即座にシーク (従来通り)
 
-**B. video.src 変更後の readyState チェック強化**
-- [ ] "Handle video source changes" Effect で `video.src` を変更した後、`video.readyState` が 0 にリセットされることを利用
-  - tick() の既存条件 `video.readyState >= 2` が自然にガードとして機能する
-  - 過渡期検出 (A) と組み合わせることで、二重の安全策となる
+**B. tick() でクリップ切替の過渡期を検出してフォールバック**
+- [x] tick() 内で `clip.clip.id !== lastClipIdRef.current` をチェック
+  - Effect 実行前は前クリップの ID のまま → 不一致 = 過渡期
+  - deltaMs ベースで時間を進める
+
+**C. tick() で video.currentTime の妥当性を検証**
+- [x] `video.readyState >= 2` の場合でも、`video.currentTime` が期待値から 500ms 以上ズレていれば deltaMs フォールバック
+  - 期待値: `clip.inMs + (curTime - clip.startMs)`
+  - readyState >= 2 でもシーク未完了の場合があるため、直接検証が必要
