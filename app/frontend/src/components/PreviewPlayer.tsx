@@ -312,7 +312,7 @@ export function PreviewPlayer({
         flexDirection: "column",
         width: "100%",
         height: "100%",
-        background: "#000",
+        background: activeClip ? "#000" : theme.bgDark,
       }}
     >
       {/* Preview area */}
