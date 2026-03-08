@@ -205,6 +205,10 @@ export function buildExportArgs(
 
   args.push(
     "-c:v", "libx264",
+    "-pix_fmt", "yuv420p",
+    "-colorspace", "bt709",
+    "-color_primaries", "bt709",
+    "-color_trc", "bt709",
     "-preset", "medium",
     "-crf", "20",
     "-r", String(preset.fps ?? 30),

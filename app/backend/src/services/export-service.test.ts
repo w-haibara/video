@@ -252,6 +252,20 @@ describe("buildExportArgs", () => {
     expect(args).toContain("24");
   });
 
+  test("includes browser-compatible pixel format and color space options", () => {
+    const project = makeProject();
+    const args = buildExportArgs(project, "/assets", "/out/export.mp4");
+
+    expect(args).toContain("-pix_fmt");
+    expect(args).toContain("yuv420p");
+    expect(args).toContain("-colorspace");
+    expect(args).toContain("bt709");
+    expect(args).toContain("-color_primaries");
+    expect(args).toContain("bt709");
+    expect(args).toContain("-color_trc");
+    expect(args).toContain("bt709");
+  });
+
   test("throws for missing asset", () => {
     const project = makeProject({
       assets: [], // no assets

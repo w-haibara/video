@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useExport, useExports } from "../api/exports";
 import { useJob } from "../api/jobs";
 import { JobProgress } from "./JobProgress";
@@ -31,6 +31,14 @@ export function ExportDialog({ projectId, onClose }: Props) {
 
   const isExporting =
     activeJobId && job && job.status !== "completed" && job.status !== "failed";
+
+  const prevStatusRef = useRef(job?.status);
+  useEffect(() => {
+    if (prevStatusRef.current !== "completed" && job?.status === "completed") {
+      refetchExports();
+    }
+    prevStatusRef.current = job?.status;
+  }, [job?.status, refetchExports]);
 
   return (
     <div
