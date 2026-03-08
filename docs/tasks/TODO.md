@@ -49,7 +49,7 @@
 | 43 | クリップ選択時のシーク移動とプレビュー表示 | [x] Done | 12, 24 |
 | 44 | 選択クリップ範囲のみ再生 | [x] Done | 43 |
 | 45 | 共有型に ProjectSettings を追加 | [x] Done | 02 |
-| 46 | Settings タブの追加 | [ ] Todo | 40, 45 |
+| 46 | Settings タブの追加 | [x] Done | 40, 45 |
 | 47 | タイムライン UI への動画時間制限の反映 | [ ] Todo | 45, 09, 10, 11 |
 | 48 | テストの追加 | [ ] Todo | 45, 47 |
 
@@ -909,42 +909,20 @@ EditorLayout のグリッド構造を全面的に変更し、プレビューを�
 エディタ右ペインに Settings タブを追加し、動画時間を編集できるようにする。
 
 **A. ProjectSettingsPanel コンポーネント** (`app/frontend/src/components/ProjectSettingsPanel.tsx`)
-- [ ] 新規作成
-- [ ] Props:
-  ```typescript
-  {
-    project: Project;
-    onUpdateSettings: (settings: ProjectSettings) => void;
-  }
-  ```
-- [ ] UI 構成:
-  - セクションタイトル「Project Settings」
-  - 「Duration (sec)」ラベル + 数値入力フィールド
-    - `<input type="number" step="1" min="1">` で秒単位の入力
-    - 表示値: `project.settings.durationMs / 1000` (ミリ秒→秒変換)
-    - 変更時: `onUpdateSettings({ durationMs: value * 1000 })` を呼ぶ
-  - バリデーション:
-    - 最小値: 1 秒 (1000ms)
-    - 最大値: 3600 秒 (3600000ms = 1 時間)
-    - 不正な値の場合は元の値に戻す
-- [ ] ダークテーマスタイル (InspectorPanel と統一)
+- [x] 新規作成
+- [x] Props: `{ project: Project; onUpdateSettings: (settings: ProjectSettings) => void }`
+- [x] UI 構成: Duration (sec) 数値入力、バリデーション (1-3600s)、ダークテーマ
 
 **B. EditorMainPanel にタブ追加** (`app/frontend/src/components/EditorMainPanel.tsx`)
-- [ ] タブ定義を拡張: `"inspector" | "assets" | "export" | "settings"`
-- [ ] TABS 配列に `{ id: "settings", label: "Settings" }` を追加
-- [ ] Props に `settingsContent: ReactNode` を追加
-- [ ] タブコンテンツの切り替えに Settings を追加
+- [x] タブ定義を `"inspector" | "assets" | "export" | "settings"` に拡張
+- [x] TABS 配列に Settings を追加、Props に `settingsContent` を追加
 
 **C. EditorPage の組み込み** (`app/frontend/src/pages/EditorPage.tsx`)
-- [ ] `handleUpdateSettings` コールバックを追加:
-  - `project.settings` を更新して `pushState` でアンドゥ履歴に保存
-  - `useAutoSave` 経由でバックエンドに保存
-- [ ] `ProjectSettingsPanel` を `settingsContent` として `EditorMainPanel` に渡す
+- [x] `handleUpdateSettings` コールバックを追加 (useUpdateProject で直接保存)
+- [x] `ProjectSettingsPanel` を `settingsContent` として渡す
 
-**D. useProjectEditor にプロジェクト設定更新を追加** (`app/frontend/src/hooks/useProjectEditor.ts`)
-- [ ] `updateSettings(settings: ProjectSettings): void` を追加
-  - 現在の `project` の `settings` を更新し、`pushState` でシーケンスと一緒に保存
-  - 注意: 設定変更はシーケンスではなくプロジェクトレベルの変更なので、保存フローの確認が必要
+**D. useProjectEditor にプロジェクト設定更新を追加**
+- [x] 設定変更はプロジェクトレベルのため、useUpdateProject で直接保存する方式を採用 (undo/redo 対象外)
 
 ### 47: タイムライン UI への動画時間制限の反映
 
