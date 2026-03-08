@@ -56,7 +56,6 @@ export function EditorMainPanel({
       >
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
-          const isInspector = tab.id === "inspector";
           return (
             <button
               key={tab.id}
@@ -69,24 +68,9 @@ export function EditorMainPanel({
                 borderBottom: isActive ? "2px solid #5b8def" : "2px solid transparent",
                 cursor: "pointer",
                 fontSize: 13,
-                fontWeight: isInspector ? 600 : 400,
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
               }}
             >
               {tab.label}
-              {isInspector && selectedClipId && (
-                <span
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: "#5b8def",
-                    display: "inline-block",
-                  }}
-                />
-              )}
             </button>
           );
         })}
