@@ -40,7 +40,7 @@
 | 34 | トリム範囲のバリデーション強化 | [x] Done | 11 |
 | 35 | 同一アセットの連続クリップ再生バグ修正 | [x] Done | 12, 24 |
 | 36 | 異なるアセットの連続クリップ再生バグ修正 | [x] Done | 12, 24, 35 |
-| 37 | エクスポート動画のブラウザ再生不可バグ修正 | [ ] Todo | 15 |
+| 37 | エクスポート動画のブラウザ再生不可バグ修正 | [x] Done | 15 |
 
 ## Phase 1 Tasks
 
@@ -620,18 +620,16 @@
 修正方針:
 
 **A. FFmpeg エクスポート引数の修正** (`app/backend/src/services/export-service.ts`)
-- [ ] `buildExportArgs()` の出力オプションに `-pix_fmt yuv420p` を追加
+- [x] `buildExportArgs()` の出力オプションに `-pix_fmt yuv420p` を追加
   - 10-bit ソースを 8-bit に変換し、ブラウザ互換の H.264 High profile で出力する
   - これによりすべてのブラウザで再生可能になる
-- [ ] HDR → SDR のカラースペース変換を追加
+- [x] HDR → SDR のカラースペース変換を追加
   - `-colorspace bt709 -color_primaries bt709 -color_trc bt709` を指定
   - HDR (BT.2020 HLG) から SDR (BT.709) への色域マッピング
   - これによりブラウザで正しい色味で表示される
-- [ ] H.264 プロファイルを明示的に指定: `-profile:v high -level 4.1`
-  - ブラウザ互換を保証
 
 **B. Media 配信ルートの改善** (`app/backend/src/routes/media.ts`)
-- [ ] レスポンスに適切な Content-Type ヘッダーを設定
+- [x] レスポンスに適切な Content-Type ヘッダーを設定
   - `.mp4` → `video/mp4`
   - `.jpg`/`.jpeg` → `image/jpeg`
   - `.png` → `image/png`
@@ -639,14 +637,14 @@
   - `.mp3` → `audio/mpeg`
   - `.wav` → `audio/wav`
   - `.m4a`/`.aac` → `audio/mp4`
-- [ ] Content-Disposition ヘッダーを追加 (exports の場合のみ `attachment; filename="..."`)
+- [x] Content-Disposition ヘッダーを追加 (exports の場合のみ `attachment; filename="..."`)
 
 **C. エクスポート完了後のファイル一覧更新** (`app/frontend/src/components/ExportDialog.tsx`)
-- [ ] `job.status === "completed"` になった時点で `refetchExports()` を呼び出す
+- [x] `job.status === "completed"` になった時点で `refetchExports()` を呼び出す
   - `useEffect` で `job?.status` を監視し、`"completed"` 変化時に refetch
-- [ ] これにより、ダイアログを閉じずに新しいエクスポートファイルが一覧に表示される
+- [x] これにより、ダイアログを閉じずに新しいエクスポートファイルが一覧に表示される
 
 **D. テスト** (`app/backend/src/services/export-service.test.ts`)
-- [ ] `buildExportArgs()` の出力に `-pix_fmt yuv420p` が含まれることを検証
-- [ ] `buildExportArgs()` の出力に色空間変換オプションが含まれることを検証
-- [ ] 既存のテストが引き続きパスすることを確認
+- [x] `buildExportArgs()` の出力に `-pix_fmt yuv420p` が含まれることを検証
+- [x] `buildExportArgs()` の出力に色空間変換オプションが含まれることを検証
+- [x] 既存のテストが引き続きパスすることを確認 (106 pass)
