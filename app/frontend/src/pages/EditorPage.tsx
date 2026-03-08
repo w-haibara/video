@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import type { Project } from "@video/shared";
 import { useProject } from "../api/projects";
 import { EditorLayout } from "../components/EditorLayout";
+import { EditorMainPanel } from "../components/EditorMainPanel";
 import { AssetPanel } from "../components/AssetPanel";
 import { Timeline } from "../components/Timeline";
 import { InspectorPanel } from "../components/InspectorPanel";
@@ -64,7 +65,6 @@ function EditorPageLoaded({
 
   const { saveStatus } = useAutoSave(project.id, sequence);
 
-  // Build a project view with the current (possibly unsaved) sequence
   const currentProject: Project = { ...project, sequence };
 
   const handleDeleteClip = useCallback((clipId: string) => {
@@ -95,39 +95,7 @@ function EditorPageLoaded({
 
   return (
     <EditorLayout
-      left={
-        <div>
-          <AssetPanel
-            project={currentProject}
-            onAddToTimeline={addClipFromAsset}
-          />
-          <div style={{ padding: "8px", borderTop: "1px solid #333", marginTop: "8px" }}>
-            <button
-              onClick={() => {
-                addTextClip(currentTimeMs, 3000, {
-                  value: "Text",
-                  fontSize: 48,
-                  color: "#ffffff",
-                  backgroundColor: "#000000",
-                });
-              }}
-              style={{
-                width: "100%",
-                padding: "6px",
-                background: "#8e44ad",
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontSize: "12px",
-              }}
-            >
-              + Add Text
-            </button>
-          </div>
-        </div>
-      }
-      center={
+      preview={
         <PreviewPlayer
           project={currentProject}
           currentTimeMs={currentTimeMs}
@@ -136,54 +104,96 @@ function EditorPageLoaded({
           onPlayPause={onPlayPause}
         />
       }
-      right={
-        <div>
-          <SaveIndicator
-            status={saveStatus}
-            canUndo={canUndo}
-            canRedo={canRedo}
-            onUndo={undo}
-            onRedo={redo}
-          />
-          <div style={{ padding: "4px 8px", display: "flex", gap: "4px" }}>
-            <button
-              onClick={() => setShowExport(true)}
-              style={{
-                flex: 1,
-                padding: "5px",
-                background: "#3a6ad4",
-                color: "#fff",
-                border: "none",
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "12px",
-              }}
-            >
-              Export
-            </button>
-            <Link
-              to={`/projects/${project.id}/jobs`}
-              style={{
-                flex: 1,
-                padding: "5px",
-                background: "#444",
-                color: "#ccc",
-                border: "none",
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "12px",
-                textDecoration: "none",
-                textAlign: "center",
-                display: "block",
-              }}
-            >
-              Jobs
-            </Link>
-          </div>
-          <InspectorPanel
-            project={currentProject}
+      mainPanel={
+        <>
+          <EditorMainPanel
             selectedClipId={selectedClipId}
-            onUpdateClip={updateClip}
+            inspectorContent={
+              <div>
+                <SaveIndicator
+                  status={saveStatus}
+                  canUndo={canUndo}
+                  canRedo={canRedo}
+                  onUndo={undo}
+                  onRedo={redo}
+                />
+                <InspectorPanel
+                  project={currentProject}
+                  selectedClipId={selectedClipId}
+                  onUpdateClip={updateClip}
+                />
+              </div>
+            }
+            assetsContent={
+              <div>
+                <AssetPanel
+                  project={currentProject}
+                  onAddToTimeline={addClipFromAsset}
+                />
+                <div style={{ padding: "8px", borderTop: "1px solid #333", marginTop: "8px" }}>
+                  <button
+                    onClick={() => {
+                      addTextClip(currentTimeMs, 3000, {
+                        value: "Text",
+                        fontSize: 48,
+                        color: "#ffffff",
+                        backgroundColor: "#000000",
+                      });
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "6px",
+                      background: "#8e44ad",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                    }}
+                  >
+                    + Add Text
+                  </button>
+                </div>
+              </div>
+            }
+            exportContent={
+              <div>
+                <div style={{ display: "flex", gap: "4px", marginBottom: "8px" }}>
+                  <button
+                    onClick={() => setShowExport(true)}
+                    style={{
+                      flex: 1,
+                      padding: "8px",
+                      background: "#3a6ad4",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                    }}
+                  >
+                    Start Export
+                  </button>
+                </div>
+                <Link
+                  to={`/projects/${project.id}/jobs`}
+                  style={{
+                    display: "block",
+                    padding: "8px",
+                    background: "#444",
+                    color: "#ccc",
+                    border: "none",
+                    borderRadius: "3px",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    textDecoration: "none",
+                    textAlign: "center",
+                  }}
+                >
+                  View Jobs
+                </Link>
+              </div>
+            }
           />
           {showExport && (
             <ExportDialog
@@ -191,7 +201,7 @@ function EditorPageLoaded({
               onClose={() => setShowExport(false)}
             />
           )}
-        </div>
+        </>
       }
       bottom={
         <Timeline

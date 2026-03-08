@@ -42,6 +42,10 @@
 | 36 | 異なるアセットの連続クリップ再生バグ修正 | [x] Done | 12, 24, 35 |
 | 37 | エクスポート動画のブラウザ再生不可バグ修正 | [x] Done | 15 |
 | 38 | Export モーダル簡素化: エクスポート→自動ダウンロード | [x] Done | 18, 37 |
+| 39 | エディタ画面レイアウト大改修: プレビュー左固定 + 右ペインタブ化 | [ ] Todo | 23, 08 |
+| 40 | 右ペインのタブ UI コンポーネント実装 | [ ] Todo | 39 |
+| 41 | Inspector タブの優先表示とクリップ選択連動 | [ ] Todo | 40 |
+| 42 | タイムラインの全幅レイアウト維持 | [ ] Todo | 39 |
 
 ## Phase 1 Tasks
 
@@ -670,3 +674,136 @@
 
 **C. 不要になった API フックの整理** (`app/frontend/src/api/exports.ts`)
 - [x] `useExports` フックを削除 (使用箇所がなくなるため)
+
+## Phase 11 Tasks — エディタ画面レイアウト大改修
+
+### 現状の課題
+
+現在のエディタ画面は 3 カラム + 下部タイムラインの構成:
+```
+┌──────────┬─────────────────────┬──────────┐
+│  Assets  │   Preview Player    │Inspector │
+│  (240px) │      (1fr)          │ (240px)  │
+├──────────┴─────────────────────┴──────────┤
+│              Timeline (220px)              │
+└───────────────────────────────────────────┘
+```
+
+問題点:
+- プレビューが中央に大きく配置されているが、編集作業中は Inspector の操作が主であり、プレビューは確認用
+- Assets パネルと Inspector パネルがそれぞれ 240px と狭く、操作しにくい
+- Assets / Inspector / Export ボタンなどの機能が分散している
+
+### 目標レイアウト
+
+プレビューを左端に固定し、右側の広いエリアを 1 ペインにまとめてタブで切り替える。Inspector をデフォルトタブとして最も目立つ位置に配置する。
+
+```
+┌───────────────┬─────────────────────────────┐
+│               │  [Inspector] [Assets] [Export]│ ← タブバー
+│   Preview     ├─────────────────────────────┤
+│   Player      │                             │
+│   (1/3幅)     │   タブコンテンツ (2/3幅)      │
+│               │   (Inspector がデフォルト)    │
+│               │                             │
+├───────────────┴─────────────────────────────┤
+│              Timeline (220px, 全幅)          │
+└─────────────────────────────────────────────┘
+```
+
+### 39: エディタ画面レイアウト大改修: プレビュー左固定 + 右ペインタブ化
+
+EditorLayout のグリッド構造を全面的に変更し、プレビューを左 1/3 に固定、右 2/3 をタブ付きペインにする。
+
+**A. EditorLayout の CSS Grid 再設計** (`app/frontend/src/components/EditorLayout.tsx`)
+- [ ] Props を変更:
+  - 旧: `{ left, center, right, bottom }`
+  - 新: `{ preview, mainPanel, bottom }`
+  - `preview`: PreviewPlayer を配置
+  - `mainPanel`: タブ付きペイン (Inspector / Assets / Export を含む)
+  - `bottom`: Timeline (変更なし)
+- [ ] gridTemplateColumns を `"1fr 2fr"` に変更 (左 1/3、右 2/3)
+- [ ] gridTemplateRows は `"1fr 220px"` を維持
+- [ ] プレビュー領域 (左): row 1, col 1
+  - `background: #111`, `display: flex`, `alignItems: center`, `justifyContent: center`
+  - `overflow: hidden`
+- [ ] メインペイン (右): row 1, col 2
+  - `background: #1a1a1a`, `overflow: auto`
+  - `display: flex`, `flexDirection: column` (タブバー + コンテンツ)
+- [ ] タイムライン (下): row 2, col 1-2 (`gridColumn: "1 / -1"`)
+
+**B. EditorPage の組み替え** (`app/frontend/src/pages/EditorPage.tsx`)
+- [ ] `left` / `center` / `right` の分離をやめ、`preview` と `mainPanel` に統合
+- [ ] `preview` には PreviewPlayer のみを渡す
+- [ ] `mainPanel` には新しい `EditorMainPanel` コンポーネントを渡す
+  - EditorMainPanel がタブ管理を担当 (タスク 40 で詳細化)
+
+### 40: 右ペインのタブ UI コンポーネント実装
+
+タブバーとタブコンテンツを管理するコンポーネントを新規作成する。
+
+**A. EditorMainPanel コンポーネント** (`app/frontend/src/components/EditorMainPanel.tsx`)
+- [ ] 新規作成
+- [ ] タブ定義:
+  - `Inspector`: InspectorPanel + SaveIndicator (Undo/Redo)
+  - `Assets`: AssetPanel + Add Text ボタン
+  - `Export`: Export ボタン + ExportDialog トリガー
+- [ ] タブ状態管理: `useState<"inspector" | "assets" | "export">("inspector")`
+  - デフォルトは `"inspector"` (Inspector が最も使用頻度が高いため)
+- [ ] Props: EditorPage から必要な props をすべて受け取る
+  - `project`, `selectedClip`, `onUpdateClip`, `onDeleteAsset`, `assets`, `onImportAsset` 等
+
+**B. タブバー UI** (`app/frontend/src/components/EditorMainPanel.tsx` 内)
+- [ ] タブバー: `display: flex`, 上部に固定
+  - 高さ: 36px
+  - 背景: #1a1a1a
+  - 下線: 1px solid #333
+- [ ] 各タブボタン:
+  - アクティブタブ: 背景 #2a2a2a, 下線 2px solid #5b8def, テキスト #eee
+  - 非アクティブタブ: 背景 transparent, テキスト #888
+  - ホバー: テキスト #ccc
+  - パディング: 8px 16px
+  - フォントサイズ: 13px
+  - カーソル: pointer
+- [ ] タブコンテンツ: `flex: 1`, `overflow: auto`, `padding: 8px`
+
+**C. タブコンテンツの切り替え**
+- [ ] アクティブなタブのコンテンツのみレンダリング (条件分岐)
+  - Inspector タブ: SaveIndicator + InspectorPanel
+  - Assets タブ: AssetPanel + "+ Add Text" ボタン
+  - Export タブ: Export ボタン + Jobs リンク
+- [ ] 非アクティブなタブのコンテンツはアンマウントせず `display: none` で非表示にする
+  - AssetPanel のインポート状態やポーリングが失われないようにするため
+
+### 41: Inspector タブの優先表示とクリップ選択連動
+
+タイムラインでクリップを選択したとき、自動的に Inspector タブに切り替える。
+
+**A. クリップ選択時の自動タブ切り替え** (`app/frontend/src/components/EditorMainPanel.tsx`)
+- [ ] `selectedClipId` prop を受け取る
+- [ ] `useEffect` で `selectedClipId` の変化を監視
+  - `selectedClipId` が `null` → 非 null に変わったとき、タブを `"inspector"` に切り替え
+  - `null` → `null` や非 null → 別の非 null では切り替えない (ユーザーが意図的に別タブにいる場合を尊重)
+- [ ] ただし、初回レンダー時は切り替えを発生させない (`useRef` でマウント済みフラグ管理)
+
+**B. Inspector タブの視覚的な強調**
+- [ ] Inspector タブのラベルを太字にする (`fontWeight: 600`)
+- [ ] クリップ選択中は Inspector タブのラベル横にインジケータ (小さな青い丸) を表示
+  - `width: 6px, height: 6px, borderRadius: 50%, background: #5b8def`
+  - クリップ未選択時は非表示
+
+### 42: タイムラインの全幅レイアウト維持
+
+レイアウト変更後もタイムラインが画面下部に全幅で表示されることを保証する。
+
+**A. タイムラインのグリッド配置確認** (`app/frontend/src/components/EditorLayout.tsx`)
+- [ ] タイムラインの `gridColumn: "1 / -1"` を維持 (2カラム全幅)
+- [ ] `gridRow: 2` を明示的に設定
+- [ ] 高さ 220px を維持
+
+**B. タイムラインの操作性確認**
+- [ ] ルーラーのドラッグシークが正常に動作すること
+- [ ] シークバー専用行が正常に表示されること
+- [ ] プレイヘッドが正しい位置に表示されること
+- [ ] クリップの右クリックメニューが正常に動作すること
+- [ ] トリムハンドルのドラッグが正常に動作すること
