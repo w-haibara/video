@@ -1,5 +1,5 @@
 import type { Project } from "@video/shared";
-import { generateId } from "@video/shared";
+import { generateId, DEFAULT_PROJECT_DURATION_MS } from "@video/shared";
 import {
   projectDir,
   projectJsonPath,
@@ -20,6 +20,7 @@ export async function createProject(name: string): Promise<Project> {
     updatedAt: now,
     assets: [],
     sequence: { tracks: [] },
+    settings: { durationMs: DEFAULT_PROJECT_DURATION_MS },
   };
   await mkdir(projectDir(id), { recursive: true });
   await mkdir(assetsDir(id), { recursive: true });
@@ -53,11 +54,12 @@ export async function listProjects(): Promise<Project[]> {
 
 export async function updateProject(
   id: string,
-  updates: Partial<Pick<Project, "name" | "sequence">>,
+  updates: Partial<Pick<Project, "name" | "sequence" | "settings">>,
 ): Promise<Project> {
   const project = await getProject(id);
   if (updates.name !== undefined) project.name = updates.name;
   if (updates.sequence !== undefined) project.sequence = updates.sequence;
+  if (updates.settings !== undefined) project.settings = updates.settings;
   project.updatedAt = new Date().toISOString();
   await writeFile(projectJsonPath(id), JSON.stringify(project, null, 2));
   return project;

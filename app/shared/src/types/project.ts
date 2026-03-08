@@ -1,5 +1,9 @@
 import type { Asset } from "./asset";
 
+export type ProjectSettings = {
+  durationMs: number; // 動画全体の目標尺 (ミリ秒)
+};
+
 export type Project = {
   id: string;
   name: string;
@@ -7,6 +11,7 @@ export type Project = {
   updatedAt: string; // ISO 8601
   assets: Asset[];
   sequence: Sequence;
+  settings: ProjectSettings;
   exportPreset?: ExportPreset;
 };
 

@@ -48,6 +48,10 @@
 | 42 | タイムラインの全幅レイアウト維持 | [x] Done | 39 |
 | 43 | クリップ選択時のシーク移動とプレビュー表示 | [x] Done | 12, 24 |
 | 44 | 選択クリップ範囲のみ再生 | [x] Done | 43 |
+| 45 | 共有型に ProjectSettings を追加 | [ ] Todo | 02 |
+| 46 | Settings タブの追加 | [ ] Todo | 40, 45 |
+| 47 | タイムライン UI への動画時間制限の反映 | [ ] Todo | 45, 09, 10, 11 |
+| 48 | テストの追加 | [ ] Todo | 45, 47 |
 
 ## Phase 1 Tasks
 
@@ -863,3 +867,142 @@ EditorLayout のグリッド構造を全面的に変更し、プレビューを�
 **C. 選択解除時の挙動**
 - [ ] 再生中にクリップ選択を解除 (`selectedClipId` が null に変化) した場合、再生を継続して全体再生モードに切り替え
   - tick() 内で `selectedClipId` が null になったら終了ポイントを `seqEnd` に戻す
+
+## Phase 13 Tasks — プロジェクト設定とタイムライン制約
+
+### 現状の課題
+
+- プロジェクト全体の設定を管理する場所がない
+- タイムラインの長さはクリップ配置から動的に計算されており、動画全体の目標尺を制御できない
+- クリップをいくらでも長い位置に配置でき、意図しない長尺動画になるリスクがある
+
+### 目標
+
+- プロジェクト設定として「動画時間 (duration)」を管理する
+- デフォルト値は 10 秒 (10000ms)
+- タイムライン UI にこの時間制限を反映し、制限を超える位置へのクリップ配置・移動・トリムを防止する
+- エディタの右ペインに「Settings」タブを追加し、動画時間を変更できるようにする
+
+### 45: 共有型に ProjectSettings を追加
+
+プロジェクトに設定フィールドを追加し、動画時間のデフォルト値を定義する。
+
+**A. 型定義の追加** (`app/shared/src/types/project.ts`)
+- [ ] `ProjectSettings` 型を新規定義:
+  ```typescript
+  export type ProjectSettings = {
+    durationMs: number; // 動画全体の目標尺 (ミリ秒)
+  };
+  ```
+- [ ] `Project` 型に `settings: ProjectSettings` フィールドを追加 (必須フィールド)
+- [ ] `index.ts` re-export に `ProjectSettings` を追加
+
+**B. デフォルト値の定義** (`app/shared/src/utils/constants.ts`)
+- [ ] `DEFAULT_PROJECT_DURATION_MS = 10_000` (10 秒) を追加
+
+**C. プロジェクト作成時のデフォルト設定**
+- [ ] バックエンドの `createProject()` (`app/backend/src/services/project-service.ts`) で `settings: { durationMs: DEFAULT_PROJECT_DURATION_MS }` を初期値として設定
+- [ ] フロントエンドの `useCreateProject` (`app/frontend/src/api/projects.ts`) でも同様にデフォルト設定を含める
+
+### 46: Settings タブの追加
+
+エディタ右ペインに Settings タブを追加し、動画時間を編集できるようにする。
+
+**A. ProjectSettingsPanel コンポーネント** (`app/frontend/src/components/ProjectSettingsPanel.tsx`)
+- [ ] 新規作成
+- [ ] Props:
+  ```typescript
+  {
+    project: Project;
+    onUpdateSettings: (settings: ProjectSettings) => void;
+  }
+  ```
+- [ ] UI 構成:
+  - セクションタイトル「Project Settings」
+  - 「Duration (sec)」ラベル + 数値入力フィールド
+    - `<input type="number" step="1" min="1">` で秒単位の入力
+    - 表示値: `project.settings.durationMs / 1000` (ミリ秒→秒変換)
+    - 変更時: `onUpdateSettings({ durationMs: value * 1000 })` を呼ぶ
+  - バリデーション:
+    - 最小値: 1 秒 (1000ms)
+    - 最大値: 3600 秒 (3600000ms = 1 時間)
+    - 不正な値の場合は元の値に戻す
+- [ ] ダークテーマスタイル (InspectorPanel と統一)
+
+**B. EditorMainPanel にタブ追加** (`app/frontend/src/components/EditorMainPanel.tsx`)
+- [ ] タブ定義を拡張: `"inspector" | "assets" | "export" | "settings"`
+- [ ] TABS 配列に `{ id: "settings", label: "Settings" }` を追加
+- [ ] Props に `settingsContent: ReactNode` を追加
+- [ ] タブコンテンツの切り替えに Settings を追加
+
+**C. EditorPage の組み込み** (`app/frontend/src/pages/EditorPage.tsx`)
+- [ ] `handleUpdateSettings` コールバックを追加:
+  - `project.settings` を更新して `pushState` でアンドゥ履歴に保存
+  - `useAutoSave` 経由でバックエンドに保存
+- [ ] `ProjectSettingsPanel` を `settingsContent` として `EditorMainPanel` に渡す
+
+**D. useProjectEditor にプロジェクト設定更新を追加** (`app/frontend/src/hooks/useProjectEditor.ts`)
+- [ ] `updateSettings(settings: ProjectSettings): void` を追加
+  - 現在の `project` の `settings` を更新し、`pushState` でシーケンスと一緒に保存
+  - 注意: 設定変更はシーケンスではなくプロジェクトレベルの変更なので、保存フローの確認が必要
+
+### 47: タイムライン UI への動画時間制限の反映
+
+タイムラインの表示と操作に動画時間の上限を適用する。
+
+**A. タイムライン表示幅の固定** (`app/frontend/src/components/Timeline.tsx`)
+- [ ] `getTimelineDuration()` を修正:
+  - 現在: クリップ末尾 + 5000ms のパディング (最小 10000ms)
+  - 変更: `project.settings.durationMs` を使用してタイムライン表示幅を決定
+- [ ] タイムラインルーラーに動画時間の終端マーカーを表示
+  - 終端位置に縦の破線 (dashed line) を描画: `border-right: 2px dashed rgba(255, 100, 100, 0.5)`
+  - 終端を超えた領域を暗く表示: `background: rgba(255, 0, 0, 0.05)`
+
+**B. クリップ追加時の制約** (`app/frontend/src/lib/sequence-ops.ts`)
+- [ ] `addClipFromAsset()` に `maxDurationMs?: number` 引数を追加
+  - クリップの `startMs + durationMs` が `maxDurationMs` を超える場合:
+    - クリップの `durationMs` を `maxDurationMs - startMs` にトリム
+    - `startMs` 自体が `maxDurationMs` 以上の場合はクリップ追加を拒否 (シーケンスをそのまま返す)
+  - `outMs` も `inMs + newDuration` に再計算
+- [ ] `addTextClip()` にも同様の `maxDurationMs` 制約を追加
+  - テキストクリップの `startMs + durationMs` が `maxDurationMs` を超える場合、`durationMs` をクランプ
+
+**C. クリップ移動時の制約** (`app/frontend/src/lib/sequence-ops.ts`)
+- [ ] `moveClip()` に `maxDurationMs?: number` 引数を追加
+  - 移動後の `newStartMs + clip.durationMs` が `maxDurationMs` を超える場合:
+    - `newStartMs` を `maxDurationMs - clip.durationMs` にクランプ
+    - クリップの durationMs が maxDurationMs より長い場合は `newStartMs = 0` にクランプ
+
+**D. クリップトリム時の制約** (`app/frontend/src/lib/sequence-ops.ts`)
+- [ ] `trimClip()` の右トリムに制約を追加
+  - 既存の `maxSourceDurationMs` に加えて、`maxTimelineDurationMs?: number` 引数を追加
+  - 右トリム時: `clip.startMs + newDuration` が `maxTimelineDurationMs` を超えないようクランプ
+    - `newDuration = Math.min(newDuration, maxTimelineDurationMs - clip.startMs)`
+
+**E. useProjectEditor への制約伝播** (`app/frontend/src/hooks/useProjectEditor.ts`)
+- [ ] 各操作関数に `project.settings.durationMs` を渡す
+  - `addClipFromAsset`: `addClipFromAsset(sequence, asset, durationMs)`
+  - `moveClip`: `moveClip(sequence, clipId, newStartMs, durationMs)`
+  - `trimClip`: `trimClip(sequence, clipId, side, deltaMs, maxSourceDurationMs, durationMs)`
+  - `addTextClip`: `addTextClip(sequence, startMs, durationMs, text, projectDurationMs)`
+
+**F. ドラッグ移動のビジュアルフィードバック** (`app/frontend/src/components/TimelineClip.tsx`)
+- [ ] ドラッグ中にクリップが動画時間の終端を超えた場合、スナップバックする視覚的なフィードバック
+  - ドラッグ中のプレビュー位置を `Math.min(newStartMs, maxDurationMs - clip.durationMs)` でクランプ
+
+### 48: テストの追加
+
+**A. sequence-ops テスト** (`app/frontend/src/lib/sequence-ops.test.ts`)
+- [ ] `addClipFromAsset` に `maxDurationMs` を指定した場合のテスト:
+  - クリップの durationMs がクランプされることを検証
+  - startMs が maxDurationMs 以上の場合にクリップが追加されないことを検証
+- [ ] `moveClip` に `maxDurationMs` を指定した場合のテスト:
+  - 移動後のクリップ末尾が maxDurationMs を超えない場合はそのまま移動
+  - 超える場合は newStartMs がクランプされることを検証
+- [ ] `trimClip` に `maxTimelineDurationMs` を指定した場合のテスト:
+  - 右トリムがタイムライン上限でクランプされることを検証
+- [ ] `addTextClip` に `maxDurationMs` を指定した場合のテスト
+
+**B. 型の整合性確認**
+- [ ] `Project` 型で `settings` が必須フィールドであることを TypeScript コンパイルで確認
+- [ ] プロジェクト作成時に `settings.durationMs` が `DEFAULT_PROJECT_DURATION_MS` で初期化されることを検証

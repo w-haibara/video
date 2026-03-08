@@ -1,6 +1,6 @@
 // Types
 export type { Asset, AssetKind } from "./types/asset";
-export type { Project, Sequence, Track, Clip, ClipText, ClipTransform, ClipCrop, ExportPreset } from "./types/project";
+export type { Project, ProjectSettings, Sequence, Track, Clip, ClipText, ClipTransform, ClipCrop, ExportPreset } from "./types/project";
 export type { Job, JobStatus } from "./types/job";
 export type {
   CreateProjectRequest,
@@ -19,6 +19,7 @@ export { generateId } from "./utils/id";
 // Constants
 export {
   DEFAULT_IMAGE_DURATION_MS,
+  DEFAULT_PROJECT_DURATION_MS,
   PROXY_WIDTH,
   PROXY_HEIGHT,
   THUMBNAIL_HEIGHT,
