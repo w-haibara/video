@@ -6,7 +6,7 @@
     "test": "bun test"
   },
   "devDependencies": {
-    "concurrently": "^9",
-    "typescript": "^5"
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.3"
   }
 }
