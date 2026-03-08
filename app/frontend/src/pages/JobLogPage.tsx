@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../api/client";
 import type { Job } from "@video/shared";
 import { JOB_POLL_INTERVAL_MS } from "@video/shared";
+import { theme } from "../theme";
 
 type JobListResponse = { jobs: Job[] };
 
@@ -22,10 +23,10 @@ function useProjectJobs(projectId: string) {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  pending: "#fa0",
-  processing: "#4af",
-  completed: "#4a4",
-  failed: "#f44",
+  pending: theme.warning,
+  processing: theme.primary,
+  completed: theme.success,
+  failed: theme.error,
 };
 
 export function JobLogPage() {
@@ -38,26 +39,26 @@ export function JobLogPage() {
         maxWidth: "800px",
         margin: "0 auto",
         padding: "20px",
-        color: "#ccc",
-        background: "#1a1a1a",
+        color: theme.text,
+        background: theme.bg,
         minHeight: "100vh",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <h2 style={{ margin: 0, color: "#fff" }}>Job Log</h2>
+        <h2 style={{ margin: 0 }}>Job Log</h2>
         <Link
           to={`/projects/${id}`}
-          style={{ color: "#4a7fff", textDecoration: "none", fontSize: "14px" }}
+          style={{ color: theme.primary, textDecoration: "none", fontSize: "14px" }}
         >
           Back to Editor
         </Link>
       </div>
 
       {isLoading && <div>Loading...</div>}
-      {error && <div style={{ color: "#f44" }}>Error: {error.message}</div>}
+      {error && <div style={{ color: theme.error }}>Error: {error.message}</div>}
 
       {data && data.jobs.length === 0 && (
-        <div style={{ color: "#666" }}>No jobs yet.</div>
+        <div style={{ color: theme.textMuted }}>No jobs yet.</div>
       )}
 
       {data && data.jobs.length > 0 && (
@@ -69,18 +70,18 @@ export function JobLogPage() {
           }}
         >
           <thead>
-            <tr style={{ borderBottom: "2px solid #444" }}>
-              <th style={{ textAlign: "left", padding: "8px 4px", color: "#888" }}>ID</th>
-              <th style={{ textAlign: "left", padding: "8px 4px", color: "#888" }}>Asset</th>
-              <th style={{ textAlign: "left", padding: "8px 4px", color: "#888" }}>Status</th>
-              <th style={{ textAlign: "left", padding: "8px 4px", color: "#888" }}>Progress</th>
-              <th style={{ textAlign: "left", padding: "8px 4px", color: "#888" }}>Updated</th>
-              <th style={{ textAlign: "left", padding: "8px 4px", color: "#888" }}>Error</th>
+            <tr style={{ borderBottom: `2px solid ${theme.border}` }}>
+              <th style={{ textAlign: "left", padding: "8px 4px", color: theme.textMuted }}>ID</th>
+              <th style={{ textAlign: "left", padding: "8px 4px", color: theme.textMuted }}>Asset</th>
+              <th style={{ textAlign: "left", padding: "8px 4px", color: theme.textMuted }}>Status</th>
+              <th style={{ textAlign: "left", padding: "8px 4px", color: theme.textMuted }}>Progress</th>
+              <th style={{ textAlign: "left", padding: "8px 4px", color: theme.textMuted }}>Updated</th>
+              <th style={{ textAlign: "left", padding: "8px 4px", color: theme.textMuted }}>Error</th>
             </tr>
           </thead>
           <tbody>
             {[...data.jobs].reverse().map((job) => (
-              <tr key={job.id} style={{ borderBottom: "1px solid #333" }}>
+              <tr key={job.id} style={{ borderBottom: `1px solid ${theme.borderLight}` }}>
                 <td style={{ padding: "6px 4px", fontFamily: "monospace", fontSize: "11px" }}>
                   {job.id.slice(0, 8)}
                 </td>
@@ -90,7 +91,7 @@ export function JobLogPage() {
                 <td style={{ padding: "6px 4px" }}>
                   <span
                     style={{
-                      color: STATUS_COLOR[job.status] ?? "#ccc",
+                      color: STATUS_COLOR[job.status] ?? theme.text,
                       fontWeight: "bold",
                     }}
                   >
@@ -102,7 +103,7 @@ export function JobLogPage() {
                     ? `${Math.round(job.progress * 100)}%`
                     : job.status === "completed"
                       ? "100%"
-                      : "—"}
+                      : "\u2014"}
                 </td>
                 <td style={{ padding: "6px 4px", fontSize: "11px" }}>
                   {new Date(job.updatedAt).toLocaleTimeString()}
@@ -110,7 +111,7 @@ export function JobLogPage() {
                 <td
                   style={{
                     padding: "6px 4px",
-                    color: "#f44",
+                    color: theme.error,
                     fontSize: "11px",
                     maxWidth: "200px",
                     overflow: "hidden",
@@ -119,7 +120,7 @@ export function JobLogPage() {
                   }}
                   title={job.error}
                 >
-                  {job.error ?? "—"}
+                  {job.error ?? "\u2014"}
                 </td>
               </tr>
             ))}

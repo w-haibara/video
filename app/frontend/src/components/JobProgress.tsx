@@ -1,4 +1,5 @@
 import type { Job } from "@video/shared";
+import { theme } from "../theme";
 
 type Props = { job: Job };
 
@@ -9,7 +10,7 @@ export function JobProgress({ job }: Props) {
       <div
         style={{
           height: "3px",
-          background: "#444",
+          background: theme.bgHover,
           borderRadius: "2px",
           overflow: "hidden",
         }}
@@ -18,12 +19,12 @@ export function JobProgress({ job }: Props) {
           style={{
             height: "100%",
             width: `${percent}%`,
-            background: job.status === "failed" ? "#e44" : "#4af",
+            background: job.status === "failed" ? theme.error : theme.primary,
             transition: "width 0.3s ease",
           }}
         />
       </div>
-      <div style={{ fontSize: "10px", color: "#aaa", marginTop: "2px" }}>
+      <div style={{ fontSize: "10px", color: theme.textMuted, marginTop: "2px" }}>
         {job.status === "processing" ? `${percent}%` : job.status}
       </div>
     </div>

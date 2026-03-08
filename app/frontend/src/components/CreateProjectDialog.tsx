@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCreateProject } from "../api/projects";
+import { theme } from "../theme";
 
 type Props = { onClose: () => void };
 
@@ -21,7 +22,7 @@ export function CreateProjectDialog({ onClose }: Props) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.6)",
+        background: theme.overlay,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -34,10 +35,10 @@ export function CreateProjectDialog({ onClose }: Props) {
       <form
         onSubmit={handleSubmit}
         style={{
-          background: "#1e1e1e",
+          background: theme.bg,
           borderRadius: "8px",
           padding: "24px",
-          border: "1px solid #333",
+          border: `1px solid ${theme.border}`,
           minWidth: "360px",
           display: "flex",
           flexDirection: "column",
@@ -52,9 +53,9 @@ export function CreateProjectDialog({ onClose }: Props) {
           autoFocus
           style={{
             padding: "10px 12px",
-            background: "#111",
-            color: "#eee",
-            border: "1px solid #444",
+            background: theme.bgPanel,
+            color: theme.text,
+            border: `1px solid ${theme.border}`,
             borderRadius: "6px",
             fontSize: "14px",
             outline: "none",
@@ -66,8 +67,8 @@ export function CreateProjectDialog({ onClose }: Props) {
             onClick={onClose}
             style={{
               padding: "8px 16px",
-              background: "#333",
-              color: "#ccc",
+              background: theme.bgDark,
+              color: theme.text,
               border: "none",
               borderRadius: "6px",
               cursor: "pointer",
@@ -81,8 +82,8 @@ export function CreateProjectDialog({ onClose }: Props) {
             disabled={createProject.isPending}
             style={{
               padding: "8px 16px",
-              background: "#3a6ad4",
-              color: "#fff",
+              background: theme.button,
+              color: theme.buttonText,
               border: "none",
               borderRadius: "6px",
               cursor: "pointer",

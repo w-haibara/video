@@ -3,6 +3,7 @@ import type { Project } from "@video/shared";
 import { useProjects } from "../api/projects";
 import { ProjectCard } from "../components/ProjectCard";
 import { CreateProjectDialog } from "../components/CreateProjectDialog";
+import { theme } from "../theme";
 
 export function HomePage() {
   const { data, isLoading, error } = useProjects();
@@ -16,8 +17,8 @@ export function HomePage() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "16px 24px",
-          background: "#1a1a1a",
-          borderBottom: "1px solid #333",
+          background: theme.bgPanel,
+          borderBottom: `1px solid ${theme.border}`,
           position: "sticky",
           top: 0,
           zIndex: 10,
@@ -28,8 +29,8 @@ export function HomePage() {
           onClick={() => setShowCreate(true)}
           style={{
             padding: "8px 16px",
-            background: "#3a6ad4",
-            color: "#fff",
+            background: theme.button,
+            color: theme.buttonText,
             border: "none",
             borderRadius: "6px",
             cursor: "pointer",
@@ -43,14 +44,14 @@ export function HomePage() {
 
       <main style={{ padding: "24px" }}>
         {isLoading && (
-          <div style={{ color: "#888", textAlign: "center", padding: "48px" }}>
+          <div style={{ color: theme.textMuted, textAlign: "center", padding: "48px" }}>
             Loading...
           </div>
         )}
         {error && (
           <div
             style={{
-              color: "#e74c3c",
+              color: theme.error,
               textAlign: "center",
               padding: "48px",
             }}
@@ -63,7 +64,7 @@ export function HomePage() {
             style={{
               textAlign: "center",
               padding: "64px 24px",
-              color: "#666",
+              color: theme.textMuted,
             }}
           >
             <p style={{ fontSize: "18px", marginBottom: "8px" }}>
