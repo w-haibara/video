@@ -50,7 +50,7 @@
 | 44 | 選択クリップ範囲のみ再生 | [x] Done | 43 |
 | 45 | 共有型に ProjectSettings を追加 | [x] Done | 02 |
 | 46 | Settings タブの追加 | [x] Done | 40, 45 |
-| 47 | タイムライン UI への動画時間制限の反映 | [ ] Todo | 45, 09, 10, 11 |
+| 47 | タイムライン UI への動画時間制限の反映 | [x] Done | 45, 09, 10, 11 |
 | 48 | テストの追加 | [ ] Todo | 45, 47 |
 
 ## Phase 1 Tasks
@@ -929,44 +929,24 @@ EditorLayout のグリッド構造を全面的に変更し、プレビューを�
 タイムラインの表示と操作に動画時間の上限を適用する。
 
 **A. タイムライン表示幅の固定** (`app/frontend/src/components/Timeline.tsx`)
-- [ ] `getTimelineDuration()` を修正:
-  - 現在: クリップ末尾 + 5000ms のパディング (最小 10000ms)
-  - 変更: `project.settings.durationMs` を使用してタイムライン表示幅を決定
-- [ ] タイムラインルーラーに動画時間の終端マーカーを表示
-  - 終端位置に縦の破線 (dashed line) を描画: `border-right: 2px dashed rgba(255, 100, 100, 0.5)`
-  - 終端を超えた領域を暗く表示: `background: rgba(255, 0, 0, 0.05)`
+- [x] `getTimelineDuration()` を `project.settings.durationMs` ベースに修正
+- [x] タイムラインに終端マーカー (dashed red line) を表示
 
 **B. クリップ追加時の制約** (`app/frontend/src/lib/sequence-ops.ts`)
-- [ ] `addClipFromAsset()` に `maxDurationMs?: number` 引数を追加
-  - クリップの `startMs + durationMs` が `maxDurationMs` を超える場合:
-    - クリップの `durationMs` を `maxDurationMs - startMs` にトリム
-    - `startMs` 自体が `maxDurationMs` 以上の場合はクリップ追加を拒否 (シーケンスをそのまま返す)
-  - `outMs` も `inMs + newDuration` に再計算
-- [ ] `addTextClip()` にも同様の `maxDurationMs` 制約を追加
-  - テキストクリップの `startMs + durationMs` が `maxDurationMs` を超える場合、`durationMs` をクランプ
+- [x] `addClipFromAsset()` に `maxDurationMs` 引数追加、クランプ・拒否ロジック実装
+- [x] `addTextClip()` にも同様の制約追加
 
-**C. クリップ移動時の制約** (`app/frontend/src/lib/sequence-ops.ts`)
-- [ ] `moveClip()` に `maxDurationMs?: number` 引数を追加
-  - 移動後の `newStartMs + clip.durationMs` が `maxDurationMs` を超える場合:
-    - `newStartMs` を `maxDurationMs - clip.durationMs` にクランプ
-    - クリップの durationMs が maxDurationMs より長い場合は `newStartMs = 0` にクランプ
+**C. クリップ移動時の制約**
+- [x] `moveClip()` に `maxDurationMs` 引数追加、startMs クランプ実装
 
-**D. クリップトリム時の制約** (`app/frontend/src/lib/sequence-ops.ts`)
-- [ ] `trimClip()` の右トリムに制約を追加
-  - 既存の `maxSourceDurationMs` に加えて、`maxTimelineDurationMs?: number` 引数を追加
-  - 右トリム時: `clip.startMs + newDuration` が `maxTimelineDurationMs` を超えないようクランプ
-    - `newDuration = Math.min(newDuration, maxTimelineDurationMs - clip.startMs)`
+**D. クリップトリム時の制約**
+- [x] `trimClip()` に `maxTimelineDurationMs` 引数追加、右トリムのクランプ実装
 
-**E. useProjectEditor への制約伝播** (`app/frontend/src/hooks/useProjectEditor.ts`)
-- [ ] 各操作関数に `project.settings.durationMs` を渡す
-  - `addClipFromAsset`: `addClipFromAsset(sequence, asset, durationMs)`
-  - `moveClip`: `moveClip(sequence, clipId, newStartMs, durationMs)`
-  - `trimClip`: `trimClip(sequence, clipId, side, deltaMs, maxSourceDurationMs, durationMs)`
-  - `addTextClip`: `addTextClip(sequence, startMs, durationMs, text, projectDurationMs)`
+**E. useProjectEditor への制約伝播**
+- [x] 全操作関数に `project.settings.durationMs` を渡すよう更新
 
 **F. ドラッグ移動のビジュアルフィードバック** (`app/frontend/src/components/TimelineClip.tsx`)
-- [ ] ドラッグ中にクリップが動画時間の終端を超えた場合、スナップバックする視覚的なフィードバック
-  - ドラッグ中のプレビュー位置を `Math.min(newStartMs, maxDurationMs - clip.durationMs)` でクランプ
+- [x] ドラッグ中のプレビュー位置を `maxDurationMs - clip.durationMs` でクランプ
 
 ### 48: テストの追加
 
