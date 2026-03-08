@@ -60,6 +60,9 @@
 | 54 | クリップ開始位置の数値入力 | [x] Done | 11, 50 |
 | 55 | Undo/Redo UI を Inspector から分離してグローバル配置 | [x] Done | 13, 39 |
 | 56 | TypeScript 暗黙 any 型エラーの修正 | [x] Done | 02 |
+| 57 | エクスポートが project settings の動画時間を超過するバグ修正 | [x] Done | 15, 45 |
+| 58 | 設定変更時の既存クリップ遡及トリム | [ ] Todo | 45, 47 |
+| 59 | エクスポート時のクリップフリーズ・尺ずれバグ修正 | [ ] Todo | 15, 57 |
 
 ## Phase 1 Tasks
 
@@ -1205,3 +1208,63 @@ EditorLayout のグリッド構造を全面的に変更し、プレビューを�
 **E. テストファイルの型注釈追加** (`app/frontend/src/lib/sequence-ops.test.ts`)
 - [ ] `.find((t) =>` → `.find((t: Track) =>`
 - [ ] `.map((c) =>` / `.find((c) =>` → `(c: Clip)`（5箇所）
+
+### 57: エクスポートが project settings の動画時間を超過するバグ修正
+
+現状: `buildExportArgs()` (`app/backend/src/services/export-service.ts`) はビデオトラックの全クリップの `durationMs` を単純合算してエクスポートしており、`project.settings.durationMs` を一切参照していない。ユーザーが Settings で動画時間を 6 秒に設定しても、タイムライン上の全クリップ（例: 3 秒 × 6 本 = 18 秒）がそのまま出力される。
+
+目標: エクスポート結果の動画長が `project.settings.durationMs` を超えないようにする。
+
+**A. buildExportArgs でプロジェクト設定の durationMs を適用** (`app/backend/src/services/export-service.ts`)
+- [ ] `project.settings.durationMs` を取得し、エクスポートの最大時間とする
+- [ ] クリップのフィルタリング: `clip.startMs >= projectDurationMs` のクリップを除外
+- [ ] クリップのトリム: `clip.startMs + clip.durationMs > projectDurationMs` の場合、`durationMs` を `projectDurationMs - clip.startMs` にクランプ
+- [ ] concat の `n=` パラメータを除外後のクリップ数に更新
+- [ ] テキストオーバーレイも同様に `projectDurationMs` 以降を除外
+
+**B. startExport の totalDurationMs 計算を修正** (`app/backend/src/services/export-service.ts`)
+- [ ] `totalDurationMs` を `Math.min(clipSum, project.settings.durationMs)` に変更（プログレスバー精度向上）
+
+**C. テスト追加** (`app/backend/src/services/export-service.test.ts`)
+- [ ] プロジェクト設定 6000ms、クリップ合計 18000ms → 出力が 6000ms 分に制限されることを検証
+- [ ] 境界をまたぐクリップが正しくトリムされることを検証
+- [ ] 設定時間外のクリップが除外されることを検証
+
+### 58: 設定変更時の既存クリップ遡及トリム
+
+現状: `addClipFromAsset()` はクリップ追加時に `maxDurationMs` でクランプするが、プロジェクト設定の `durationMs` を後から短くしても既存クリップは調整されない。結果、タイムライン上にプロジェクト設定を超えるクリップが残り、Task 57 のエクスポート問題の原因となる。
+
+目標: プロジェクト設定の `durationMs` 変更時に既存クリップを自動的にトリム・除外する。
+
+**A. クリップトリム関数の追加** (`app/frontend/src/lib/sequence-ops.ts`)
+- [ ] `clampClipsToDuration(sequence, maxDurationMs)` 関数を追加
+- [ ] `startMs >= maxDurationMs` のクリップを除外
+- [ ] `startMs + durationMs > maxDurationMs` のクリップの `durationMs` と `outMs` をクランプ
+- [ ] 空になったトラック（video/audio）は保持（title トラックのクリップも同様にクランプ）
+
+**B. 設定変更時の適用** (`app/frontend/src/hooks/useProjectEditor.ts` or Settings パネル)
+- [ ] `project.settings.durationMs` の変更時に `clampClipsToDuration` を呼び出す
+- [ ] Undo/Redo スタックに正しく反映されるよう `pushState` 経由で適用
+
+**C. テスト追加** (`app/frontend/src/lib/sequence-ops.test.ts`)
+- [ ] 設定短縮で境界をまたぐクリップがトリムされることを検証
+- [ ] 設定範囲外のクリップが除外されることを検証
+- [ ] title/audio トラックも同様にクランプされることを検証
+
+### 59: エクスポート時のクリップフリーズ・尺ずれバグ修正
+
+現状: エクスポートした動画で (1) 1つ目のクリップが想定より短い (2) 2つ目のクリップが途中でフリーズし静止画のまま残り時間を埋める、という現象が発生。原因は FFmpeg の `trim` フィルターが、クリップの `durationMs` がソース動画の実際の長さを超える場合に最終フレームを引き延ばすこと、および `inMs`/`outMs` と `durationMs` の不整合。
+
+目標: エクスポート動画がフリーズせず、各クリップが正確な尺で再生されるようにする。
+
+**A. trim duration のソース長クランプ** (`app/backend/src/services/export-service.ts`)
+- [ ] エクスポート時にアセットの `durationMs` を参照し、`trim` の `duration` が `asset.durationMs - clip.inMs` を超えないようクランプ
+- [ ] `clip.durationMs` がソース残量を超える場合、不足分は黒フレームで埋めるか、クリップをソース長で打ち切る（打ち切りが妥当）
+
+**B. inMs/outMs/durationMs の整合性チェック**
+- [ ] `buildExportArgs` 内で各クリップの `outMs - inMs === durationMs` を検証し、不整合があれば `durationMs = outMs - inMs` に修正
+- [ ] フロントエンド側（`sequence-ops.ts`）でも `trimClip` / `updateClip` 後の整合性を保証
+
+**C. Playwright E2E テスト** (調査・検証用)
+- [ ] Playwright でアプリを起動し、2つの動画アセットをインポート → タイムラインに追加 → 設定で動画時間を指定 → エクスポート → 出力動画の長さを `ffprobe` で検証
+- [ ] フリーズフレームが発生しないことを確認（最終フレームが不自然に長くないことを検証）
