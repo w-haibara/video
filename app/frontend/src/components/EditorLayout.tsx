@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { theme } from "../theme";
 
 type Props = {
@@ -25,13 +26,23 @@ export function EditorLayout({ toolbar, preview, mainPanel, bottom }: Props) {
           gridColumn: "1 / -1",
           display: "flex",
           alignItems: "center",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
           background: theme.bgPanel,
           height: 34,
           padding: "0 8px",
           borderBottom: `1px solid ${theme.border}`,
         }}
       >
+        <Link
+          to="/"
+          style={{
+            color: theme.textMuted,
+            textDecoration: "none",
+            fontSize: "13px",
+          }}
+        >
+          ← Home
+        </Link>
         {toolbar}
       </div>
       <div
