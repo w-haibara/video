@@ -1,5 +1,6 @@
 import type { Track, Asset, Clip } from "@video/shared";
 import { TimelineClip } from "./TimelineClip";
+import { theme } from "../theme";
 
 type Props = {
   track: Track;
@@ -45,9 +46,9 @@ export function TimelineTrack({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#252525",
-          borderRight: "1px solid #444",
-          color: "#aaa",
+          background: theme.bgHover,
+          borderRight: `1px solid ${theme.border}`,
+          color: theme.textMuted,
           fontSize: "11px",
           fontWeight: "bold",
           userSelect: "none",
@@ -60,8 +61,8 @@ export function TimelineTrack({
           position: "relative",
           flex: 1,
           minWidth: `${totalWidth}px`,
-          background: "#2a2a2a",
-          borderBottom: "1px solid #333",
+          background: theme.timelineTrackBg,
+          borderBottom: `1px solid ${theme.borderLight}`,
         }}
       >
         {track.clips.map((clip: Clip) => (

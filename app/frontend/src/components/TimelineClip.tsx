@@ -1,5 +1,6 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import type { Clip, Asset } from "@video/shared";
+import { theme } from "../theme";
 
 type Props = {
   clip: Clip;
@@ -41,14 +42,14 @@ export function TimelineClip({
   let bgColor: string;
   let borderColor: string;
   if (isTextClip) {
-    bgColor = isSelected ? "#9b59b6" : "#8e44ad";
-    borderColor = isSelected ? "#fff" : "#6c3483";
+    bgColor = isSelected ? theme.clipText : theme.clipTextSelect;
+    borderColor = isSelected ? theme.text : theme.clipTextSelect;
   } else if (isAudioClip) {
-    bgColor = isSelected ? "#27ae60" : "#1e8449";
-    borderColor = isSelected ? "#fff" : "#145a32";
+    bgColor = isSelected ? theme.clipAudio : theme.clipAudioSelect;
+    borderColor = isSelected ? theme.text : theme.clipAudioSelect;
   } else {
-    bgColor = isSelected ? "#4a7fff" : "#3a6ad4";
-    borderColor = isSelected ? "#fff" : "#2a4a9a";
+    bgColor = isSelected ? theme.clipVideo : theme.clipVideoSelect;
+    borderColor = isSelected ? theme.text : theme.clipVideoSelect;
   }
   const dragRef = useRef<{ startX: number; startMs: number } | null>(null);
   const trimRef = useRef<{ startX: number; side: "left" | "right" } | null>(null);

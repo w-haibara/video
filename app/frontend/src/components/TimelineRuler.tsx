@@ -1,3 +1,5 @@
+import { theme } from "../theme";
+
 type Props = {
   durationMs: number;
   msToPx: (ms: number) => number;
@@ -36,9 +38,9 @@ export function TimelineRuler({ durationMs, msToPx }: Props) {
         position: "relative",
         height: "24px",
         minWidth: `${totalWidth}px`,
-        borderBottom: "1px solid #444",
+        borderBottom: `1px solid ${theme.border}`,
         fontSize: "10px",
-        color: "#888",
+        color: theme.textMuted,
         userSelect: "none",
         flexShrink: 0,
       }}
@@ -51,7 +53,7 @@ export function TimelineRuler({ durationMs, msToPx }: Props) {
             left: `${msToPx(t)}px`,
             top: 0,
             height: "100%",
-            borderLeft: "1px solid #444",
+            borderLeft: `1px solid ${theme.border}`,
             paddingLeft: "3px",
             lineHeight: "24px",
           }}

@@ -5,6 +5,7 @@ import { TimelineTrack } from "./TimelineTrack";
 import { Playhead } from "./Playhead";
 import { ContextMenu } from "./ContextMenu";
 import { useTimelineZoom } from "../hooks/useTimelineZoom";
+import { theme } from "../theme";
 
 type Props = {
   project: Project;
@@ -132,8 +133,8 @@ export function Timeline({
           alignItems: "center",
           gap: "4px",
           padding: "2px 8px",
-          background: "#1e1e1e",
-          borderBottom: "1px solid #444",
+          background: theme.bgPanel,
+          borderBottom: `1px solid ${theme.border}`,
           flexShrink: 0,
         }}
       >
@@ -141,8 +142,8 @@ export function Timeline({
           onClick={zoomOut}
           style={{
             background: "none",
-            border: "1px solid #555",
-            color: "#ccc",
+            border: `1px solid ${theme.border}`,
+            color: theme.text,
             padding: "2px 8px",
             cursor: "pointer",
             borderRadius: "3px",
@@ -155,8 +156,8 @@ export function Timeline({
           onClick={zoomIn}
           style={{
             background: "none",
-            border: "1px solid #555",
-            color: "#ccc",
+            border: `1px solid ${theme.border}`,
+            color: theme.text,
             padding: "2px 8px",
             cursor: "pointer",
             borderRadius: "3px",
@@ -165,7 +166,7 @@ export function Timeline({
         >
           +
         </button>
-        <span style={{ color: "#888", fontSize: "11px", marginLeft: "8px" }}>
+        <span style={{ color: theme.textMuted, fontSize: "11px", marginLeft: "8px" }}>
           {formatTime(currentTimeMs)}
         </span>
       </div>
@@ -192,8 +193,8 @@ export function Timeline({
               onMouseDown={handleRulerMouseDown}
               style={{
                 height: "16px",
-                background: "#252525",
-                borderBottom: "1px solid #444",
+                background: theme.bgHover,
+                borderBottom: `1px solid ${theme.border}`,
                 cursor: "col-resize",
                 paddingLeft: "32px",
               }}
@@ -203,7 +204,7 @@ export function Timeline({
             {project.sequence.tracks.length === 0 ? (
               <div
                 style={{
-                  color: "#666",
+                  color: theme.textMuted,
                   padding: "16px 32px",
                   fontSize: "13px",
                 }}
@@ -236,7 +237,7 @@ export function Timeline({
                 left: `${msToPx(project.settings.durationMs) + 32}px`,
                 top: 0,
                 bottom: 0,
-                borderLeft: "2px dashed rgba(255, 100, 100, 0.5)",
+                borderLeft: `2px dashed ${theme.error}80`,
                 pointerEvents: "none",
                 zIndex: 1,
               }}

@@ -1,3 +1,5 @@
+import { theme } from "../theme";
+
 type Props = {
   positionPx: number;
 };
@@ -11,7 +13,7 @@ export function Playhead({ positionPx }: Props) {
         top: 0,
         bottom: 0,
         width: "2px",
-        background: "#f44",
+        background: theme.playhead,
         zIndex: 10,
         pointerEvents: "none",
       }}
@@ -25,7 +27,7 @@ export function Playhead({ positionPx }: Props) {
           height: 0,
           borderLeft: "6px solid transparent",
           borderRight: "6px solid transparent",
-          borderTop: "8px solid #f44",
+          borderTop: `8px solid ${theme.playhead}`,
         }}
       />
     </div>
