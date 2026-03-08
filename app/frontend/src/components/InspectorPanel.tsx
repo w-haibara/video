@@ -56,17 +56,16 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveCl
         <tbody>
           {!isTextClip && <Row label="File" value={fileName} />}
           <Row label="Type" value={isTextClip ? "text" : (asset?.kind ?? "—")} />
-          {onMoveClip ? (
-            <StartEditor clip={clip} onMoveClip={(newStartMs) => onMoveClip(clip.id, newStartMs)} />
-          ) : (
-            <Row label="Start" value={formatMs(clip.startMs)} />
-          )}
           {asset?.width && asset?.height && (
             <Row label="Size" value={`${asset.width}x${asset.height}`} />
           )}
           {asset?.codec && <Row label="Codec" value={asset.codec} />}
         </tbody>
       </table>
+
+      {onMoveClip && (
+        <StartEndEditor clip={clip} onMoveClip={(newStartMs) => onMoveClip(clip.id, newStartMs)} />
+      )}
 
       {onUpdateClip && (
         <TrimEditor
@@ -558,7 +557,7 @@ function TransformEditor({
   );
 }
 
-function StartEditor({
+function StartEndEditor({
   clip,
   onMoveClip,
 }: {
@@ -580,31 +579,47 @@ function StartEditor({
     onMoveClip(newMs);
   };
 
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "#333",
+    color: "#fff",
+    border: "1px solid #555",
+    borderRadius: "3px",
+    padding: "2px 4px",
+    fontSize: "12px",
+    boxSizing: "border-box",
+  };
+
   return (
-    <tr>
-      <td style={{ padding: "2px 4px 2px 0", color: "#888", whiteSpace: "nowrap" }}>Start</td>
-      <td style={{ padding: "2px 0" }}>
-        <input
-          type="number"
-          value={val}
-          onChange={(e) => setVal(e.target.value)}
-          onBlur={handleCommit}
-          onKeyDown={(e) => { if (e.key === "Enter") handleCommit(); }}
-          min={0}
-          step={0.1}
-          style={{
-            width: "100%",
-            background: "#333",
-            color: "#fff",
-            border: "1px solid #555",
-            borderRadius: "3px",
-            padding: "2px 4px",
-            fontSize: "12px",
-            boxSizing: "border-box",
-          }}
-        />
-      </td>
-    </tr>
+    <div style={{ marginTop: "8px" }}>
+      <label style={{ color: "#888", display: "block", marginBottom: "4px" }}>
+        Position
+      </label>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
+        <div>
+          <label style={{ color: "#666", fontSize: "10px" }}>Start (s)</label>
+          <input
+            type="number"
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            onBlur={handleCommit}
+            onKeyDown={(e) => { if (e.key === "Enter") handleCommit(); }}
+            min={0}
+            step={0.1}
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={{ color: "#666", fontSize: "10px" }}>End (s)</label>
+          <input
+            type="number"
+            value={msToSec(clip.startMs + clip.durationMs)}
+            disabled
+            style={{ ...inputStyle, color: "#888", cursor: "default" }}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
