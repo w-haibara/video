@@ -106,11 +106,20 @@ export function buildExportArgs(
 
     const assetPath = path.join(assetsBase, path.basename(asset.originalPath));
 
+    // Resolve effective duration: ensure consistency between durationMs and outMs-inMs,
+    // and clamp to source length to prevent FFmpeg freeze on last frame
+    let effectiveDurationMs = Math.min(clip.durationMs, clip.outMs - clip.inMs);
+    if (asset.kind === "video" && asset.durationMs) {
+      const maxFromSource = asset.durationMs - clip.inMs;
+      if (maxFromSource > 0) {
+        effectiveDurationMs = Math.min(effectiveDurationMs, maxFromSource);
+      }
+    }
+
     if (asset.kind === "video") {
       inputArgs.push("-i", assetPath);
-      // Trim and scale
       const trimStart = clip.inMs / 1000;
-      const duration = clip.durationMs / 1000;
+      const duration = effectiveDurationMs / 1000;
       let chain =
         `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS,` +
         `scale=${preset.width}:${preset.height}:force_original_aspect_ratio=decrease,` +
@@ -118,7 +127,7 @@ export function buildExportArgs(
       chain += buildTransformFilter(clip, preset);
       filterParts.push(`${chain}[v${i}]`);
     } else if (asset.kind === "image") {
-      inputArgs.push("-loop", "1", "-t", String(clip.durationMs / 1000), "-i", assetPath);
+      inputArgs.push("-loop", "1", "-t", String(effectiveDurationMs / 1000), "-i", assetPath);
       let chain =
         `[${i}:v]scale=${preset.width}:${preset.height}:force_original_aspect_ratio=decrease,` +
         `pad=${preset.width}:${preset.height}:(ow-iw)/2:(oh-ih)/2,setsar=1`;
@@ -194,12 +203,18 @@ export function buildExportArgs(
           })
           .filter((i) => i >= 0);
 
-        // For clips without audio, generate silence; for those with audio, use their stream
+        // For clips without audio, generate silence; for those with audio, trim to match video
         const audioParts: string[] = [];
         clips.forEach((clip, i) => {
           const a = project.assets.find((a) => a.id === clip.assetId);
           if (a?.kind === "video" && a.hasAudio) {
-            audioParts.push(`[${i}:a]`);
+            const trimStart = clip.inMs / 1000;
+            let dur = Math.min(clip.durationMs, clip.outMs - clip.inMs);
+            if (a.durationMs) dur = Math.min(dur, a.durationMs - clip.inMs);
+            filterParts.push(
+              `[${i}:a]atrim=start=${trimStart}:duration=${dur / 1000},asetpts=PTS-STARTPTS[at${i}]`,
+            );
+            audioParts.push(`[at${i}]`);
           } else {
             const dur = clip.durationMs / 1000;
             filterParts.push(
@@ -237,7 +252,13 @@ export function buildExportArgs(
     clips.forEach((clip, i) => {
       const a = project.assets.find((a) => a.id === clip.assetId);
       if (a?.kind === "video" && a.hasAudio) {
-        audioParts.push(`[${i}:a]`);
+        const trimStart = clip.inMs / 1000;
+        let dur = Math.min(clip.durationMs, clip.outMs - clip.inMs);
+        if (a.durationMs) dur = Math.min(dur, a.durationMs - clip.inMs);
+        filterParts.push(
+          `[${i}:a]atrim=start=${trimStart}:duration=${dur / 1000},asetpts=PTS-STARTPTS[at${i}]`,
+        );
+        audioParts.push(`[at${i}]`);
       } else {
         const dur = clip.durationMs / 1000;
         filterParts.push(`anullsrc=r=48000:cl=stereo[sil${i}]`);

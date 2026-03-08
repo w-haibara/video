@@ -371,6 +371,105 @@ describe("buildExportArgs", () => {
     expect(filter).toContain("concat=n=2:v=1:a=0");
   });
 
+  test("clamps trim duration to source length to prevent freeze", () => {
+    const project = makeProject({
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 3000, hasAudio: false },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              // Clip claims 5s duration but source is only 3s
+              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Should be clamped to 3s (source length), not 5s
+    expect(filter).toContain("trim=start=0:duration=3,");
+  });
+
+  test("clamps trim duration accounting for inMs offset", () => {
+    const project = makeProject({
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 5000, hasAudio: false },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              // inMs=2000, so only 3s of source remains, but durationMs claims 4s
+              { id: "c1", assetId: "v1", startMs: 0, durationMs: 4000, inMs: 2000, outMs: 6000 },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Should be clamped to 3s (5000 - 2000 = 3000ms)
+    expect(filter).toContain("trim=start=2:duration=3,");
+  });
+
+  test("uses outMs-inMs when smaller than durationMs (consistency fix)", () => {
+    const project = makeProject({
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 10000, hasAudio: false },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              // durationMs=5000 but outMs-inMs=3000 (inconsistent)
+              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 1000, outMs: 4000 },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Should use outMs-inMs = 3s, not durationMs = 5s
+    expect(filter).toContain("trim=start=1:duration=3,");
+  });
+
+  test("trims audio to match video for clips with hasAudio", () => {
+    const project = makeProject({
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 5000, hasAudio: true },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              { id: "c1", assetId: "v1", startMs: 0, durationMs: 3000, inMs: 1000, outMs: 4000 },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Audio should be trimmed to match video
+    expect(filter).toContain("atrim=start=1:duration=3,asetpts=PTS-STARTPTS");
+  });
+
   test("excludes text overlays beyond project duration", () => {
     const project = makeProject({
       sequence: {
