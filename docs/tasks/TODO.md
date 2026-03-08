@@ -67,6 +67,8 @@
 | 61 | グローバル CSS・ページコンポーネントの色彩更新 | [x] Done | 60 |
 | 62 | エディタ UI コンポーネントの色彩更新 | [x] Done | 60 |
 | 63 | タイムライン・クリップコンポーネントの色彩更新 | [x] Done | 60 |
+| 64 | プレビュー "No clip at playhead" 表示の全幅化 | [x] Done | 12 |
+| 65 | エディタ画面からホームへの導線追加 | [ ] TODO | 07, 39 |
 
 ## Phase 1 Tasks
 
@@ -1505,3 +1507,32 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 
 **F. EditorPage のインライン色** (`app/frontend/src/pages/EditorPage.tsx`)
 - [ ] エディタ画面内のインラインスタイル色をすべて `theme.*` に置換
+
+---
+
+### 64: プレビュー "No clip at playhead" 表示の全幅化
+
+**背景**: プレビュー領域にクリップがない場合、"No clip at playhead" テキストが小さく中央に表示されるが、プレビュー領域の横幅をフルに使えていない。PreviewPlayer コンポーネントに `width: 100%` が設定されておらず、親の EditorLayout が `alignItems: center` で中央寄せしているため横幅が縮んでいる。
+
+**対象ファイル**:
+- `app/frontend/src/components/PreviewPlayer.tsx`
+
+**サブタスク**:
+- [x] PreviewPlayer のルートコンテナに `width: "100%"` を追加し、プレビュー領域全体を横幅いっぱいに使えるようにする
+- [x] "No clip at playhead" 表示時もプレビュー黒背景が全幅に表示されることを確認
+
+---
+
+### 65: エディタ画面からホームへの導線追加
+
+**背景**: 現在エディタ画面にはホーム画面 (`/`) へ戻る UI がなく、ブラウザの戻るボタンに頼る必要がある。ツールバー領域にホームへ戻るリンクを追加する。
+
+**対象ファイル**:
+- `app/frontend/src/pages/EditorPage.tsx` — ツールバーにホームリンクを追加
+- `app/frontend/src/components/EditorLayout.tsx` — ツールバー左側にスペースを確保（必要に応じて）
+
+**サブタスク**:
+- [ ] EditorLayout のツールバー行を左右に分割し、左端にホームリンク用スペースを確保する
+- [ ] EditorPage の toolbar prop にホームリンク (`react-router-dom` の `Link` で `/` へ遷移) を追加する
+- [ ] リンクのスタイルを Everforest Light テーマに合わせる（`theme.text` / `theme.textMuted` を使用）
+- [ ] ホームリンクのテキストは「← Home」等シンプルなものにする
