@@ -142,6 +142,7 @@ function EditorPageLoaded({
                   project={currentProject}
                   selectedClipId={selectedClipId}
                   onUpdateClip={updateClip}
+                  onMoveClip={moveClip}
                 />
               </div>
             }

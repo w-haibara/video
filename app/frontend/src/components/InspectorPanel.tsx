@@ -5,6 +5,7 @@ type Props = {
   project: Project;
   selectedClipId: string | null;
   onUpdateClip?: (clipId: string, updates: Partial<Clip>) => void;
+  onMoveClip?: (clipId: string, newStartMs: number) => void;
 };
 
 function findClipAndAsset(
@@ -26,7 +27,7 @@ function formatMs(ms: number): string {
   return `${totalSec}s`;
 }
 
-export function InspectorPanel({ project, selectedClipId, onUpdateClip }: Props) {
+export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveClip }: Props) {
   if (!selectedClipId) {
     return (
       <div style={{ color: "#666", fontSize: "12px", padding: "8px" }}>
@@ -55,7 +56,11 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip }: Props)
         <tbody>
           {!isTextClip && <Row label="File" value={fileName} />}
           <Row label="Type" value={isTextClip ? "text" : (asset?.kind ?? "—")} />
-          <Row label="Start" value={formatMs(clip.startMs)} />
+          {onMoveClip ? (
+            <StartEditor clip={clip} onMoveClip={(newStartMs) => onMoveClip(clip.id, newStartMs)} />
+          ) : (
+            <Row label="Start" value={formatMs(clip.startMs)} />
+          )}
           {asset?.width && asset?.height && (
             <Row label="Size" value={`${asset.width}x${asset.height}`} />
           )}
@@ -550,6 +555,56 @@ function TransformEditor({
         </button>
       )}
     </div>
+  );
+}
+
+function StartEditor({
+  clip,
+  onMoveClip,
+}: {
+  clip: Clip;
+  onMoveClip: (newStartMs: number) => void;
+}) {
+  const [val, setVal] = useState(msToSec(clip.startMs));
+
+  useEffect(() => {
+    setVal(msToSec(clip.startMs));
+  }, [clip.startMs]);
+
+  const handleCommit = () => {
+    const newMs = secToMs(val);
+    if (isNaN(newMs) || newMs < 0) {
+      setVal(msToSec(clip.startMs));
+      return;
+    }
+    onMoveClip(newMs);
+  };
+
+  return (
+    <tr>
+      <td style={{ padding: "2px 4px 2px 0", color: "#888", whiteSpace: "nowrap" }}>Start</td>
+      <td style={{ padding: "2px 0" }}>
+        <input
+          type="number"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          onBlur={handleCommit}
+          onKeyDown={(e) => { if (e.key === "Enter") handleCommit(); }}
+          min={0}
+          step={0.1}
+          style={{
+            width: "100%",
+            background: "#333",
+            color: "#fff",
+            border: "1px solid #555",
+            borderRadius: "3px",
+            padding: "2px 4px",
+            fontSize: "12px",
+            boxSizing: "border-box",
+          }}
+        />
+      </td>
+    </tr>
   );
 }
 
