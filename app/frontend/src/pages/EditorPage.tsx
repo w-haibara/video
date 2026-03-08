@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import type { Project } from "@video/shared";
-import { useProject } from "../api/projects";
+import type { Project, ProjectSettings } from "@video/shared";
+import { useProject, useUpdateProject } from "../api/projects";
 import { EditorLayout } from "../components/EditorLayout";
 import { EditorMainPanel } from "../components/EditorMainPanel";
 import { AssetPanel } from "../components/AssetPanel";
@@ -10,6 +10,7 @@ import { InspectorPanel } from "../components/InspectorPanel";
 import { PreviewPlayer } from "../components/PreviewPlayer";
 import { SaveIndicator } from "../components/SaveIndicator";
 import { ExportDialog } from "../components/ExportDialog";
+import { ProjectSettingsPanel } from "../components/ProjectSettingsPanel";
 import { useProjectEditor } from "../hooks/useProjectEditor";
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { useAutoSave } from "../hooks/useAutoSave";
@@ -64,6 +65,11 @@ function EditorPageLoaded({
     useProjectEditor(project, sequence, pushState);
 
   const { saveStatus } = useAutoSave(project.id, sequence);
+
+  const updateProjectMutation = useUpdateProject(project.id);
+  const handleUpdateSettings = useCallback((settings: ProjectSettings) => {
+    updateProjectMutation.mutate({ settings });
+  }, [updateProjectMutation]);
 
   const currentProject: Project = { ...project, sequence };
 
@@ -207,6 +213,12 @@ function EditorPageLoaded({
                   View Jobs
                 </Link>
               </div>
+            }
+            settingsContent={
+              <ProjectSettingsPanel
+                project={currentProject}
+                onUpdateSettings={handleUpdateSettings}
+              />
             }
           />
           {showExport && (

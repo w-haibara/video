@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
 
-type TabId = "inspector" | "assets" | "export";
+type TabId = "inspector" | "assets" | "export" | "settings";
 
 type Props = {
   inspectorContent: ReactNode;
   assetsContent: ReactNode;
   exportContent: ReactNode;
+  settingsContent: ReactNode;
   selectedClipId: string | null;
 };
 
@@ -13,12 +14,14 @@ const tabs: { id: TabId; label: string }[] = [
   { id: "inspector", label: "Inspector" },
   { id: "assets", label: "Assets" },
   { id: "export", label: "Export" },
+  { id: "settings", label: "Settings" },
 ];
 
 export function EditorMainPanel({
   inspectorContent,
   assetsContent,
   exportContent,
+  settingsContent,
   selectedClipId,
 }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>("inspector");
@@ -41,6 +44,7 @@ export function EditorMainPanel({
     inspector: inspectorContent,
     assets: assetsContent,
     export: exportContent,
+    settings: settingsContent,
   };
 
   return (
