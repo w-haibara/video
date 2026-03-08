@@ -3,4 +3,5 @@ dist/
 workspace/
 *.tsbuildinfo
 .playwright-mcp/
+.playwright-cli/
 screenshots/
