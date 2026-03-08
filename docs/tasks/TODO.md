@@ -41,6 +41,7 @@
 | 35 | 同一アセットの連続クリップ再生バグ修正 | [x] Done | 12, 24 |
 | 36 | 異なるアセットの連続クリップ再生バグ修正 | [x] Done | 12, 24, 35 |
 | 37 | エクスポート動画のブラウザ再生不可バグ修正 | [x] Done | 15 |
+| 38 | Export モーダル簡素化: エクスポート→自動ダウンロード | [ ] Todo | 18, 37 |
 
 ## Phase 1 Tasks
 
@@ -648,3 +649,24 @@
 - [x] `buildExportArgs()` の出力に `-pix_fmt yuv420p` が含まれることを検証
 - [x] `buildExportArgs()` の出力に色空間変換オプションが含まれることを検証
 - [x] 既存のテストが引き続きパスすることを確認 (106 pass)
+
+### 38: Export モーダル簡素化: エクスポート→自動ダウンロード
+
+現状: Export モーダルに過去の Exported Files 一覧が表示されている。エクスポート完了後は手動で Download リンクをクリックする必要がある。ユーザーが求めるのは「Start Export を押したらエクスポートしてそのままダウンロードされる」というシンプルなフローである。
+
+修正方針:
+
+**A. Exported Files 一覧の削除** (`app/frontend/src/components/ExportDialog.tsx`)
+- [ ] `useExports` フックの使用を削除
+- [ ] Exported Files セクション (`<h4>Exported Files</h4>` 以下のファイルリスト) を削除
+- [ ] タスク37 で追加した `refetchExports` 関連の `useEffect` を削除 (一覧表示がなくなるため不要)
+
+**B. エクスポート完了時の自動ダウンロード** (`app/frontend/src/components/ExportDialog.tsx`)
+- [ ] `useEffect` で `job?.status === "completed"` を監視し、完了時に自動ダウンロードを実行
+  - `filename` state を ref に保持し、エクスポート開始時のファイル名を記録
+  - ダウンロード URL: `/media/projects/${projectId}/exports/${filename}`
+  - プログラム的に `<a>` 要素を生成して `.click()` でダウンロードをトリガー
+- [ ] 同じジョブに対して重複ダウンロードしないようフラグで制御
+
+**C. 不要になった API フックの整理** (`app/frontend/src/api/exports.ts`)
+- [ ] `useExports` フックを削除 (使用箇所がなくなるため)
