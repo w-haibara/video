@@ -51,7 +51,7 @@
 | 45 | 共有型に ProjectSettings を追加 | [x] Done | 02 |
 | 46 | Settings タブの追加 | [x] Done | 40, 45 |
 | 47 | タイムライン UI への動画時間制限の反映 | [x] Done | 45, 09, 10, 11 |
-| 48 | テストの追加 | [ ] Todo | 45, 47 |
+| 48 | テストの追加 | [x] Done | 45, 47 |
 
 ## Phase 1 Tasks
 
@@ -951,16 +951,11 @@ EditorLayout のグリッド構造を全面的に変更し、プレビューを�
 ### 48: テストの追加
 
 **A. sequence-ops テスト** (`app/frontend/src/lib/sequence-ops.test.ts`)
-- [ ] `addClipFromAsset` に `maxDurationMs` を指定した場合のテスト:
-  - クリップの durationMs がクランプされることを検証
-  - startMs が maxDurationMs 以上の場合にクリップが追加されないことを検証
-- [ ] `moveClip` に `maxDurationMs` を指定した場合のテスト:
-  - 移動後のクリップ末尾が maxDurationMs を超えない場合はそのまま移動
-  - 超える場合は newStartMs がクランプされることを検証
-- [ ] `trimClip` に `maxTimelineDurationMs` を指定した場合のテスト:
-  - 右トリムがタイムライン上限でクランプされることを検証
-- [ ] `addTextClip` に `maxDurationMs` を指定した場合のテスト
+- [x] `addClipFromAsset` に `maxDurationMs` を指定: クランプ、拒否、制約なしの 4 テスト
+- [x] `moveClip` に `maxDurationMs` を指定: 移動可、クランプ、オーバーフローの 3 テスト
+- [x] `trimClip` に `maxTimelineDurationMs` を指定: タイムライン制約、ソース+タイムライン複合制約の 2 テスト
+- [x] `addTextClip` に `maxDurationMs` を指定: クランプ、拒否、制約なしの 3 テスト
 
 **B. 型の整合性確認**
-- [ ] `Project` 型で `settings` が必須フィールドであることを TypeScript コンパイルで確認
-- [ ] プロジェクト作成時に `settings.durationMs` が `DEFAULT_PROJECT_DURATION_MS` で初期化されることを検証
+- [x] `Project` 型で `settings` が必須フィールドであることを TypeScript コンパイルで確認 (既存テストが型チェックを通過)
+- [x] `createProject` が `settings.durationMs = 10_000` で初期化されることを検証 (project-service.test.ts に追加)
