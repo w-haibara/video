@@ -52,6 +52,9 @@
 | 46 | Settings タブの追加 | [x] Done | 40, 45 |
 | 47 | タイムライン UI への動画時間制限の反映 | [x] Done | 45, 09, 10, 11 |
 | 48 | テストの追加 | [x] Done | 45, 47 |
+| 49 | 先頭から全体再生ボタンの追加 | [x] Done | 12, 44 |
+| 50 | 同一トラック内のクリップ重なり防止 | [ ] Todo | 11, 47 |
+| 51 | アセットインポート完了前のクリップ追加防止とサムネイル表示改善 | [ ] Todo | 05, 08 |
 
 ## Phase 1 Tasks
 
@@ -959,3 +962,85 @@ EditorLayout のグリッド構造を全面的に変更し、プレビューを�
 **B. 型の整合性確認**
 - [x] `Project` 型で `settings` が必須フィールドであることを TypeScript コンパイルで確認 (既存テストが型チェックを通過)
 - [x] `createProject` が `settings.durationMs = 10_000` で初期化されることを検証 (project-service.test.ts に追加)
+
+## Phase 14 Tasks — 再生・操作性・インポート改善
+
+### 49: 先頭から全体再生ボタンの追加
+
+現状: Play ボタンはクリップ選択中はそのクリップ範囲のみ再生し、未選択時は現在位置から末尾まで再生する。「最初から全体を通して再生する」操作にはクリップ選択を解除 → プレイヘッドを先頭に移動 → Play の 3 ステップが必要。
+
+目標: 1 クリックで「クリップ選択を解除し、先頭 (0ms) から全体再生」できるボタンを追加する。
+
+**A. PreviewPlayer に「最初から再生」ボタンを追加** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [ ] Play ボタンの左に「⏮」(先頭から再生) ボタンを追加
+  - クリック時: `onTimeUpdate(0)` でプレイヘッドを先頭に移動
+  - `onSelectClip(null)` でクリップ選択を解除 (全体再生モードにする)
+  - `onPlayPause()` で再生開始 (既に再生中なら一度停止してから再開)
+- [ ] Props に `onSelectClip: (id: string | null) => void` を追加
+  - EditorPage からクリップ選択解除を呼べるようにする
+
+**B. ボタン UI** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [ ] 既存の Play ボタンと統一したスタイル
+  - サイズ・背景色・ボーダーを合わせる
+  - ラベル: 「⏮」または「Restart」(コンパクトな表記)
+- [ ] ボタン配置: 「⏮ Play」の順で左から並べる
+- [ ] 再生中に「⏮」を押した場合: 再生を停止 → 先頭にシーク → 再生開始
+
+**C. EditorPage の接続** (`app/frontend/src/pages/EditorPage.tsx`)
+- [ ] PreviewPlayer に `onSelectClip={handleSelectClip}` を渡す (既存の handleSelectClip を再利用)
+  - ただし PreviewPlayer 内では `onSelectClip(null)` のみ使用 (選択解除のみ)
+
+### 50: 同一トラック内のクリップ重なり防止
+
+現状: `moveClip()` は `startMs >= 0` と `startMs + durationMs <= maxDurationMs` の制約のみ適用しており、同一トラック内のクリップ間の重なりを検出・防止していない。クリップを別のクリップ上にドラッグすると、重なった状態で配置される。
+
+目標: クリップをドラッグ移動する際、同一トラック内の他のクリップと重ならないようにする。後ろから近づけた場合、前のクリップの末尾にピッタリくっついた位置で停止する (スナップ動作)。
+
+**A. moveClip にクリップ衝突回避ロジックを追加** (`app/frontend/src/lib/sequence-ops.ts`)
+- [ ] `moveClip()` 内でクリップ移動後の位置を計算した後、同一トラック内の他のクリップとの重なりを検出
+- [ ] 衝突回避アルゴリズム:
+  1. 移動対象クリップの新しい範囲: `[newStartMs, newStartMs + clip.durationMs)`
+  2. 同一トラック内の他のクリップを走査
+  3. 重なるクリップが見つかった場合:
+     - **右方向から近づいた場合** (移動先が前のクリップと重なる): `newStartMs = prevClip.startMs + prevClip.durationMs` (前のクリップの末尾にスナップ)
+     - **左方向から近づいた場合** (移動先が後ろのクリップと重なる): `newStartMs = nextClip.startMs - clip.durationMs` (後ろのクリップの先頭にスナップ)
+  4. スナップ後も別のクリップと重なる場合は移動をキャンセル (元の位置を維持)
+
+**B. 衝突検出ヘルパー関数** (`app/frontend/src/lib/sequence-ops.ts`)
+- [ ] `findNonOverlappingPosition(clips, movingClipId, newStartMs, durationMs): number` を追加
+  - 他のクリップの範囲を確認し、重ならない最寄りの位置を返す
+  - 左側の最も近いクリップの末尾と、右側の最も近いクリップの先頭の間に収まるようにクランプ
+
+**C. テストの追加** (`app/frontend/src/lib/sequence-ops.test.ts`)
+- [ ] クリップを別のクリップ上に移動しようとした場合、前のクリップ末尾にスナップすることを検証
+- [ ] クリップ間に十分なスペースがある場合は自由に移動できることを検証
+- [ ] 3つ以上のクリップがある場合の中間位置への移動テスト
+
+### 51: アセットインポート完了前のクリップ追加防止とサムネイル表示改善
+
+現状の問題:
+1. アセットをインポートした直後、バックグラウンドジョブ (ffprobe + proxy/thumbnail 生成) が完了するまで `asset.thumbnailPath` と `asset.proxyPath` が `undefined`。この状態でサムネイルが表示されず kind ラベル ("video" 等) のみ表示される。
+2. ジョブ完了前に「+ Add to Timeline」を押すと、`asset.durationMs` が `undefined` のため `DEFAULT_IMAGE_DURATION_MS (3000ms)` がフォールバックとして使われ、不正確なクリップが作成される。ジョブ完了後に正しい duration に更新されない。
+3. ジョブ完了後、プロジェクトの再フェッチが行われないため、サムネイルが表示されない場合がある。
+
+**A. ジョブ未完了アセットの「Add to Timeline」ボタンを無効化** (`app/frontend/src/components/AssetPanel.tsx`)
+- [ ] `AssetThumbnail` コンポーネントの「+」ボタンに `disabled` 条件を追加
+  - ジョブが進行中 (`job.status` が `"pending"` or `"running"`) の場合はボタンをグレーアウト
+  - ジョブが完了 (`"completed"`) の場合のみクリック可能
+  - ジョブがない (`jobId` が null) かつ `asset.durationMs` が設定済みの場合も有効 (既に完了済みのアセット)
+- [ ] ボタンの disabled スタイル: `opacity: 0.4`, `cursor: not-allowed`
+
+**B. ジョブ完了後のプロジェクト再フェッチ** (`app/frontend/src/components/AssetPanel.tsx`)
+- [ ] ジョブ完了 (`job.status === "completed"`) を検出したら `queryClient.invalidateQueries(["projects", projectId])` を呼び出す
+  - これにより `useProject` が再フェッチされ、更新された asset (thumbnailPath, proxyPath, durationMs) が取得される
+  - `useEffect` で各アクティブジョブの status を監視し、completed 変化時に refetch をトリガー
+
+**C. アクティブジョブの永続化改善** (`app/frontend/src/components/AssetPanel.tsx`)
+- [ ] 現在 `activeJobIds` は `useState` で管理されており、ページ遷移やリロードで失われる
+  - アセットの `thumbnailPath` が undefined のアセットについて、初回レンダー時にバックエンドから最新のジョブ情報を取得する
+  - または、アセットの `thumbnailPath` の有無でジョブ完了を判定し、ジョブ ID 管理を不要にする
+
+**D. AssetThumbnail のローディング表示改善** (`app/frontend/src/components/AssetThumbnail.tsx`)
+- [ ] ジョブ進行中: スピナーまたはプログレスバーを表示 (既存の JobProgress を使用)
+- [ ] ジョブ完了でサムネイルがまだ表示されない場合: 「Processing...」表示
+- [ ] サムネイルがある場合: 画像を表示 (現状通り)
