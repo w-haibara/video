@@ -46,6 +46,8 @@
 | 40 | 右ペインのタブ UI コンポーネント実装 | [x] Done | 39 |
 | 41 | Inspector タブの優先表示とクリップ選択連動 | [x] Done | 40 |
 | 42 | タイムラインの全幅レイアウト維持 | [x] Done | 39 |
+| 43 | クリップ選択時のシーク移動とプレビュー表示 | [x] Done | 12, 24 |
+| 44 | 選択クリップ範囲のみ再生 | [x] Done | 43 |
 
 ## Phase 1 Tasks
 
@@ -807,3 +809,57 @@ EditorLayout のグリッド構造を全面的に変更し、プレビューを�
 - [ ] プレイヘッドが正しい位置に表示されること
 - [ ] クリップの右クリックメニューが正常に動作すること
 - [ ] トリムハンドルのドラッグが正常に動作すること
+
+## Phase 12 Tasks — クリップ選択と再生の連動
+
+### 43: クリップ選択時のシーク移動とプレビュー表示
+
+現状: タイムラインでクリップをクリックすると `selectedClipId` が設定されるが、プレイヘッド (`currentTimeMs`) は移動しない。プレビューも変化しない。ユーザーはクリップを選択した後、そのクリップの内容を確認するために手動でシークバーを操作する必要がある。
+
+目標: クリップを選択したら、プレイヘッドをそのクリップの先頭 (`clip.startMs`) に移動させ、プレビューにそのクリップの 1 フレーム目を表示する。
+
+原理:
+- `currentTimeMs` をクリップの `startMs` に設定すれば、`findActiveClip()` がそのクリップを返し、PreviewPlayer の既存ロジック (非再生時の seek useEffect) が `video.currentTime = clip.inMs / 1000` を設定する
+- つまりシーク移動だけで、プレビュー表示は既存の仕組みで自動的に実現される
+
+**A. EditorPage のクリップ選択ハンドラにシーク追加** (`app/frontend/src/pages/EditorPage.tsx`)
+- [ ] `onSelectClip` のコールバックを拡張: クリップ選択時にそのクリップの `startMs` に `onSeek` を呼ぶ
+  - `handleSelectClip(clipId: string | null)` を新設
+  - `clipId` が非 null の場合: `sequence.tracks` からクリップを検索し、`clip.startMs` を取得して `onSeek(clip.startMs)` を呼ぶ
+  - `clipId` が null の場合 (選択解除): シークは変更しない
+- [ ] Timeline と EditorMainPanel に渡す `onSelectClip` をこの新ハンドラに差し替え
+
+**B. クリップ検索ヘルパー** (`app/frontend/src/pages/EditorPage.tsx`)
+- [ ] `findClipById(sequence, clipId)` ヘルパーを追加 (全トラックを走査して該当クリップを返す)
+- [ ] 見つからない場合はシーク変更なし (安全ガード)
+
+**C. 注意事項**
+- [ ] ドラッグ並べ替え中の mousedown でもシークが発生するが、並べ替え操作自体には影響しない (クリップの startMs に移動するだけ)
+- [ ] 再生中のクリップ選択ではシークにより再生位置がジャンプする (意図的な挙動)
+
+### 44: 選択クリップ範囲のみ再生
+
+現状: Play を押すと `currentTimeMs` からシーケンス末尾 (`seqEnd`) まで全体を通して再生する。特定のクリップだけを確認したい場合に不便。
+
+目標:
+- クリップが選択された状態で Play を押すと、そのクリップの範囲 (`clip.startMs` 〜 `clip.startMs + clip.durationMs`) のみ再生する
+- クリップ末尾に到達したら再生を停止する
+- 停止後に再度 Play を押すと、そのクリップの先頭から再生する
+- クリップが未選択の場合は従来通り全体再生
+
+**A. PreviewPlayer の tick() にクリップ範囲制限を追加** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [ ] Props に `selectedClipId: string | null` を追加
+- [ ] `selectedClipId` が非 null の場合、シーケンス末尾の代わりに選択クリップの末尾を再生終了ポイントとして使用
+  - tick() 内の `seqEnd` を `selectedClipEndMs` に置き換える
+  - `selectedClipEndMs = selectedClip.startMs + selectedClip.durationMs`
+- [ ] 選択クリップの検索: `findClipInSequence(project.sequence, selectedClipId)` を使用
+  - 見つからない場合 (クリップが削除された等) はフォールバックとして全体再生
+
+**B. Play ボタンの挙動変更** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [ ] Play 押下時の先頭リセット判定を修正:
+  - クリップ選択中: `currentTimeMs >= selectedClipEndMs` の場合、`onTimeUpdate(selectedClip.startMs)` でクリップ先頭にリセット
+  - クリップ未選択: 従来通り `currentTimeMs >= seqEnd` で `onTimeUpdate(0)` (シーケンス先頭)
+
+**C. 選択解除時の挙動**
+- [ ] 再生中にクリップ選択を解除 (`selectedClipId` が null に変化) した場合、再生を継続して全体再生モードに切り替え
+  - tick() 内で `selectedClipId` が null になったら終了ポイントを `seqEnd` に戻す
