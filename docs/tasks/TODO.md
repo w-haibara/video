@@ -63,6 +63,10 @@
 | 57 | エクスポートが project settings の動画時間を超過するバグ修正 | [x] Done | 15, 45 |
 | 58 | 設定変更時の既存クリップ遡及トリム | [x] Done | 45, 47 |
 | 59 | エクスポート時のクリップフリーズ・尺ずれバグ修正 | [x] Done | 15, 57 |
+| 60 | Everforest Light テーマ定数ファイルの作成 | [x] Done | - |
+| 61 | グローバル CSS・ページコンポーネントの色彩更新 | [ ] Todo | 60 |
+| 62 | エディタ UI コンポーネントの色彩更新 | [ ] Todo | 60 |
+| 63 | タイムライン・クリップコンポーネントの色彩更新 | [ ] Todo | 60 |
 
 ## Phase 1 Tasks
 
@@ -1268,3 +1272,236 @@ EditorLayout のグリッド構造を全面的に変更し、プレビューを�
 **C. Playwright E2E テスト** (調査・検証用)
 - [ ] Playwright でアプリを起動し、2つの動画アセットをインポート → タイムラインに追加 → 設定で動画時間を指定 → エクスポート → 出力動画の長さを `ffprobe` で検証
 - [ ] フリーズフレームが発生しないことを確認（最終フレームが不自然に長くないことを検証）
+
+## Phase 17 Tasks — Everforest Light カラーテーマ適用
+
+### 現状の課題
+
+- 全コンポーネントがダークテーマのハードコード色 (#111, #1a1a1a, #222, #333 等) を使用
+- カラー定数が一切集約されておらず、23 ファイルに分散
+- テーマ変更や色彩統一が困難
+
+### 目標
+
+macOS Terminal テーマ `everforest-light.terminal` で定義されるカラーパレットに基づき、全コンポーネントをライトテーマに統一する。
+
+### Everforest Light カラーパレット (`.terminal` ファイルから抽出)
+
+| 役割 | RGB (0-1) | HEX | 用途 |
+|------|-----------|-----|------|
+| Background | 0.992, 0.965, 0.890 | `#FDF6E3` | メイン背景 |
+| Text | 0.361, 0.416, 0.447 | `#5C6A72` | 本文テキスト |
+| Cursor | 0.208, 0.655, 0.486 | `#35A77C` | カーソル・アクセント (cyan) |
+| Selection | 0.937, 0.914, 0.835 | `#EFE9D5` | 選択範囲・ホバー |
+| Black | 0.361, 0.416, 0.447 | `#5C6A72` | 見出し・強調テキスト |
+| Red | 0.973, 0.333, 0.322 | `#F85552` | エラー・削除 |
+| Green | 0.553, 0.631, 0.004 | `#8DA101` | 成功・audio クリップ |
+| Yellow | 0.875, 0.627, 0.0 | `#DFA000` | 警告・saving 状態 |
+| Blue | 0.227, 0.580, 0.773 | `#3A94C5` | video クリップ・アクティブタブ |
+| Magenta | 0.875, 0.412, 0.729 | `#DF69BA` | text クリップ |
+| Cyan | 0.208, 0.655, 0.486 | `#35A77C` | ハイライト・リンク |
+| White | 0.576, 0.624, 0.569 | `#939F91` | 無効テキスト・ボーダー |
+| BrightWhite | 0.957, 0.941, 0.851 | `#F4F0D9` | サブ背景・パネル |
+
+### 60: Everforest Light テーマ定数ファイルの作成
+
+カラーパレットを一元管理する定数ファイルを新規作成し、全コンポーネントから参照可能にする。
+
+**A. テーマ定数ファイルの作成** (`app/frontend/src/theme.ts`)
+- [ ] 新規作成
+- [ ] Everforest Light のベースカラーを定義:
+  ```typescript
+  export const theme = {
+    // ── ベースカラー ──
+    bg:          '#FDF6E3',  // メイン背景 (Background)
+    bgPanel:     '#F4F0D9',  // パネル背景 (BrightWhite)
+    bgHover:     '#EFE9D5',  // ホバー・選択 (Selection)
+    bgDark:      '#E5DFC9',  // 押下・アクティブ (Selection より暗め, 派生色)
+
+    text:        '#5C6A72',  // 本文テキスト (Text / Black)
+    textMuted:   '#939F91',  // 補助テキスト (White)
+    textDisabled:'#A9B3A5',  // 無効テキスト (White より明るめ, 派生色)
+
+    border:      '#D4CCAB',  // ボーダー (派生色: Selection を暗くしたもの)
+    borderLight: '#E5DFC9',  // 薄いボーダー (派生色)
+
+    // ── セマンティックカラー ──
+    primary:     '#3A94C5',  // プライマリ (Blue)
+    primaryHover:'#2E7BA3',  // プライマリ:hover (Blue 暗め)
+    accent:      '#35A77C',  // アクセント (Cyan / Cursor)
+
+    error:       '#F85552',  // エラー (Red)
+    warning:     '#DFA000',  // 警告 (Yellow)
+    success:     '#8DA101',  // 成功 (Green)
+    info:        '#3A94C5',  // 情報 (Blue)
+
+    // ── クリップタイプカラー ──
+    clipVideo:       '#3A94C5',  // video クリップ (Blue)
+    clipVideoSelect: '#2E7BA3',  // video 選択時
+    clipAudio:       '#8DA101',  // audio クリップ (Green)
+    clipAudioSelect: '#738501',  // audio 選択時
+    clipText:        '#DF69BA',  // text クリップ (Magenta)
+    clipTextSelect:  '#C050A0',  // text 選択時
+
+    // ── UI 部品 ──
+    tabActive:       '#FDF6E3',  // アクティブタブ背景
+    tabInactive:     '#F4F0D9',  // 非アクティブタブ背景
+    tabIndicator:    '#3A94C5',  // タブ下線 (Blue)
+    tabText:         '#5C6A72',  // タブテキスト
+    tabTextInactive: '#939F91',  // 非アクティブタブテキスト
+
+    button:          '#3A94C5',  // ボタン背景
+    buttonText:      '#FFFFFF',  // ボタンテキスト
+    buttonHover:     '#2E7BA3',  // ボタン:hover
+    buttonDanger:    '#F85552',  // 危険ボタン
+    buttonDangerHover:'#D94440', // 危険ボタン:hover
+
+    // ── タイムライン ──
+    timelineBg:      '#F4F0D9',  // タイムライン背景
+    timelineTrackBg: '#FDF6E3',  // トラック背景
+    timelineRuler:   '#EFE9D5',  // ルーラー背景
+    playhead:        '#F85552',  // プレイヘッド (Red)
+    seekBar:         '#35A77C',  // シークバー (Cyan)
+
+    // ── その他 ──
+    shadow:    'rgba(92, 106, 114, 0.12)',  // ドロップシャドウ
+    overlay:   'rgba(92, 106, 114, 0.5)',   // モーダルオーバーレイ
+  } as const;
+  ```
+
+**B. 型エクスポート**
+- [ ] `export type Theme = typeof theme;` を追加
+- [ ] 必要に応じてカラーキーのユニオン型も提供
+
+### 61: グローバル CSS・ページコンポーネントの色彩更新
+
+グローバルスタイルとページレベルのコンポーネントを Everforest Light テーマに変更する。
+
+**A. index.css の更新** (`app/frontend/src/index.css`)
+- [ ] `body` の `background` を `#FDF6E3` に変更
+- [ ] `body` の `color` を `#5C6A72` に変更
+- [ ] `::selection` に `background: #EFE9D5` を追加
+- [ ] スクロールバーのスタイルをライトテーマに合わせる
+
+**B. HomePage の更新** (`app/frontend/src/pages/HomePage.tsx`)
+- [ ] 背景色: `#111` → `theme.bg`
+- [ ] テキスト色: `#eee` / `#ccc` → `theme.text`
+- [ ] ボタン色: ダーク系 → `theme.button` / `theme.buttonText`
+- [ ] カードのスタイル: `ProjectCard.tsx` のダーク背景 → `theme.bgPanel`, ボーダー `theme.border`
+
+**C. ProjectCard の更新** (`app/frontend/src/components/ProjectCard.tsx`)
+- [ ] カード背景: ダーク系 → `theme.bgPanel`
+- [ ] テキスト色 → `theme.text` / `theme.textMuted`
+- [ ] ホバー → `theme.bgHover`
+- [ ] ボーダー → `theme.border`
+
+**D. CreateProjectDialog の更新** (`app/frontend/src/components/CreateProjectDialog.tsx`)
+- [ ] モーダル背景 → `theme.overlay`
+- [ ] ダイアログ背景 → `theme.bg`
+- [ ] 入力フィールド: ダーク背景 → `theme.bgPanel`, ボーダー `theme.border`
+- [ ] ボタン → `theme.button` / `theme.buttonText`
+
+**E. JobLogPage の更新** (`app/frontend/src/pages/JobLogPage.tsx`)
+- [ ] 背景・テキスト → `theme.bg` / `theme.text`
+- [ ] テーブル/リストのスタイル → `theme.bgPanel`, `theme.border`
+
+**F. JobProgress の更新** (`app/frontend/src/components/JobProgress.tsx`)
+- [ ] プログレスバーの背景 → `theme.bgHover`
+- [ ] プログレスバーの前景 → `theme.primary`
+
+### 62: エディタ UI コンポーネントの色彩更新
+
+エディタ画面のパネル・ダイアログ系コンポーネントの色彩を更新する。
+
+**A. EditorLayout の更新** (`app/frontend/src/components/EditorLayout.tsx`)
+- [ ] ツールバー背景: `#1e1e1e` → `theme.bgPanel`
+- [ ] プレビュー領域背景: `#111` → `theme.bg`
+- [ ] メインペイン背景: `#1a1a1a` → `theme.bgPanel`
+- [ ] ボーダー: `#333` → `theme.border`
+
+**B. EditorMainPanel の更新** (`app/frontend/src/components/EditorMainPanel.tsx`)
+- [ ] タブバー背景: `#1a1a1a` → `theme.bgPanel`
+- [ ] タブ下線: `#333` → `theme.border`
+- [ ] アクティブタブ: 背景 `#2a2a2a` → `theme.tabActive`, 下線 `#5b8def` → `theme.tabIndicator`, テキスト `#eee` → `theme.tabText`
+- [ ] 非アクティブタブ: テキスト `#888` → `theme.tabTextInactive`
+- [ ] ホバー: テキスト `#ccc` → `theme.text`
+- [ ] インジケータ (青い丸): `#5b8def` → `theme.tabIndicator`
+
+**C. PreviewPlayer の更新** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [ ] コントロールバー背景: ダーク系 → `theme.bgPanel`
+- [ ] ボタン色 → `theme.text` / `theme.textMuted`
+- [ ] テキストオーバーレイのデフォルト色の確認 (ユーザー指定色は変更しない)
+
+**D. InspectorPanel の更新** (`app/frontend/src/components/InspectorPanel.tsx`)
+- [ ] パネル背景 → `theme.bg`
+- [ ] ラベル色: `#888` / `#aaa` → `theme.textMuted`
+- [ ] 入力フィールド: ダーク背景 → `theme.bgPanel`, ボーダー `theme.border`, テキスト `theme.text`
+- [ ] セクション区切り: `#333` → `theme.border`
+- [ ] 削除ボタン: 既存の赤系 → `theme.buttonDanger`
+
+**E. AssetPanel の更新** (`app/frontend/src/components/AssetPanel.tsx`)
+- [ ] パネル背景 → `theme.bg`
+- [ ] アセット一覧の各行: ダーク系 → `theme.bgPanel`, ホバー → `theme.bgHover`
+- [ ] 「+ Import」ボタン → `theme.button` / `theme.buttonText`
+- [ ] テキスト → `theme.text` / `theme.textMuted`
+
+**F. AssetThumbnail の更新** (`app/frontend/src/components/AssetThumbnail.tsx`)
+- [ ] サムネイル背景 → `theme.bgPanel`
+- [ ] ボーダー・枠線 → `theme.border`
+- [ ] 「+」ボタン → `theme.accent`
+
+**G. ProjectSettingsPanel の更新** (`app/frontend/src/components/ProjectSettingsPanel.tsx`)
+- [ ] 背景・入力フィールド → ライトテーマ化
+- [ ] ラベル色 → `theme.textMuted`
+
+**H. ExportDialog の更新** (`app/frontend/src/components/ExportDialog.tsx`)
+- [ ] モーダルオーバーレイ → `theme.overlay`
+- [ ] ダイアログ背景 → `theme.bg`
+- [ ] ボタン → `theme.button`, `theme.buttonDanger`
+
+**I. SaveIndicator の更新** (`app/frontend/src/components/SaveIndicator.tsx`)
+- [ ] ステータス色のマッピング更新:
+  - `saved`: `#4a4` → `theme.success`
+  - `saving`: `#fa0` → `theme.warning`
+  - `error`: `#f44` → `theme.error`
+- [ ] Undo/Redo ボタン → `theme.bgHover` / `theme.text`
+
+**J. ContextMenu の更新** (`app/frontend/src/components/ContextMenu.tsx`)
+- [ ] メニュー背景: ダーク系 → `theme.bg`
+- [ ] メニュー項目ホバー → `theme.bgHover`
+- [ ] テキスト → `theme.text`
+- [ ] ボーダー → `theme.border`
+- [ ] シャドウ → `theme.shadow`
+
+### 63: タイムライン・クリップコンポーネントの色彩更新
+
+タイムライン関連コンポーネントの色彩を Everforest Light テーマに統一する。
+
+**A. Timeline の更新** (`app/frontend/src/components/Timeline.tsx`)
+- [ ] タイムライン背景: `#1a1a1a` → `theme.timelineBg`
+- [ ] トラックヘッダー → `theme.bgPanel`
+- [ ] ボーダー・区切り線: `#333` → `theme.border`
+- [ ] テキスト (トラックラベル) → `theme.text`
+- [ ] 終端マーカー (赤い破線) → `theme.error`
+
+**B. TimelineTrack の更新** (`app/frontend/src/components/TimelineTrack.tsx`)
+- [ ] トラック背景: ダーク系 → `theme.timelineTrackBg`
+- [ ] 交互行色 (あれば) → `theme.bgPanel` / `theme.bg`
+
+**C. TimelineClip の更新** (`app/frontend/src/components/TimelineClip.tsx`)
+- [ ] video クリップ: `#3a6ad4` → `theme.clipVideo`, 選択時 `#2a4a9a` → `theme.clipVideoSelect`
+- [ ] audio クリップ: `#27ae60` / `#1e8449` → `theme.clipAudio` / `theme.clipAudioSelect`
+- [ ] text クリップ: `#9b59b6` / `#8e44ad` → `theme.clipText` / `theme.clipTextSelect`
+- [ ] クリップ内テキスト → `#FFFFFF` (ライトテーマでもクリップ上のテキストは白を維持して可読性を確保)
+- [ ] トリムハンドル → ライトテーマ適応
+
+**D. TimelineRuler の更新** (`app/frontend/src/components/TimelineRuler.tsx`)
+- [ ] ルーラー背景 → `theme.timelineRuler`
+- [ ] 目盛り線 → `theme.textMuted`
+- [ ] 時間ラベル → `theme.text`
+
+**E. Playhead の更新** (`app/frontend/src/components/Playhead.tsx`)
+- [ ] プレイヘッド色: 既存の赤系 → `theme.playhead` (`#F85552`)
+
+**F. EditorPage のインライン色** (`app/frontend/src/pages/EditorPage.tsx`)
+- [ ] エディタ画面内のインラインスタイル色をすべて `theme.*` に置換
