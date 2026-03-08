@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useExport } from "../api/exports";
 import { useJob } from "../api/jobs";
 import { JobProgress } from "./JobProgress";
+import { theme } from "../theme";
 
 type Props = {
   projectId: string;
@@ -48,7 +49,7 @@ export function ExportDialog({ projectId, onClose }: Props) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.7)",
+        background: theme.overlay,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -59,18 +60,19 @@ export function ExportDialog({ projectId, onClose }: Props) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#2a2a2a",
+          background: theme.bg,
           borderRadius: "8px",
           padding: "20px",
           minWidth: "400px",
           maxWidth: "500px",
-          color: "#ccc",
+          color: theme.text,
+          border: `1px solid ${theme.border}`,
         }}
       >
-        <h3 style={{ margin: "0 0 16px", color: "#fff" }}>Export</h3>
+        <h3 style={{ margin: "0 0 16px" }}>Export</h3>
 
         {/* Filename */}
-        <label style={{ display: "block", marginBottom: "4px", fontSize: "12px", color: "#888" }}>
+        <label style={{ display: "block", marginBottom: "4px", fontSize: "12px", color: theme.textMuted }}>
           Filename
         </label>
         <input
@@ -80,9 +82,9 @@ export function ExportDialog({ projectId, onClose }: Props) {
           style={{
             width: "100%",
             padding: "6px 8px",
-            background: "#333",
-            color: "#fff",
-            border: "1px solid #555",
+            background: theme.bgPanel,
+            color: theme.text,
+            border: `1px solid ${theme.border}`,
             borderRadius: "4px",
             fontSize: "13px",
             marginBottom: "12px",
@@ -97,8 +99,8 @@ export function ExportDialog({ projectId, onClose }: Props) {
           style={{
             width: "100%",
             padding: "8px",
-            background: isExporting ? "#555" : "#3a6ad4",
-            color: "#fff",
+            background: isExporting ? theme.bgDark : theme.button,
+            color: isExporting ? theme.textMuted : theme.buttonText,
             border: "none",
             borderRadius: "4px",
             cursor: isExporting ? "default" : "pointer",
@@ -114,12 +116,12 @@ export function ExportDialog({ projectId, onClose }: Props) {
           <div style={{ marginBottom: "12px" }}>
             <JobProgress job={job} />
             {job.status === "completed" && (
-              <div style={{ color: "#4a4", marginTop: "4px", fontSize: "12px" }}>
+              <div style={{ color: theme.success, marginTop: "4px", fontSize: "12px" }}>
                 Export completed! Downloading...
               </div>
             )}
             {job.status === "failed" && (
-              <div style={{ color: "#f44", marginTop: "4px", fontSize: "12px" }}>
+              <div style={{ color: theme.error, marginTop: "4px", fontSize: "12px" }}>
                 Export failed: {job.error}
               </div>
             )}
@@ -133,8 +135,8 @@ export function ExportDialog({ projectId, onClose }: Props) {
             width: "100%",
             padding: "6px",
             background: "none",
-            color: "#888",
-            border: "1px solid #555",
+            color: theme.textMuted,
+            border: `1px solid ${theme.border}`,
             borderRadius: "4px",
             cursor: "pointer",
             fontSize: "12px",

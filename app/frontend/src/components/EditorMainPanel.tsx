@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
+import { theme } from "../theme";
 
 type TabId = "inspector" | "assets" | "export" | "settings";
 
@@ -53,8 +54,8 @@ export function EditorMainPanel({
         style={{
           display: "flex",
           height: 36,
-          borderBottom: "1px solid #333",
-          background: "#1a1a1a",
+          borderBottom: `1px solid ${theme.border}`,
+          background: theme.bgPanel,
           flexShrink: 0,
         }}
       >
@@ -66,10 +67,10 @@ export function EditorMainPanel({
               onClick={() => setActiveTab(tab.id)}
               style={{
                 padding: "8px 16px",
-                background: isActive ? "#2a2a2a" : "transparent",
-                color: isActive ? "#eee" : "#888",
+                background: isActive ? theme.tabActive : "transparent",
+                color: isActive ? theme.tabText : theme.tabTextInactive,
                 border: "none",
-                borderBottom: isActive ? "2px solid #5b8def" : "2px solid transparent",
+                borderBottom: isActive ? `2px solid ${theme.tabIndicator}` : "2px solid transparent",
                 cursor: "pointer",
                 fontSize: 13,
               }}

@@ -1,4 +1,5 @@
 import type { SaveStatus } from "../hooks/useAutoSave";
+import { theme } from "../theme";
 
 type Props = {
   status: SaveStatus;
@@ -16,10 +17,10 @@ const STATUS_LABEL: Record<SaveStatus, string> = {
 };
 
 const STATUS_COLOR: Record<SaveStatus, string> = {
-  idle: "#666",
-  saving: "#fa0",
-  saved: "#4a4",
-  error: "#f44",
+  idle: theme.textMuted,
+  saving: theme.warning,
+  saved: theme.success,
+  error: theme.error,
 };
 
 export function SaveIndicator({
@@ -46,7 +47,7 @@ export function SaveIndicator({
         style={{
           background: "none",
           border: "none",
-          color: canUndo ? "#ccc" : "#555",
+          color: canUndo ? theme.text : theme.textDisabled,
           cursor: canUndo ? "pointer" : "default",
           fontSize: "14px",
           padding: "2px 4px",
@@ -61,7 +62,7 @@ export function SaveIndicator({
         style={{
           background: "none",
           border: "none",
-          color: canRedo ? "#ccc" : "#555",
+          color: canRedo ? theme.text : theme.textDisabled,
           cursor: canRedo ? "pointer" : "default",
           fontSize: "14px",
           padding: "2px 4px",

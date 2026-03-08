@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Project, Clip, Asset, ClipText, ClipTransform, ClipCrop } from "@video/shared";
+import { theme } from "../theme";
 
 type Props = {
   project: Project;
@@ -30,7 +31,7 @@ function formatMs(ms: number): string {
 export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveClip }: Props) {
   if (!selectedClipId) {
     return (
-      <div style={{ color: "#666", fontSize: "12px", padding: "8px" }}>
+      <div style={{ color: theme.textMuted, fontSize: "12px", padding: "8px" }}>
         Select a clip to view details
       </div>
     );
@@ -39,7 +40,7 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveCl
   const result = findClipAndAsset(project, selectedClipId);
   if (!result) {
     return (
-      <div style={{ color: "#666", fontSize: "12px", padding: "8px" }}>
+      <div style={{ color: theme.textMuted, fontSize: "12px", padding: "8px" }}>
         Clip not found
       </div>
     );
@@ -47,15 +48,15 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveCl
 
   const { clip, asset, trackKind } = result;
   const isTextClip = trackKind === "title";
-  const fileName = asset?.originalPath.split("/").pop() ?? "—";
+  const fileName = asset?.originalPath.split("/").pop() ?? "\u2014";
 
   return (
-    <div style={{ padding: "8px", fontSize: "12px", color: "#ccc" }}>
-      <h4 style={{ margin: "0 0 8px", color: "#fff" }}>Inspector</h4>
+    <div style={{ padding: "8px", fontSize: "12px", color: theme.text }}>
+      <h4 style={{ margin: "0 0 8px" }}>Inspector</h4>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <tbody>
           {!isTextClip && <Row label="File" value={fileName} />}
-          <Row label="Type" value={isTextClip ? "text" : (asset?.kind ?? "—")} />
+          <Row label="Type" value={isTextClip ? "text" : (asset?.kind ?? "\u2014")} />
           {asset?.width && asset?.height && (
             <Row label="Size" value={`${asset.width}x${asset.height}`} />
           )}
@@ -93,7 +94,7 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveCl
 
       {trackKind === "audio" && onUpdateClip && (
         <div style={{ marginTop: "8px" }}>
-          <label style={{ color: "#888", display: "block", marginBottom: "4px" }}>
+          <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
             Volume: {Math.round((clip.volume ?? 1) * 100)}%
           </label>
           <input
@@ -122,6 +123,17 @@ function secToMs(sec: string): number {
   return Math.round(parseFloat(sec) * 1000);
 }
 
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  background: theme.bgPanel,
+  color: theme.text,
+  border: `1px solid ${theme.border}`,
+  borderRadius: "3px",
+  padding: "2px 4px",
+  fontSize: "12px",
+  boxSizing: "border-box",
+};
+
 function TrimEditor({
   clip,
   asset,
@@ -146,17 +158,6 @@ function TrimEditor({
     setInVal(msToSec(clip.inMs));
     setOutVal(msToSec(clip.outMs));
   }, [clip.durationMs, clip.inMs, clip.outMs]);
-
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    background: "#333",
-    color: "#fff",
-    border: "1px solid #555",
-    borderRadius: "3px",
-    padding: "2px 4px",
-    fontSize: "12px",
-    boxSizing: "border-box",
-  };
 
   const handleDurationCommit = () => {
     const newDurationMs = secToMs(durationVal);
@@ -211,13 +212,13 @@ function TrimEditor({
 
   return (
     <div style={{ marginTop: "8px" }}>
-      <label style={{ color: "#888", display: "block", marginBottom: "4px" }}>
+      <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
         Trim
       </label>
       <div style={{ display: "grid", gridTemplateColumns: hasSourceTrim ? "1fr 1fr 1fr" : "1fr", gap: "4px" }}>
         {hasSourceTrim && (
           <div>
-            <label style={{ color: "#666", fontSize: "10px" }}>In (s)</label>
+            <label style={{ color: theme.textDisabled, fontSize: "10px" }}>In (s)</label>
             <input
               type="number"
               value={inVal}
@@ -232,7 +233,7 @@ function TrimEditor({
         )}
         {hasSourceTrim && (
           <div>
-            <label style={{ color: "#666", fontSize: "10px" }}>Out (s)</label>
+            <label style={{ color: theme.textDisabled, fontSize: "10px" }}>Out (s)</label>
             <input
               type="number"
               value={outVal}
@@ -246,7 +247,7 @@ function TrimEditor({
           </div>
         )}
         <div>
-          <label style={{ color: "#666", fontSize: "10px" }}>Duration (s)</label>
+          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>Duration (s)</label>
           <input
             type="number"
             value={durationVal}
@@ -278,7 +279,7 @@ function TextEditor({
 
   return (
     <div style={{ marginTop: "8px" }}>
-      <label style={{ color: "#888", display: "block", marginBottom: "4px" }}>
+      <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
         Text
       </label>
       <textarea
@@ -287,9 +288,9 @@ function TextEditor({
         rows={2}
         style={{
           width: "100%",
-          background: "#333",
-          color: "#fff",
-          border: "1px solid #555",
+          background: theme.bgPanel,
+          color: theme.text,
+          border: `1px solid ${theme.border}`,
           borderRadius: "3px",
           padding: "4px",
           fontSize: "12px",
@@ -300,7 +301,7 @@ function TextEditor({
 
       <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
         <div style={{ flex: 1 }}>
-          <label style={{ color: "#888", display: "block", marginBottom: "2px" }}>
+          <label style={{ color: theme.textMuted, display: "block", marginBottom: "2px" }}>
             Size
           </label>
           <input
@@ -309,20 +310,11 @@ function TextEditor({
             onChange={(e) => updateText({ fontSize: Number(e.target.value) })}
             min={12}
             max={200}
-            style={{
-              width: "100%",
-              background: "#333",
-              color: "#fff",
-              border: "1px solid #555",
-              borderRadius: "3px",
-              padding: "2px 4px",
-              fontSize: "12px",
-              boxSizing: "border-box",
-            }}
+            style={inputStyle}
           />
         </div>
         <div style={{ flex: 1 }}>
-          <label style={{ color: "#888", display: "block", marginBottom: "2px" }}>
+          <label style={{ color: theme.textMuted, display: "block", marginBottom: "2px" }}>
             Color
           </label>
           <input
@@ -341,7 +333,7 @@ function TextEditor({
       </div>
 
       <div style={{ marginTop: "6px" }}>
-        <label style={{ color: "#888", display: "block", marginBottom: "2px" }}>
+        <label style={{ color: theme.textMuted, display: "block", marginBottom: "2px" }}>
           Background
         </label>
         <input
@@ -394,28 +386,17 @@ function TransformEditor({
   const btnStyle = (active: boolean): React.CSSProperties => ({
     flex: 1,
     padding: "4px",
-    background: active ? "#3a6ad4" : "#333",
-    color: active ? "#fff" : "#aaa",
-    border: "1px solid " + (active ? "#3a6ad4" : "#555"),
+    background: active ? theme.primary : theme.bgPanel,
+    color: active ? theme.buttonText : theme.textMuted,
+    border: `1px solid ${active ? theme.primary : theme.border}`,
     borderRadius: "3px",
     cursor: "pointer",
     fontSize: "11px",
   });
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    background: "#333",
-    color: "#fff",
-    border: "1px solid #555",
-    borderRadius: "3px",
-    padding: "2px 4px",
-    fontSize: "12px",
-    boxSizing: "border-box",
-  };
-
   return (
     <div style={{ marginTop: "8px" }}>
-      <label style={{ color: "#888", display: "block", marginBottom: "4px" }}>
+      <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
         Rotation
       </label>
       <div style={{ display: "flex", gap: "4px" }}>
@@ -430,12 +411,12 @@ function TransformEditor({
         ))}
       </div>
 
-      <label style={{ color: "#888", display: "block", marginTop: "8px", marginBottom: "4px" }}>
+      <label style={{ color: theme.textMuted, display: "block", marginTop: "8px", marginBottom: "4px" }}>
         Position
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
         <div>
-          <label style={{ color: "#666", fontSize: "10px" }}>X (px)</label>
+          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>X (px)</label>
           <input
             type="number"
             value={transform.x ?? 0}
@@ -445,7 +426,7 @@ function TransformEditor({
           />
         </div>
         <div>
-          <label style={{ color: "#666", fontSize: "10px" }}>Y (px)</label>
+          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>Y (px)</label>
           <input
             type="number"
             value={transform.y ?? 0}
@@ -456,7 +437,7 @@ function TransformEditor({
         </div>
       </div>
 
-      <label style={{ color: "#888", display: "block", marginTop: "8px", marginBottom: "4px" }}>
+      <label style={{ color: theme.textMuted, display: "block", marginTop: "8px", marginBottom: "4px" }}>
         Scale ({Math.round((transform.scale ?? 1) * 100)}%)
       </label>
       <input
@@ -475,9 +456,9 @@ function TransformEditor({
           style={{
             marginTop: "4px",
             padding: "2px 8px",
-            background: "#333",
-            color: "#888",
-            border: "1px solid #555",
+            background: theme.bgPanel,
+            color: theme.textMuted,
+            border: `1px solid ${theme.border}`,
             borderRadius: "3px",
             cursor: "pointer",
             fontSize: "11px",
@@ -487,12 +468,12 @@ function TransformEditor({
         </button>
       )}
 
-      <label style={{ color: "#888", display: "block", marginTop: "8px", marginBottom: "4px" }}>
+      <label style={{ color: theme.textMuted, display: "block", marginTop: "8px", marginBottom: "4px" }}>
         Crop {crop ? "(active)" : ""}
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
         <div>
-          <label style={{ color: "#666", fontSize: "10px" }}>X</label>
+          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>X</label>
           <input
             type="number"
             value={crop?.x ?? 0}
@@ -503,7 +484,7 @@ function TransformEditor({
           />
         </div>
         <div>
-          <label style={{ color: "#666", fontSize: "10px" }}>Y</label>
+          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>Y</label>
           <input
             type="number"
             value={crop?.y ?? 0}
@@ -514,7 +495,7 @@ function TransformEditor({
           />
         </div>
         <div>
-          <label style={{ color: "#666", fontSize: "10px" }}>W</label>
+          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>W</label>
           <input
             type="number"
             value={crop?.width ?? defaultW}
@@ -525,7 +506,7 @@ function TransformEditor({
           />
         </div>
         <div>
-          <label style={{ color: "#666", fontSize: "10px" }}>H</label>
+          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>H</label>
           <input
             type="number"
             value={crop?.height ?? defaultH}
@@ -542,9 +523,9 @@ function TransformEditor({
           style={{
             marginTop: "4px",
             padding: "2px 8px",
-            background: "#333",
-            color: "#888",
-            border: "1px solid #555",
+            background: theme.bgPanel,
+            color: theme.textMuted,
+            border: `1px solid ${theme.border}`,
             borderRadius: "3px",
             cursor: "pointer",
             fontSize: "11px",
@@ -579,25 +560,14 @@ function StartEndEditor({
     onMoveClip(newMs);
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    background: "#333",
-    color: "#fff",
-    border: "1px solid #555",
-    borderRadius: "3px",
-    padding: "2px 4px",
-    fontSize: "12px",
-    boxSizing: "border-box",
-  };
-
   return (
     <div style={{ marginTop: "8px" }}>
-      <label style={{ color: "#888", display: "block", marginBottom: "4px" }}>
+      <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
         Position
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
         <div>
-          <label style={{ color: "#666", fontSize: "10px" }}>Start (s)</label>
+          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>Start (s)</label>
           <input
             type="number"
             value={val}
@@ -610,12 +580,12 @@ function StartEndEditor({
           />
         </div>
         <div>
-          <label style={{ color: "#666", fontSize: "10px" }}>End (s)</label>
+          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>End (s)</label>
           <input
             type="number"
             value={msToSec(clip.startMs + clip.durationMs)}
             disabled
-            style={{ ...inputStyle, color: "#888", cursor: "default" }}
+            style={{ ...inputStyle, color: theme.textMuted, cursor: "default" }}
           />
         </div>
       </div>
@@ -626,7 +596,7 @@ function StartEndEditor({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <tr>
-      <td style={{ padding: "2px 4px 2px 0", color: "#888", whiteSpace: "nowrap" }}>
+      <td style={{ padding: "2px 4px 2px 0", color: theme.textMuted, whiteSpace: "nowrap" }}>
         {label}
       </td>
       <td style={{ padding: "2px 0", wordBreak: "break-all" }}>{value}</td>

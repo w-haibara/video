@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
+import { theme } from "../theme";
 
 type Props = {
   project: Project;
@@ -325,7 +326,7 @@ export function PreviewPlayer({
         }}
       >
         {!activeClip ? (
-          <span style={{ color: "#555", fontSize: "14px" }}>No clip at playhead</span>
+          <span style={{ color: theme.textDisabled, fontSize: "14px" }}>No clip at playhead</span>
         ) : (
           <div style={{
             overflow: "hidden",
@@ -407,8 +408,8 @@ export function PreviewPlayer({
           justifyContent: "center",
           gap: "8px",
           padding: "4px",
-          background: "#1a1a1a",
-          borderTop: "1px solid #333",
+          background: theme.bgPanel,
+          borderTop: `1px solid ${theme.border}`,
           flexShrink: 0,
         }}
       >
@@ -424,8 +425,8 @@ export function PreviewPlayer({
           }}
           style={{
             background: "none",
-            border: "1px solid #555",
-            color: "#ccc",
+            border: `1px solid ${theme.border}`,
+            color: theme.text,
             padding: "4px 16px",
             cursor: "pointer",
             borderRadius: "3px",
@@ -458,8 +459,8 @@ export function PreviewPlayer({
           }}
           style={{
             background: "none",
-            border: "1px solid #555",
-            color: "#ccc",
+            border: `1px solid ${theme.border}`,
+            color: theme.text,
             padding: "4px 16px",
             cursor: "pointer",
             borderRadius: "3px",
@@ -469,7 +470,7 @@ export function PreviewPlayer({
         >
           {isPlaying ? "Pause" : "Play"}
         </button>
-        <span style={{ color: "#888", fontSize: "12px" }}>
+        <span style={{ color: theme.textMuted, fontSize: "12px" }}>
           {formatTime(currentTimeMs)}
         </span>
       </div>

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Asset } from "@video/shared";
 import { useJob, useRetryJob } from "../api/jobs";
 import { JobProgress } from "./JobProgress";
+import { theme } from "../theme";
 
 type Props = {
   asset: Asset;
@@ -46,7 +47,7 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
       style={{
         position: "relative",
         aspectRatio: "16/9",
-        background: "#333",
+        background: theme.bgDark,
         borderRadius: "4px",
         overflow: "hidden",
       }}
@@ -64,7 +65,7 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
             alignItems: "center",
             justifyContent: "center",
             height: "100%",
-            color: "#666",
+            color: theme.textMuted,
             fontSize: "12px",
           }}
         >
@@ -78,7 +79,7 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
             bottom: 0,
             left: 0,
             right: 0,
-            background: "rgba(0,0,0,0.7)",
+            background: theme.overlay,
             padding: "4px",
           }}
         >
@@ -91,9 +92,9 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
             <button
               onClick={() => onDelete(asset.id)}
               style={{
-                background: "rgba(0,0,0,0.7)",
+                background: theme.overlay,
                 border: "none",
-                color: "#f66",
+                color: theme.error,
                 fontSize: "14px",
                 width: "22px",
                 height: "22px",
@@ -114,7 +115,7 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
               onClick={() => !addDisabled && onAddToTimeline(asset)}
               disabled={addDisabled}
               style={{
-                background: "rgba(0,0,0,0.7)",
+                background: theme.overlay,
                 border: "none",
                 color: "#fff",
                 fontSize: "14px",
@@ -140,7 +141,7 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
           style={{
             position: "absolute",
             inset: 0,
-            background: "rgba(200,0,0,0.5)",
+            background: "rgba(248,85,82,0.5)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -174,7 +175,7 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
                 style={{
                   background: "rgba(255,255,255,0.2)",
                   border: "1px solid rgba(255,255,255,0.5)",
-                  color: "#f66",
+                  color: theme.error,
                   fontSize: "10px",
                   padding: "2px 8px",
                   borderRadius: "3px",

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { theme } from "../theme";
 
 type MenuItem = {
   label: string;
@@ -39,13 +40,13 @@ export function ContextMenu({ items, position, onClose }: Props) {
         position: "fixed",
         left: position.x,
         top: position.y,
-        background: "#2a2a2a",
-        border: "1px solid #555",
+        background: theme.bg,
+        border: `1px solid ${theme.border}`,
         borderRadius: "4px",
         padding: "4px 0",
         zIndex: 1000,
         minWidth: "120px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+        boxShadow: `0 4px 12px ${theme.shadow}`,
       }}
     >
       {items.map((item, i) => (
@@ -64,14 +65,14 @@ export function ContextMenu({ items, position, onClose }: Props) {
             padding: "6px 16px",
             background: "none",
             border: "none",
-            color: item.disabled ? "#666" : "#ccc",
+            color: item.disabled ? theme.textDisabled : theme.text,
             fontSize: "12px",
             textAlign: "left",
             cursor: item.disabled ? "default" : "pointer",
           }}
           onMouseEnter={(e) => {
             if (!item.disabled) {
-              (e.target as HTMLElement).style.background = "#3a3a3a";
+              (e.target as HTMLElement).style.background = theme.bgHover;
             }
           }}
           onMouseLeave={(e) => {

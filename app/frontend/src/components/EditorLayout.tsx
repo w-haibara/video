@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { theme } from "../theme";
 
 type Props = {
   toolbar: ReactNode;
@@ -16,7 +17,7 @@ export function EditorLayout({ toolbar, preview, mainPanel, bottom }: Props) {
         gridTemplateRows: "auto 1fr 220px",
         height: "100vh",
         gap: "1px",
-        background: "#222",
+        background: theme.border,
       }}
     >
       <div
@@ -25,10 +26,10 @@ export function EditorLayout({ toolbar, preview, mainPanel, bottom }: Props) {
           display: "flex",
           alignItems: "center",
           justifyContent: "flex-end",
-          background: "#1a1a1a",
+          background: theme.bgPanel,
           height: 34,
           padding: "0 8px",
-          borderBottom: "1px solid #333",
+          borderBottom: `1px solid ${theme.border}`,
         }}
       >
         {toolbar}
@@ -38,7 +39,7 @@ export function EditorLayout({ toolbar, preview, mainPanel, bottom }: Props) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#111",
+          background: theme.bg,
           overflow: "hidden",
         }}
       >
@@ -46,7 +47,7 @@ export function EditorLayout({ toolbar, preview, mainPanel, bottom }: Props) {
       </div>
       <div
         style={{
-          background: "#1a1a1a",
+          background: theme.bgPanel,
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
@@ -56,7 +57,7 @@ export function EditorLayout({ toolbar, preview, mainPanel, bottom }: Props) {
       </div>
       <div
         style={{
-          background: "#1a1a1a",
+          background: theme.bgPanel,
           overflow: "hidden",
           gridColumn: "1 / -1",
         }}

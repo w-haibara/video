@@ -15,6 +15,7 @@ import { useProjectEditor } from "../hooks/useProjectEditor";
 import { clampClipsToDuration } from "../lib/sequence-ops";
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { useAutoSave } from "../hooks/useAutoSave";
+import { theme } from "../theme";
 
 function EditorPageInner({ projectId }: { projectId: string }) {
   const { data: project, isLoading, error } = useProject(projectId);
@@ -155,7 +156,7 @@ function EditorPageLoaded({
                   project={currentProject}
                   onAddToTimeline={addClipFromAsset}
                 />
-                <div style={{ padding: "8px", borderTop: "1px solid #333", marginTop: "8px" }}>
+                <div style={{ padding: "8px", borderTop: `1px solid ${theme.border}`, marginTop: "8px" }}>
                   <button
                     onClick={() => {
                       addTextClip(currentTimeMs, 3000, {
@@ -168,8 +169,8 @@ function EditorPageLoaded({
                     style={{
                       width: "100%",
                       padding: "6px",
-                      background: "#8e44ad",
-                      color: "#fff",
+                      background: theme.clipText,
+                      color: theme.buttonText,
                       border: "none",
                       borderRadius: "4px",
                       cursor: "pointer",
@@ -189,8 +190,8 @@ function EditorPageLoaded({
                     style={{
                       flex: 1,
                       padding: "8px",
-                      background: "#3a6ad4",
-                      color: "#fff",
+                      background: theme.button,
+                      color: theme.buttonText,
                       border: "none",
                       borderRadius: "3px",
                       cursor: "pointer",
@@ -205,8 +206,8 @@ function EditorPageLoaded({
                   style={{
                     display: "block",
                     padding: "8px",
-                    background: "#444",
-                    color: "#ccc",
+                    background: theme.bgDark,
+                    color: theme.text,
                     border: "none",
                     borderRadius: "3px",
                     cursor: "pointer",

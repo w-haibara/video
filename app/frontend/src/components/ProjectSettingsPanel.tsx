@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Project, ProjectSettings } from "@video/shared";
+import { theme } from "../theme";
 
 type Props = {
   project: Project;
@@ -28,9 +29,9 @@ export function ProjectSettingsPanel({ project, onUpdateSettings }: Props) {
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
-    background: "#333",
-    color: "#fff",
-    border: "1px solid #555",
+    background: theme.bgPanel,
+    color: theme.text,
+    border: `1px solid ${theme.border}`,
     borderRadius: "3px",
     padding: "4px 6px",
     fontSize: "12px",
@@ -38,10 +39,10 @@ export function ProjectSettingsPanel({ project, onUpdateSettings }: Props) {
   };
 
   return (
-    <div style={{ padding: "8px", fontSize: "12px", color: "#ccc" }}>
-      <h4 style={{ margin: "0 0 12px", color: "#fff" }}>Project Settings</h4>
+    <div style={{ padding: "8px", fontSize: "12px", color: theme.text }}>
+      <h4 style={{ margin: "0 0 12px" }}>Project Settings</h4>
       <div>
-        <label style={{ color: "#888", display: "block", marginBottom: "4px" }}>
+        <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
           Duration (sec)
         </label>
         <input
@@ -55,7 +56,7 @@ export function ProjectSettingsPanel({ project, onUpdateSettings }: Props) {
           step={1}
           style={inputStyle}
         />
-        <div style={{ color: "#666", fontSize: "10px", marginTop: "4px" }}>
+        <div style={{ color: theme.textDisabled, fontSize: "10px", marginTop: "4px" }}>
           Min: 1s / Max: 3600s (1 hour)
         </div>
       </div>
