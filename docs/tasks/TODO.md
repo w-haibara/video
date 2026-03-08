@@ -48,7 +48,7 @@
 | 42 | タイムラインの全幅レイアウト維持 | [x] Done | 39 |
 | 43 | クリップ選択時のシーク移動とプレビュー表示 | [x] Done | 12, 24 |
 | 44 | 選択クリップ範囲のみ再生 | [x] Done | 43 |
-| 45 | 共有型に ProjectSettings を追加 | [ ] Todo | 02 |
+| 45 | 共有型に ProjectSettings を追加 | [x] Done | 02 |
 | 46 | Settings タブの追加 | [ ] Todo | 40, 45 |
 | 47 | タイムライン UI への動画時間制限の反映 | [ ] Todo | 45, 09, 10, 11 |
 | 48 | テストの追加 | [ ] Todo | 45, 47 |
@@ -888,21 +888,21 @@ EditorLayout のグリッド構造を全面的に変更し、プレビューを�
 プロジェクトに設定フィールドを追加し、動画時間のデフォルト値を定義する。
 
 **A. 型定義の追加** (`app/shared/src/types/project.ts`)
-- [ ] `ProjectSettings` 型を新規定義:
+- [x] `ProjectSettings` 型を新規定義:
   ```typescript
   export type ProjectSettings = {
     durationMs: number; // 動画全体の目標尺 (ミリ秒)
   };
   ```
-- [ ] `Project` 型に `settings: ProjectSettings` フィールドを追加 (必須フィールド)
-- [ ] `index.ts` re-export に `ProjectSettings` を追加
+- [x] `Project` 型に `settings: ProjectSettings` フィールドを追加 (必須フィールド)
+- [x] `index.ts` re-export に `ProjectSettings` を追加
 
 **B. デフォルト値の定義** (`app/shared/src/utils/constants.ts`)
-- [ ] `DEFAULT_PROJECT_DURATION_MS = 10_000` (10 秒) を追加
+- [x] `DEFAULT_PROJECT_DURATION_MS = 10_000` (10 秒) を追加
 
 **C. プロジェクト作成時のデフォルト設定**
-- [ ] バックエンドの `createProject()` (`app/backend/src/services/project-service.ts`) で `settings: { durationMs: DEFAULT_PROJECT_DURATION_MS }` を初期値として設定
-- [ ] フロントエンドの `useCreateProject` (`app/frontend/src/api/projects.ts`) でも同様にデフォルト設定を含める
+- [x] バックエンドの `createProject()` (`app/backend/src/services/project-service.ts`) で `settings: { durationMs: DEFAULT_PROJECT_DURATION_MS }` を初期値として設定
+- [x] フロントエンドの `useCreateProject` (`app/frontend/src/api/projects.ts`) はバックエンド側でデフォルト設定するため変更不要
 
 ### 46: Settings タブの追加
 
