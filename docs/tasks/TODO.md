@@ -68,7 +68,7 @@
 | 62 | エディタ UI コンポーネントの色彩更新 | [x] Done | 60 |
 | 63 | タイムライン・クリップコンポーネントの色彩更新 | [x] Done | 60 |
 | 64 | プレビュー "No clip at playhead" 表示の全幅化 | [x] Done | 12 |
-| 65 | エディタ画面からホームへの導線追加 | [ ] TODO | 07, 39 |
+| 65 | エディタ画面からホームへの導線追加 | [x] Done | 07, 39 |
 
 ## Phase 1 Tasks
 
@@ -1532,7 +1532,7 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - `app/frontend/src/components/EditorLayout.tsx` — ツールバー左側にスペースを確保（必要に応じて）
 
 **サブタスク**:
-- [ ] EditorLayout のツールバー行を左右に分割し、左端にホームリンク用スペースを確保する
-- [ ] EditorPage の toolbar prop にホームリンク (`react-router-dom` の `Link` で `/` へ遷移) を追加する
-- [ ] リンクのスタイルを Everforest Light テーマに合わせる（`theme.text` / `theme.textMuted` を使用）
-- [ ] ホームリンクのテキストは「← Home」等シンプルなものにする
+- [x] EditorLayout のツールバー行を左右に分割し、左端にホームリンク用スペースを確保する
+- [x] EditorPage の toolbar prop にホームリンク (`react-router-dom` の `Link` で `/` へ遷移) を追加する
+- [x] リンクのスタイルを Everforest Light テーマに合わせる（`theme.text` / `theme.textMuted` を使用）
+- [x] ホームリンクのテキストは「← Home」等シンプルなものにする
