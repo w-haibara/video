@@ -1,4 +1,4 @@
-import type { Track, Asset } from "@video/shared";
+import type { Track, Asset, Clip } from "@video/shared";
 import { TimelineClip } from "./TimelineClip";
 
 type Props = {
@@ -64,7 +64,7 @@ export function TimelineTrack({
           borderBottom: "1px solid #333",
         }}
       >
-        {track.clips.map((clip) => (
+        {track.clips.map((clip: Clip) => (
           <TimelineClip
             key={clip.id}
             clip={clip}

@@ -35,9 +35,9 @@ export function useProjectEditor(
       // Find the clip's asset to get source duration constraint
       let maxSourceDurationMs: number | undefined;
       for (const track of sequence.tracks) {
-        const clip = track.clips.find((c) => c.id === clipId);
+        const clip = track.clips.find((c: Clip) => c.id === clipId);
         if (clip) {
-          const asset = project.assets.find((a) => a.id === clip.assetId);
+          const asset = project.assets.find((a: Asset) => a.id === clip.assetId);
           // Only constrain video/audio clips with known duration (not images)
           if (asset && asset.kind !== "image" && asset.durationMs) {
             maxSourceDurationMs = asset.durationMs;

@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import type { Asset, Sequence } from "@video/shared";
+import type { Asset, Clip, Sequence, Track } from "@video/shared";
 import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
@@ -76,7 +76,7 @@ describe("removeClip", () => {
   test("removes empty tracks", () => {
     let seq = addClipFromAsset(emptySeq, videoAsset);
     seq = addClipFromAsset(seq, audioAsset);
-    const audioClipId = seq.tracks.find((t) => t.kind === "audio")!.clips[0].id;
+    const audioClipId = seq.tracks.find((t: Track) => t.kind === "audio")!.clips[0].id;
     seq = removeClip(seq, audioClipId);
     expect(seq.tracks.length).toBe(1);
     expect(seq.tracks[0].kind).toBe("video");
@@ -334,7 +334,7 @@ describe("moveClip overlap prevention", () => {
     // Try to move clip2 to 2000 (overlapping clip1)
     seq = moveClip(seq, clip2Id, 2000);
     // Should snap to clip1's end (5000)
-    const movedClip = seq.tracks[0].clips.find((c) => c.id === clip2Id)!;
+    const movedClip = seq.tracks[0].clips.find((c: Clip) => c.id === clip2Id)!;
     expect(movedClip.startMs).toBe(5000);
   });
 
@@ -345,7 +345,7 @@ describe("moveClip overlap prevention", () => {
     const clip2Id = seq.tracks[0].clips[1].id;
     // Move clip2 to 12000 (plenty of space)
     seq = moveClip(seq, clip2Id, 12000);
-    const movedClip = seq.tracks[0].clips.find((c) => c.id === clip2Id)!;
+    const movedClip = seq.tracks[0].clips.find((c: Clip) => c.id === clip2Id)!;
     expect(movedClip.startMs).toBe(12000);
   });
 
@@ -357,7 +357,7 @@ describe("moveClip overlap prevention", () => {
     const clip3Id = seq.tracks[0].clips[2].id;
     // Move clip3 to gap at 6000
     seq = moveClip(seq, clip3Id, 6000);
-    const movedClip = seq.tracks[0].clips.find((c) => c.id === clip3Id)!;
+    const movedClip = seq.tracks[0].clips.find((c: Clip) => c.id === clip3Id)!;
     expect(movedClip.startMs).toBe(6000);
   });
 
@@ -372,7 +372,7 @@ describe("moveClip overlap prevention", () => {
     seq = moveClip(seq, clip2Id, 8000);
     // Now move clip1 to overlap with clip2 from the left
     seq = moveClip(seq, clip1Id, 7500);
-    const movedClip = seq.tracks[0].clips.find((c) => c.id === clip1Id)!;
+    const movedClip = seq.tracks[0].clips.find((c: Clip) => c.id === clip1Id)!;
     // Should snap before clip2 (8000 - 2000 = 6000)
     expect(movedClip.startMs).toBe(6000);
   });
@@ -385,7 +385,7 @@ describe("moveClip overlap prevention", () => {
     const clip3Id = seq.tracks[0].clips[2].id;
     // Try to move clip3 to 2000 (no room between clip1 and clip2)
     seq = moveClip(seq, clip3Id, 2000);
-    const movedClip = seq.tracks[0].clips.find((c) => c.id === clip3Id)!;
+    const movedClip = seq.tracks[0].clips.find((c: Clip) => c.id === clip3Id)!;
     // Should stay at original position (10000) since snap would still overlap
     expect(movedClip.startMs).toBe(10000);
   });

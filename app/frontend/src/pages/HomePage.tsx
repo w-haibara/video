@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { Project } from "@video/shared";
 import { useProjects } from "../api/projects";
 import { ProjectCard } from "../components/ProjectCard";
 import { CreateProjectDialog } from "../components/CreateProjectDialog";
@@ -81,7 +82,7 @@ export function HomePage() {
               gap: "16px",
             }}
           >
-            {data.projects.map((p) => (
+            {data.projects.map((p: Project) => (
               <ProjectCard key={p.id} project={p} />
             ))}
           </div>

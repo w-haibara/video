@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { Project } from "@video/shared";
+import type { Project, Track } from "@video/shared";
 import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTrack } from "./TimelineTrack";
 import { Playhead } from "./Playhead";
@@ -211,7 +211,7 @@ export function Timeline({
                 No clips yet. Add assets from the panel.
               </div>
             ) : (
-              project.sequence.tracks.map((track) => (
+              project.sequence.tracks.map((track: Track) => (
                 <TimelineTrack
                   key={track.id}
                   track={track}

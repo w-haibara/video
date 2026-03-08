@@ -13,9 +13,9 @@ function findClipAndAsset(
   clipId: string,
 ): { clip: Clip; asset: Asset | undefined; trackKind: string } | null {
   for (const track of project.sequence.tracks) {
-    const clip = track.clips.find((c) => c.id === clipId);
+    const clip = track.clips.find((c: Clip) => c.id === clipId);
     if (clip) {
-      const asset = project.assets.find((a) => a.id === clip.assetId);
+      const asset = project.assets.find((a: Asset) => a.id === clip.assetId);
       return { clip, asset, trackKind: track.kind };
     }
   }

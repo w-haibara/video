@@ -27,7 +27,7 @@ function findActiveClip(project: Project, timeMs: number): ActiveClip | null {
     if (track.kind !== "video") continue;
     for (const clip of track.clips) {
       if (timeMs >= clip.startMs && timeMs < clip.startMs + clip.durationMs) {
-        const asset = project.assets.find((a) => a.id === clip.assetId);
+        const asset = project.assets.find((a: Asset) => a.id === clip.assetId);
         if (!asset) continue;
         const offset = timeMs - clip.startMs;
         const clipTimeMs = clip.inMs + offset;

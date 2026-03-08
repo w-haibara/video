@@ -1,4 +1,4 @@
-import type { Asset, Clip, ClipText, Sequence } from "@video/shared";
+import type { Asset, Clip, ClipText, Sequence, Track } from "@video/shared";
 import { generateId, DEFAULT_IMAGE_DURATION_MS } from "@video/shared";
 
 export function addClipFromAsset(
@@ -6,16 +6,16 @@ export function addClipFromAsset(
   asset: Asset,
   maxDurationMs?: number,
 ): Sequence {
-  const tracks = sequence.tracks.map((t) => ({ ...t, clips: [...t.clips] }));
+  const tracks = sequence.tracks.map((t: Track) => ({ ...t, clips: [...t.clips] }));
   const trackKind = asset.kind === "audio" ? "audio" : "video";
-  let track = tracks.find((t) => t.kind === trackKind);
+  let track = tracks.find((t: Track) => t.kind === trackKind);
   if (!track) {
     track = { id: generateId(), kind: trackKind, clips: [] };
     tracks.push(track);
   }
 
   const lastEnd = track.clips.reduce(
-    (max, c) => Math.max(max, c.startMs + c.durationMs),
+    (max: number, c: Clip) => Math.max(max, c.startMs + c.durationMs),
     0,
   );
 
@@ -49,11 +49,11 @@ export function addClipFromAsset(
 
 export function removeClip(sequence: Sequence, clipId: string): Sequence {
   const tracks = sequence.tracks
-    .map((track) => ({
+    .map((track: Track) => ({
       ...track,
-      clips: track.clips.filter((c) => c.id !== clipId),
+      clips: track.clips.filter((c: Clip) => c.id !== clipId),
     }))
-    .filter((track) => track.clips.length > 0);
+    .filter((track: Track) => track.clips.length > 0);
   return { ...sequence, tracks };
 }
 
@@ -110,7 +110,7 @@ export function moveClip(
   if (maxDurationMs != null) {
     // Find the clip to get its duration for clamping
     for (const track of sequence.tracks) {
-      const clip = track.clips.find((c) => c.id === clipId);
+      const clip = track.clips.find((c: Clip) => c.id === clipId);
       if (clip) {
         const maxStart = Math.max(0, maxDurationMs - clip.durationMs);
         startMs = Math.min(startMs, maxStart);
@@ -121,7 +121,7 @@ export function moveClip(
 
   // Apply overlap prevention within the same track
   for (const track of sequence.tracks) {
-    const clip = track.clips.find((c) => c.id === clipId);
+    const clip = track.clips.find((c: Clip) => c.id === clipId);
     if (clip) {
       startMs = findNonOverlappingPosition(track.clips, clipId, startMs, clip.durationMs);
       startMs = Math.max(0, startMs);
@@ -132,11 +132,11 @@ export function moveClip(
     }
   }
 
-  const tracks = sequence.tracks.map((track) => ({
+  const tracks = sequence.tracks.map((track: Track) => ({
     ...track,
     clips: track.clips
-      .map((c) => (c.id === clipId ? { ...c, startMs } : c))
-      .sort((a, b) => a.startMs - b.startMs),
+      .map((c: Clip) => (c.id === clipId ? { ...c, startMs } : c))
+      .sort((a: Clip, b: Clip) => a.startMs - b.startMs),
   }));
   return { ...sequence, tracks };
 }
@@ -159,8 +159,8 @@ export function addTextClip(
     clampedDuration = maxDurationMs - startMs;
   }
 
-  const tracks = sequence.tracks.map((t) => ({ ...t, clips: [...t.clips] }));
-  let track = tracks.find((t) => t.kind === "title");
+  const tracks = sequence.tracks.map((t: Track) => ({ ...t, clips: [...t.clips] }));
+  let track = tracks.find((t: Track) => t.kind === "title");
   if (!track) {
     track = { id: generateId(), kind: "title", clips: [] };
     tracks.push(track);
@@ -177,7 +177,7 @@ export function addTextClip(
   };
 
   track.clips.push(clip);
-  track.clips.sort((a, b) => a.startMs - b.startMs);
+  track.clips.sort((a: Clip, b: Clip) => a.startMs - b.startMs);
   return { ...sequence, tracks };
 }
 
@@ -186,9 +186,9 @@ export function updateClip(
   clipId: string,
   updates: Partial<Clip>,
 ): Sequence {
-  const tracks = sequence.tracks.map((track) => ({
+  const tracks = sequence.tracks.map((track: Track) => ({
     ...track,
-    clips: track.clips.map((c) =>
+    clips: track.clips.map((c: Clip) =>
       c.id === clipId ? { ...c, ...updates } : c,
     ),
   }));
@@ -203,9 +203,9 @@ export function trimClip(
   maxSourceDurationMs?: number,
   maxTimelineDurationMs?: number,
 ): Sequence {
-  const tracks = sequence.tracks.map((track) => ({
+  const tracks = sequence.tracks.map((track: Track) => ({
     ...track,
-    clips: track.clips.map((c) => {
+    clips: track.clips.map((c: Clip) => {
       if (c.id !== clipId) return c;
       if (side === "left") {
         const delta = Math.min(deltaMs, c.durationMs - 100);

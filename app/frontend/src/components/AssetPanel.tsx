@@ -86,7 +86,7 @@ export function AssetPanel({ project, onAddToTimeline }: Props) {
           gap: "4px",
         }}
       >
-        {project.assets.map((asset) => (
+        {project.assets.map((asset: Asset) => (
           <AssetThumbnail
             key={asset.id}
             asset={asset}
