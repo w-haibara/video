@@ -1,4 +1,5 @@
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Project, Asset } from "@video/shared";
 import { useImportAsset, useDeleteAsset } from "../api/assets";
 import { AssetThumbnail } from "./AssetThumbnail";
@@ -12,6 +13,7 @@ export function AssetPanel({ project, onAddToTimeline }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importAsset = useImportAsset(project.id);
   const deleteAsset = useDeleteAsset(project.id);
+  const queryClient = useQueryClient();
 
   // Track which assets are in use on the timeline
   const inUseAssetIds = useMemo(() => {
@@ -26,6 +28,10 @@ export function AssetPanel({ project, onAddToTimeline }: Props) {
   const [activeJobIds, setActiveJobIds] = useState<Map<string, string>>(
     new Map(),
   );
+
+  const handleJobComplete = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["projects", project.id] });
+  }, [queryClient, project.id]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -89,6 +95,7 @@ export function AssetPanel({ project, onAddToTimeline }: Props) {
             onAddToTimeline={onAddToTimeline}
             onDelete={(assetId) => deleteAsset.mutate(assetId)}
             isInUse={inUseAssetIds.has(asset.id)}
+            onJobComplete={handleJobComplete}
           />
         ))}
       </div>

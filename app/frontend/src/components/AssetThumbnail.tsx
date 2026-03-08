@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { Asset } from "@video/shared";
 import { useJob, useRetryJob } from "../api/jobs";
 import { JobProgress } from "./JobProgress";
@@ -9,9 +10,10 @@ type Props = {
   onAddToTimeline?: (asset: Asset) => void;
   onDelete?: (assetId: string) => void;
   isInUse?: boolean;
+  onJobComplete?: () => void;
 };
 
-export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDelete, isInUse }: Props) {
+export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDelete, isInUse, onJobComplete }: Props) {
   const { data: job } = useJob(jobId);
   const retryJob = useRetryJob();
 
@@ -21,6 +23,23 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
 
   const isProcessing =
     job && job.status !== "completed" && job.status !== "failed";
+
+  // Asset is ready when it has a thumbnail (or is audio with durationMs)
+  const isAssetReady = asset.kind === "audio"
+    ? asset.durationMs != null
+    : !!asset.thumbnailPath;
+
+  // Disable add button when job is running or asset metadata not yet available
+  const addDisabled = isProcessing || (!isAssetReady && !!jobId);
+
+  // Notify parent when job completes so project data is refetched
+  const prevStatusRef = useRef(job?.status);
+  useEffect(() => {
+    if (prevStatusRef.current !== "completed" && job?.status === "completed") {
+      onJobComplete?.();
+    }
+    prevStatusRef.current = job?.status;
+  }, [job?.status, onJobComplete]);
 
   return (
     <div
@@ -49,7 +68,7 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
             fontSize: "12px",
           }}
         >
-          {asset.kind}
+          {isProcessing ? "Processing..." : asset.kind}
         </div>
       )}
       {isProcessing && job && (
@@ -92,7 +111,8 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
           )}
           {onAddToTimeline && (
             <button
-              onClick={() => onAddToTimeline(asset)}
+              onClick={() => !addDisabled && onAddToTimeline(asset)}
+              disabled={addDisabled}
               style={{
                 background: "rgba(0,0,0,0.7)",
                 border: "none",
@@ -101,13 +121,14 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
                 width: "22px",
                 height: "22px",
                 borderRadius: "3px",
-                cursor: "pointer",
+                cursor: addDisabled ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 0,
+                opacity: addDisabled ? 0.4 : 1,
               }}
-              title="Add to timeline"
+              title={addDisabled ? "Processing..." : "Add to timeline"}
             >
               +
             </button>
