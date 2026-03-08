@@ -41,7 +41,7 @@
 | 35 | 同一アセットの連続クリップ再生バグ修正 | [x] Done | 12, 24 |
 | 36 | 異なるアセットの連続クリップ再生バグ修正 | [x] Done | 12, 24, 35 |
 | 37 | エクスポート動画のブラウザ再生不可バグ修正 | [x] Done | 15 |
-| 38 | Export モーダル簡素化: エクスポート→自動ダウンロード | [ ] Todo | 18, 37 |
+| 38 | Export モーダル簡素化: エクスポート→自動ダウンロード | [x] Done | 18, 37 |
 
 ## Phase 1 Tasks
 
@@ -657,16 +657,16 @@
 修正方針:
 
 **A. Exported Files 一覧の削除** (`app/frontend/src/components/ExportDialog.tsx`)
-- [ ] `useExports` フックの使用を削除
-- [ ] Exported Files セクション (`<h4>Exported Files</h4>` 以下のファイルリスト) を削除
-- [ ] タスク37 で追加した `refetchExports` 関連の `useEffect` を削除 (一覧表示がなくなるため不要)
+- [x] `useExports` フックの使用を削除
+- [x] Exported Files セクション (`<h4>Exported Files</h4>` 以下のファイルリスト) を削除
+- [x] タスク37 で追加した `refetchExports` 関連の `useEffect` を削除 (一覧表示がなくなるため不要)
 
 **B. エクスポート完了時の自動ダウンロード** (`app/frontend/src/components/ExportDialog.tsx`)
-- [ ] `useEffect` で `job?.status === "completed"` を監視し、完了時に自動ダウンロードを実行
-  - `filename` state を ref に保持し、エクスポート開始時のファイル名を記録
+- [x] `useEffect` で `job?.status === "completed"` を監視し、完了時に自動ダウンロードを実行
+  - `exportedFilenameRef` でエクスポート開始時のファイル名を記録
   - ダウンロード URL: `/media/projects/${projectId}/exports/${filename}`
   - プログラム的に `<a>` 要素を生成して `.click()` でダウンロードをトリガー
-- [ ] 同じジョブに対して重複ダウンロードしないようフラグで制御
+- [x] `downloadedRef` フラグで同じジョブに対する重複ダウンロードを防止
 
 **C. 不要になった API フックの整理** (`app/frontend/src/api/exports.ts`)
-- [ ] `useExports` フックを削除 (使用箇所がなくなるため)
+- [x] `useExports` フックを削除 (使用箇所がなくなるため)
