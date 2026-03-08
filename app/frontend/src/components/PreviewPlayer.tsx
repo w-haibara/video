@@ -8,6 +8,7 @@ type Props = {
   isPlaying: boolean;
   onPlayPause: () => void;
   selectedClipId?: string | null;
+  onSelectClip: (id: string | null) => void;
 };
 
 type ActiveClip = {
@@ -89,6 +90,7 @@ export function PreviewPlayer({
   isPlaying,
   onPlayPause,
   selectedClipId,
+  onSelectClip,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const animFrameRef = useRef<number>(0);
@@ -395,6 +397,30 @@ export function PreviewPlayer({
           flexShrink: 0,
         }}
       >
+        <button
+          onClick={() => {
+            if (isPlaying) {
+              onPlayPause(); // stop first
+            }
+            onSelectClip(null); // clear clip selection for full playback
+            onTimeUpdate(0); // seek to start
+            // Start playback on next tick so state updates propagate
+            setTimeout(() => onPlayPause(), 0);
+          }}
+          style={{
+            background: "none",
+            border: "1px solid #555",
+            color: "#ccc",
+            padding: "4px 16px",
+            cursor: "pointer",
+            borderRadius: "3px",
+            fontSize: "13px",
+            minWidth: "36px",
+          }}
+          title="Play from start"
+        >
+          ⏮
+        </button>
         <button
           onClick={() => {
             if (!isPlaying) {

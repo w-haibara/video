@@ -122,6 +122,7 @@ function EditorPageLoaded({
           isPlaying={isPlaying}
           onPlayPause={onPlayPause}
           selectedClipId={selectedClipId}
+          onSelectClip={handleSelectClip}
         />
       }
       mainPanel={
