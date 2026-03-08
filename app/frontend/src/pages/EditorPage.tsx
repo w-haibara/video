@@ -12,6 +12,7 @@ import { SaveIndicator } from "../components/SaveIndicator";
 import { ExportDialog } from "../components/ExportDialog";
 import { ProjectSettingsPanel } from "../components/ProjectSettingsPanel";
 import { useProjectEditor } from "../hooks/useProjectEditor";
+import { clampClipsToDuration } from "../lib/sequence-ops";
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { useAutoSave } from "../hooks/useAutoSave";
 
@@ -69,7 +70,9 @@ function EditorPageLoaded({
   const updateProjectMutation = useUpdateProject(project.id);
   const handleUpdateSettings = useCallback((settings: ProjectSettings) => {
     updateProjectMutation.mutate({ settings });
-  }, [updateProjectMutation]);
+    const clamped = clampClipsToDuration(sequence, settings.durationMs);
+    pushState(clamped);
+  }, [updateProjectMutation, sequence, pushState]);
 
   const currentProject: Project = { ...project, sequence };
 

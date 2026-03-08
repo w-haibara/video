@@ -181,6 +181,29 @@ export function addTextClip(
   return { ...sequence, tracks };
 }
 
+export function clampClipsToDuration(
+  sequence: Sequence,
+  maxDurationMs: number,
+): Sequence {
+  const tracks = sequence.tracks.map((track: Track) => ({
+    ...track,
+    clips: track.clips
+      .filter((c: Clip) => c.startMs < maxDurationMs)
+      .map((c: Clip) => {
+        if (c.startMs + c.durationMs > maxDurationMs) {
+          const clampedDuration = maxDurationMs - c.startMs;
+          return {
+            ...c,
+            durationMs: clampedDuration,
+            outMs: c.inMs + clampedDuration,
+          };
+        }
+        return c;
+      }),
+  }));
+  return { ...sequence, tracks };
+}
+
 export function updateClip(
   sequence: Sequence,
   clipId: string,

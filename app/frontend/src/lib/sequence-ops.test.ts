@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
-import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition } from "./sequence-ops";
+import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -456,5 +456,65 @@ describe("updateClip", () => {
     seq = updateClip(seq, firstId, { transform: { rotation: 180 } });
     expect(seq.tracks[0].clips[0].transform?.rotation).toBe(180);
     expect(seq.tracks[0].clips[1].transform).toBeUndefined();
+  });
+});
+
+describe("clampClipsToDuration", () => {
+  test("removes clips that start at or beyond maxDurationMs", () => {
+    let seq = addClipFromAsset(emptySeq, { ...videoAsset, id: "v1", durationMs: 3000 });
+    seq = addClipFromAsset(seq, { ...videoAsset, id: "v2", durationMs: 3000 });
+    seq = addClipFromAsset(seq, { ...videoAsset, id: "v3", durationMs: 3000 });
+    // clips: 0-3000, 3000-6000, 6000-9000
+    seq = clampClipsToDuration(seq, 6000);
+    expect(seq.tracks[0].clips.length).toBe(2);
+    expect(seq.tracks[0].clips[0].durationMs).toBe(3000);
+    expect(seq.tracks[0].clips[1].durationMs).toBe(3000);
+  });
+
+  test("clamps clip that spans the boundary", () => {
+    let seq = addClipFromAsset(emptySeq, { ...videoAsset, id: "v1", durationMs: 5000 });
+    seq = addClipFromAsset(seq, { ...videoAsset, id: "v2", durationMs: 5000 });
+    // clips: 0-5000, 5000-10000
+    seq = clampClipsToDuration(seq, 8000);
+    expect(seq.tracks[0].clips.length).toBe(2);
+    expect(seq.tracks[0].clips[0].durationMs).toBe(5000); // unchanged
+    expect(seq.tracks[0].clips[1].durationMs).toBe(3000); // clamped: 8000 - 5000
+    expect(seq.tracks[0].clips[1].outMs).toBe(3000); // inMs(0) + 3000
+  });
+
+  test("clamps title track clips", () => {
+    let seq = addTextClip(emptySeq, 2000, 5000, { value: "Hello" });
+    seq = clampClipsToDuration(seq, 4000);
+    expect(seq.tracks[0].clips.length).toBe(1);
+    expect(seq.tracks[0].clips[0].durationMs).toBe(2000); // 4000 - 2000
+  });
+
+  test("removes title clips beyond maxDurationMs", () => {
+    let seq = addTextClip(emptySeq, 5000, 3000, { value: "Hello" });
+    seq = clampClipsToDuration(seq, 4000);
+    expect(seq.tracks[0].clips.length).toBe(0);
+  });
+
+  test("clamps audio track clips", () => {
+    let seq = addClipFromAsset(emptySeq, audioAsset);
+    // audio clip: 0-60000
+    seq = clampClipsToDuration(seq, 10000);
+    expect(seq.tracks[0].clips[0].durationMs).toBe(10000);
+    expect(seq.tracks[0].clips[0].outMs).toBe(10000);
+  });
+
+  test("preserves tracks even when all clips removed", () => {
+    let seq = addClipFromAsset(emptySeq, { ...videoAsset, id: "v1", durationMs: 3000 });
+    seq = clampClipsToDuration(seq, 0);
+    // Track still exists but with no clips
+    expect(seq.tracks.length).toBe(1);
+    expect(seq.tracks[0].clips.length).toBe(0);
+  });
+
+  test("does not mutate original sequence", () => {
+    let seq = addClipFromAsset(emptySeq, { ...videoAsset, id: "v1", durationMs: 5000 });
+    const original = seq;
+    clampClipsToDuration(seq, 3000);
+    expect(original.tracks[0].clips[0].durationMs).toBe(5000);
   });
 });
