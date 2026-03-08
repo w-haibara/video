@@ -14,6 +14,46 @@ function sanitizeColor(value: string): string {
 }
 
 /**
+ * Build FFmpeg filter segment for clip position/scale transform.
+ * Returns empty string or ",filter1,filter2" to append to existing chain.
+ */
+function buildTransformFilter(
+  clip: Clip,
+  preset: { width: number; height: number },
+): string {
+  const tx = clip.transform?.x ?? 0;
+  const ty = clip.transform?.y ?? 0;
+  const scale = clip.transform?.scale ?? 1;
+
+  if (tx === 0 && ty === 0 && scale === 1) return "";
+
+  const parts: string[] = [];
+
+  if (scale !== 1) {
+    // Scale relative to center: scale then re-pad to output size
+    parts.push(
+      `scale=iw*${scale}:ih*${scale}`,
+      `pad=${preset.width}:${preset.height}:(ow-iw)/2:(oh-ih)/2`,
+    );
+  }
+
+  if (tx !== 0 || ty !== 0) {
+    // Crop to simulate translate: shift the visible area
+    // We first pad with extra space, then crop to the output size at offset
+    const padW = preset.width + Math.abs(tx) * 2;
+    const padH = preset.height + Math.abs(ty) * 2;
+    const cropX = Math.abs(tx) - tx; // if tx>0, shift right -> crop from left
+    const cropY = Math.abs(ty) - ty;
+    parts.push(
+      `pad=${padW}:${padH}:(ow-iw)/2:(oh-ih)/2:color=black`,
+      `crop=${preset.width}:${preset.height}:${cropX}:${cropY}`,
+    );
+  }
+
+  return "," + parts.join(",");
+}
+
+/**
  * Build FFmpeg arguments for exporting a project.
  * Pure function for testability.
  */
@@ -55,17 +95,19 @@ export function buildExportArgs(
       // Trim and scale
       const trimStart = clip.inMs / 1000;
       const duration = clip.durationMs / 1000;
-      filterParts.push(
+      let chain =
         `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS,` +
-          `scale=${preset.width}:${preset.height}:force_original_aspect_ratio=decrease,` +
-          `pad=${preset.width}:${preset.height}:(ow-iw)/2:(oh-ih)/2[v${i}]`,
-      );
+        `scale=${preset.width}:${preset.height}:force_original_aspect_ratio=decrease,` +
+        `pad=${preset.width}:${preset.height}:(ow-iw)/2:(oh-ih)/2`;
+      chain += buildTransformFilter(clip, preset);
+      filterParts.push(`${chain}[v${i}]`);
     } else if (asset.kind === "image") {
       inputArgs.push("-loop", "1", "-t", String(clip.durationMs / 1000), "-i", assetPath);
-      filterParts.push(
+      let chain =
         `[${i}:v]scale=${preset.width}:${preset.height}:force_original_aspect_ratio=decrease,` +
-          `pad=${preset.width}:${preset.height}:(ow-iw)/2:(oh-ih)/2,setsar=1[v${i}]`,
-      );
+        `pad=${preset.width}:${preset.height}:(ow-iw)/2:(oh-ih)/2,setsar=1`;
+      chain += buildTransformFilter(clip, preset);
+      filterParts.push(`${chain}[v${i}]`);
     }
   });
 

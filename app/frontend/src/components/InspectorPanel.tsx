@@ -427,6 +427,63 @@ function TransformEditor({
       </div>
 
       <label style={{ color: "#888", display: "block", marginTop: "8px", marginBottom: "4px" }}>
+        Position
+      </label>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
+        <div>
+          <label style={{ color: "#666", fontSize: "10px" }}>X (px)</label>
+          <input
+            type="number"
+            value={transform.x ?? 0}
+            onChange={(e) => updateTransform({ x: Number(e.target.value) })}
+            step={1}
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={{ color: "#666", fontSize: "10px" }}>Y (px)</label>
+          <input
+            type="number"
+            value={transform.y ?? 0}
+            onChange={(e) => updateTransform({ y: Number(e.target.value) })}
+            step={1}
+            style={inputStyle}
+          />
+        </div>
+      </div>
+
+      <label style={{ color: "#888", display: "block", marginTop: "8px", marginBottom: "4px" }}>
+        Scale ({Math.round((transform.scale ?? 1) * 100)}%)
+      </label>
+      <input
+        type="number"
+        value={transform.scale ?? 1}
+        onChange={(e) => updateTransform({ scale: Number(e.target.value) })}
+        min={0.1}
+        max={5}
+        step={0.1}
+        style={inputStyle}
+      />
+
+      {(transform.x || transform.y || (transform.scale && transform.scale !== 1)) && (
+        <button
+          onClick={() => onUpdate({ transform: { rotation: currentRotation } })}
+          style={{
+            marginTop: "4px",
+            padding: "2px 8px",
+            background: "#333",
+            color: "#888",
+            border: "1px solid #555",
+            borderRadius: "3px",
+            cursor: "pointer",
+            fontSize: "11px",
+          }}
+        >
+          Reset Position/Scale
+        </button>
+      )}
+
+      <label style={{ color: "#888", display: "block", marginTop: "8px", marginBottom: "4px" }}>
         Crop {crop ? "(active)" : ""}
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>

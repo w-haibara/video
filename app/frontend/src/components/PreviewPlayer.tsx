@@ -279,8 +279,21 @@ export function PreviewPlayer({
     }
   }, [currentTimeMs, isPlaying]);
 
-  const rotation = activeClip?.clip.transform?.rotation ?? 0;
+  const clipTransform = activeClip?.clip.transform;
+  const rotation = clipTransform?.rotation ?? 0;
+  const translateX = clipTransform?.x ?? 0;
+  const translateY = clipTransform?.y ?? 0;
+  const scale = clipTransform?.scale ?? 1;
   const crop = activeClip?.clip.crop;
+
+  const buildTransformCss = (): string | undefined => {
+    const parts: string[] = [];
+    if (translateX || translateY) parts.push(`translate(${translateX}px, ${translateY}px)`);
+    if (scale !== 1) parts.push(`scale(${scale})`);
+    if (rotation) parts.push(`rotate(${rotation}deg)`);
+    return parts.length > 0 ? parts.join(" ") : undefined;
+  };
+  const transformCss = buildTransformCss();
 
   const isImage = activeClip?.asset.kind === "image";
   const thumbnailUrl = activeClip
@@ -331,7 +344,8 @@ export function PreviewPlayer({
                   maxWidth: "100%",
                   maxHeight: "100%",
                   objectFit: "contain",
-                  transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                  transform: transformCss,
+                  transformOrigin: "center center",
                 }}
               />
             ) : (
@@ -341,7 +355,8 @@ export function PreviewPlayer({
                   maxWidth: "100%",
                   maxHeight: "100%",
                   objectFit: "contain",
-                  transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                  transform: transformCss,
+                  transformOrigin: "center center",
                 }}
                 muted
               />
