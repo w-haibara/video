@@ -39,6 +39,12 @@ describe("project-service", () => {
     expect(entries).toContain("thumbnails");
   });
 
+  test("createProject initializes settings with default durationMs", async () => {
+    const project = await createProject("Settings Test");
+    expect(project.settings).toBeDefined();
+    expect(project.settings.durationMs).toBe(10_000);
+  });
+
   test("getProject reads project.json", async () => {
     const created = await createProject("Read Test");
     const fetched = await getProject(created.id);

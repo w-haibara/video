@@ -233,6 +233,98 @@ describe("addTextClip", () => {
   });
 });
 
+describe("addClipFromAsset with maxDurationMs", () => {
+  test("clamps clip duration to fit within maxDurationMs", () => {
+    const seq = addClipFromAsset(emptySeq, videoAsset, 3000);
+    const clip = seq.tracks[0].clips[0];
+    expect(clip.durationMs).toBe(3000); // clamped from 5000 to 3000
+    expect(clip.outMs).toBe(3000);
+  });
+
+  test("rejects clip when startMs >= maxDurationMs", () => {
+    // Fill up to 5000ms
+    let seq = addClipFromAsset(emptySeq, videoAsset); // 0-5000
+    // Try to add another clip with max 5000 — startMs would be 5000, rejected
+    seq = addClipFromAsset(seq, { ...videoAsset, id: "v2" }, 5000);
+    expect(seq.tracks[0].clips.length).toBe(1); // unchanged
+  });
+
+  test("allows clip when it fits within maxDurationMs", () => {
+    const seq = addClipFromAsset(emptySeq, videoAsset, 10000);
+    expect(seq.tracks[0].clips[0].durationMs).toBe(5000); // no clamping needed
+  });
+
+  test("no constraint when maxDurationMs is undefined", () => {
+    const seq = addClipFromAsset(emptySeq, videoAsset);
+    expect(seq.tracks[0].clips[0].durationMs).toBe(5000);
+  });
+});
+
+describe("moveClip with maxDurationMs", () => {
+  test("allows move when clip fits within maxDurationMs", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset); // duration 5000
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = moveClip(seq, clipId, 2000, 10000);
+    expect(seq.tracks[0].clips[0].startMs).toBe(2000);
+  });
+
+  test("clamps startMs when clip would exceed maxDurationMs", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset); // duration 5000
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = moveClip(seq, clipId, 8000, 10000); // 8000 + 5000 = 13000 > 10000
+    expect(seq.tracks[0].clips[0].startMs).toBe(5000); // clamped to 10000 - 5000
+  });
+
+  test("clamps startMs to 0 when clip is longer than maxDurationMs", () => {
+    let seq = addClipFromAsset(emptySeq, { ...videoAsset, durationMs: 15000 });
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = moveClip(seq, clipId, 5000, 10000);
+    expect(seq.tracks[0].clips[0].startMs).toBe(0); // max(0, 10000-15000) = 0
+  });
+});
+
+describe("trimClip with maxTimelineDurationMs", () => {
+  test("right trim clamps to timeline duration", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset); // startMs=0, duration=5000
+    const clipId = seq.tracks[0].clips[0].id;
+    // First shorten to 3000
+    seq = trimClip(seq, clipId, "right", -2000);
+    expect(seq.tracks[0].clips[0].durationMs).toBe(3000);
+    // Try to expand right by 10000 with timeline limit of 8000
+    seq = trimClip(seq, clipId, "right", 10000, undefined, 8000);
+    const clip = seq.tracks[0].clips[0];
+    expect(clip.durationMs).toBe(8000); // clamped to 8000 - 0 (startMs)
+  });
+
+  test("right trim respects both source and timeline limits", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset); // startMs=0, duration=5000
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = trimClip(seq, clipId, "right", -2000);
+    // Source limit 5000, timeline limit 4000 — timeline wins (4000 < 5000)
+    seq = trimClip(seq, clipId, "right", 10000, 5000, 4000);
+    expect(seq.tracks[0].clips[0].durationMs).toBe(4000);
+  });
+});
+
+describe("addTextClip with maxDurationMs", () => {
+  test("clamps text clip duration to maxDurationMs", () => {
+    const seq = addTextClip(emptySeq, 8000, 5000, { value: "Hello" }, 10000);
+    const clip = seq.tracks[0].clips[0];
+    expect(clip.durationMs).toBe(2000); // 10000 - 8000
+    expect(clip.outMs).toBe(2000);
+  });
+
+  test("rejects text clip when startMs >= maxDurationMs", () => {
+    const seq = addTextClip(emptySeq, 10000, 3000, { value: "Hello" }, 10000);
+    expect(seq.tracks.length).toBe(0); // rejected, unchanged
+  });
+
+  test("allows text clip within maxDurationMs without clamping", () => {
+    const seq = addTextClip(emptySeq, 2000, 3000, { value: "Hello" }, 10000);
+    expect(seq.tracks[0].clips[0].durationMs).toBe(3000);
+  });
+});
+
 describe("updateClip", () => {
   test("updates clip text", () => {
     let seq = addTextClip(emptySeq, 0, 2000, { value: "old" });
