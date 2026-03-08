@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Sequence } from "@video/shared";
-import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip } from "./sequence-ops";
+import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -322,6 +322,72 @@ describe("addTextClip with maxDurationMs", () => {
   test("allows text clip within maxDurationMs without clamping", () => {
     const seq = addTextClip(emptySeq, 2000, 3000, { value: "Hello" }, 10000);
     expect(seq.tracks[0].clips[0].durationMs).toBe(3000);
+  });
+});
+
+describe("moveClip overlap prevention", () => {
+  test("snaps to end of previous clip when dragged on top of it", () => {
+    // Create two clips: clip1 at 0-5000, clip2 at 5000-10000
+    let seq = addClipFromAsset(emptySeq, videoAsset); // clip1: 0-5000
+    seq = addClipFromAsset(seq, { ...videoAsset, id: "v2", durationMs: 5000 }); // clip2: 5000-10000
+    const clip2Id = seq.tracks[0].clips[1].id;
+    // Try to move clip2 to 2000 (overlapping clip1)
+    seq = moveClip(seq, clip2Id, 2000);
+    // Should snap to clip1's end (5000)
+    const movedClip = seq.tracks[0].clips.find((c) => c.id === clip2Id)!;
+    expect(movedClip.startMs).toBe(5000);
+  });
+
+  test("allows free movement when no overlap", () => {
+    // Create two clips with gap: clip1 at 0-5000, clip2 at 15000-20000
+    let seq = addClipFromAsset(emptySeq, videoAsset); // clip1: 0-5000
+    seq = addClipFromAsset(seq, { ...videoAsset, id: "v2", durationMs: 5000 }); // clip2: 5000-10000
+    const clip2Id = seq.tracks[0].clips[1].id;
+    // Move clip2 to 12000 (plenty of space)
+    seq = moveClip(seq, clip2Id, 12000);
+    const movedClip = seq.tracks[0].clips.find((c) => c.id === clip2Id)!;
+    expect(movedClip.startMs).toBe(12000);
+  });
+
+  test("handles three clips - move to gap between them", () => {
+    // clip1: 0-2000, clip2: 2000-4000, clip3: 10000-12000
+    let seq = addClipFromAsset(emptySeq, { ...videoAsset, id: "v1", durationMs: 2000 });
+    seq = addClipFromAsset(seq, { ...videoAsset, id: "v2", durationMs: 2000 });
+    seq = addClipFromAsset(seq, { ...videoAsset, id: "v3", durationMs: 2000 });
+    const clip3Id = seq.tracks[0].clips[2].id;
+    // Move clip3 to gap at 6000
+    seq = moveClip(seq, clip3Id, 6000);
+    const movedClip = seq.tracks[0].clips.find((c) => c.id === clip3Id)!;
+    expect(movedClip.startMs).toBe(6000);
+  });
+
+  test("snaps before next clip when approaching from left", () => {
+    // clip1: 0-2000, clip2: 5000-7000
+    let seq = addClipFromAsset(emptySeq, { ...videoAsset, id: "v1", durationMs: 2000 });
+    seq = addClipFromAsset(seq, { ...videoAsset, id: "v2", durationMs: 2000 });
+    // clip2 is at 2000-4000, move it to 5000 then test snapping
+    const clip1Id = seq.tracks[0].clips[0].id;
+    const clip2Id = seq.tracks[0].clips[1].id;
+    // Move clip2 far away first
+    seq = moveClip(seq, clip2Id, 8000);
+    // Now move clip1 to overlap with clip2 from the left
+    seq = moveClip(seq, clip1Id, 7500);
+    const movedClip = seq.tracks[0].clips.find((c) => c.id === clip1Id)!;
+    // Should snap before clip2 (8000 - 2000 = 6000)
+    expect(movedClip.startMs).toBe(6000);
+  });
+
+  test("cancels move when no valid position exists between clips", () => {
+    // Create tight arrangement: clip1: 0-5000, clip2: 5000-10000, clip3: 10000-15000
+    let seq = addClipFromAsset(emptySeq, { ...videoAsset, id: "v1", durationMs: 5000 });
+    seq = addClipFromAsset(seq, { ...videoAsset, id: "v2", durationMs: 5000 });
+    seq = addClipFromAsset(seq, { ...videoAsset, id: "v3", durationMs: 5000 });
+    const clip3Id = seq.tracks[0].clips[2].id;
+    // Try to move clip3 to 2000 (no room between clip1 and clip2)
+    seq = moveClip(seq, clip3Id, 2000);
+    const movedClip = seq.tracks[0].clips.find((c) => c.id === clip3Id)!;
+    // Should stay at original position (10000) since snap would still overlap
+    expect(movedClip.startMs).toBe(10000);
   });
 });
 

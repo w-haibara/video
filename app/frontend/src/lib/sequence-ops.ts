@@ -57,6 +57,49 @@ export function removeClip(sequence: Sequence, clipId: string): Sequence {
   return { ...sequence, tracks };
 }
 
+export function findNonOverlappingPosition(
+  clips: readonly Clip[],
+  movingClipId: string,
+  newStartMs: number,
+  durationMs: number,
+): number {
+  const others = clips
+    .filter((c) => c.id !== movingClipId)
+    .sort((a, b) => a.startMs - b.startMs);
+
+  if (others.length === 0) return newStartMs;
+
+  let pos = newStartMs;
+  const endMs = pos + durationMs;
+
+  for (const other of others) {
+    const otherEnd = other.startMs + other.durationMs;
+    // Check overlap: [pos, pos+durationMs) intersects [other.startMs, otherEnd)
+    if (pos < otherEnd && endMs > other.startMs) {
+      // Snap to whichever side is closer
+      const snapAfter = otherEnd;
+      const snapBefore = other.startMs - durationMs;
+      if (Math.abs(snapAfter - newStartMs) <= Math.abs(snapBefore - newStartMs)) {
+        pos = snapAfter;
+      } else {
+        pos = snapBefore;
+      }
+    }
+  }
+
+  // Verify the snapped position doesn't overlap with any other clip
+  for (const other of others) {
+    const otherEnd = other.startMs + other.durationMs;
+    if (pos < otherEnd && pos + durationMs > other.startMs) {
+      // Still overlapping after snap — cancel the move
+      const original = clips.find((c) => c.id === movingClipId);
+      return original ? original.startMs : newStartMs;
+    }
+  }
+
+  return pos;
+}
+
 export function moveClip(
   sequence: Sequence,
   clipId: string,
@@ -75,6 +118,20 @@ export function moveClip(
       }
     }
   }
+
+  // Apply overlap prevention within the same track
+  for (const track of sequence.tracks) {
+    const clip = track.clips.find((c) => c.id === clipId);
+    if (clip) {
+      startMs = findNonOverlappingPosition(track.clips, clipId, startMs, clip.durationMs);
+      startMs = Math.max(0, startMs);
+      if (maxDurationMs != null) {
+        startMs = Math.min(startMs, Math.max(0, maxDurationMs - clip.durationMs));
+      }
+      break;
+    }
+  }
+
   const tracks = sequence.tracks.map((track) => ({
     ...track,
     clips: track.clips
