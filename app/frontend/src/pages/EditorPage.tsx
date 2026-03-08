@@ -114,6 +114,15 @@ function EditorPageLoaded({
 
   return (
     <EditorLayout
+      toolbar={
+        <SaveIndicator
+          status={saveStatus}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={undo}
+          onRedo={redo}
+        />
+      }
       preview={
         <PreviewPlayer
           project={currentProject}
@@ -130,21 +139,12 @@ function EditorPageLoaded({
           <EditorMainPanel
             selectedClipId={selectedClipId}
             inspectorContent={
-              <div>
-                <SaveIndicator
-                  status={saveStatus}
-                  canUndo={canUndo}
-                  canRedo={canRedo}
-                  onUndo={undo}
-                  onRedo={redo}
-                />
-                <InspectorPanel
-                  project={currentProject}
-                  selectedClipId={selectedClipId}
-                  onUpdateClip={updateClip}
-                  onMoveClip={moveClip}
-                />
-              </div>
+              <InspectorPanel
+                project={currentProject}
+                selectedClipId={selectedClipId}
+                onUpdateClip={updateClip}
+                onMoveClip={moveClip}
+              />
             }
             assetsContent={
               <div>
