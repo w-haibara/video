@@ -35,6 +35,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
         },
       ],
     },
+    settings: { durationMs: 10000 },
     ...overrides,
   };
 }
@@ -273,5 +274,148 @@ describe("buildExportArgs", () => {
     expect(() => buildExportArgs(project, "/assets", "/out.mp4")).toThrow(
       "Asset not found",
     );
+  });
+
+  test("excludes clips beyond project settings durationMs", () => {
+    const project = makeProject({
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 3000, hasAudio: false },
+        { id: "v2", kind: "video", originalPath: "assets/v2.mp4", durationMs: 3000, hasAudio: false },
+        { id: "v3", kind: "video", originalPath: "assets/v3.mp4", durationMs: 3000, hasAudio: false },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              { id: "c1", assetId: "v1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c2", assetId: "v2", startMs: 3000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c3", assetId: "v3", startMs: 6000, durationMs: 3000, inMs: 0, outMs: 3000 },
+            ],
+          },
+        ],
+      },
+      settings: { durationMs: 6000 },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Only 2 clips should be included (c3 starts at 6000 which equals durationMs)
+    expect(filter).toContain("concat=n=2:v=1:a=0");
+    // v3.mp4 should not appear as input
+    expect(args).not.toContain("/assets/v3.mp4");
+  });
+
+  test("clamps clip that spans project duration boundary", () => {
+    const project = makeProject({
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 5000, hasAudio: false },
+        { id: "v2", kind: "video", originalPath: "assets/v2.mp4", durationMs: 5000, hasAudio: false },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+              { id: "c2", assetId: "v2", startMs: 5000, durationMs: 5000, inMs: 0, outMs: 5000 },
+            ],
+          },
+        ],
+      },
+      settings: { durationMs: 8000 },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Both clips included but c2 should be clamped to 3s (8000 - 5000 = 3000ms)
+    expect(filter).toContain("concat=n=2:v=1:a=0");
+    // c2 trim duration should be 3 seconds
+    expect(filter).toContain("trim=start=0:duration=3,");
+  });
+
+  test("limits total export to project settings durationMs", () => {
+    const project = makeProject({
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 3000, hasAudio: false },
+        { id: "v2", kind: "video", originalPath: "assets/v2.mp4", durationMs: 3000, hasAudio: false },
+        { id: "v3", kind: "video", originalPath: "assets/v3.mp4", durationMs: 3000, hasAudio: false },
+        { id: "v4", kind: "video", originalPath: "assets/v4.mp4", durationMs: 3000, hasAudio: false },
+        { id: "v5", kind: "video", originalPath: "assets/v5.mp4", durationMs: 3000, hasAudio: false },
+        { id: "v6", kind: "video", originalPath: "assets/v6.mp4", durationMs: 3000, hasAudio: false },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              { id: "c1", assetId: "v1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c2", assetId: "v2", startMs: 3000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c3", assetId: "v3", startMs: 6000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c4", assetId: "v4", startMs: 9000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c5", assetId: "v5", startMs: 12000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c6", assetId: "v6", startMs: 15000, durationMs: 3000, inMs: 0, outMs: 3000 },
+            ],
+          },
+        ],
+      },
+      settings: { durationMs: 6000 },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Only first 2 clips (0-3s, 3-6s) should be included
+    expect(filter).toContain("concat=n=2:v=1:a=0");
+  });
+
+  test("excludes text overlays beyond project duration", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+            ],
+          },
+          {
+            id: "t2",
+            kind: "title",
+            clips: [
+              {
+                id: "tc1",
+                assetId: "",
+                startMs: 1000,
+                durationMs: 2000,
+                inMs: 0,
+                outMs: 2000,
+                text: { value: "Visible" },
+              },
+              {
+                id: "tc2",
+                assetId: "",
+                startMs: 4000,
+                durationMs: 2000,
+                inMs: 0,
+                outMs: 2000,
+                text: { value: "Hidden" },
+              },
+            ],
+          },
+        ],
+      },
+      settings: { durationMs: 3000 },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    expect(filter).toContain("drawtext=text='Visible'");
+    expect(filter).not.toContain("drawtext=text='Hidden'");
+    // Visible text should be clamped to end at 3s
+    expect(filter).toContain("enable='between(t,1,3)'");
   });
 });

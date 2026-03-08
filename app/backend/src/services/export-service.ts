@@ -77,8 +77,24 @@ export function buildExportArgs(
     audioBitrate: "192k",
   };
 
-  // Sort clips by startMs
-  const clips = [...videoTrack.clips].sort((a, b) => a.startMs - b.startMs);
+  // Project duration limit
+  const projectDurationMs = project.settings?.durationMs;
+
+  // Sort clips by startMs, filter out clips beyond project duration, and clamp
+  const clips = [...videoTrack.clips]
+    .sort((a, b) => a.startMs - b.startMs)
+    .filter((c) => projectDurationMs == null || c.startMs < projectDurationMs)
+    .map((c) => {
+      if (projectDurationMs != null && c.startMs + c.durationMs > projectDurationMs) {
+        const clampedDuration = projectDurationMs - c.startMs;
+        return { ...c, durationMs: clampedDuration, outMs: c.inMs + clampedDuration };
+      }
+      return c;
+    });
+
+  if (clips.length === 0) {
+    throw new Error("No video clips to export");
+  }
 
   const inputArgs: string[] = [];
   const filterParts: string[] = [];
@@ -121,10 +137,15 @@ export function buildExportArgs(
   const textTrack = project.sequence.tracks.find((t) => t.kind === "title");
   let videoOut = "[outv]";
   if (textTrack && textTrack.clips.length > 0) {
-    textTrack.clips.forEach((textClip, i) => {
+    const textClips = textTrack.clips.filter(
+      (tc) => projectDurationMs == null || tc.startMs < projectDurationMs,
+    );
+    textClips.forEach((textClip, i) => {
       if (!textClip.text) return;
       const enableStart = textClip.startMs / 1000;
-      const enableEnd = (textClip.startMs + textClip.durationMs) / 1000;
+      const rawEnd = textClip.startMs + textClip.durationMs;
+      const clampedEnd = projectDurationMs != null ? Math.min(rawEnd, projectDurationMs) : rawEnd;
+      const enableEnd = clampedEnd / 1000;
       const escapedText = textClip.text.value
         .replace(/'/g, "'\\''")
         .replace(/:/g, "\\:");
@@ -284,11 +305,14 @@ export async function startExport(
     throw new Error("No video clips to export");
   }
 
-  // Calculate total duration for progress
-  const totalDurationMs = videoTrack.clips.reduce(
+  // Calculate total duration for progress (clamped to project settings)
+  const clipSumMs = videoTrack.clips.reduce(
     (sum, c) => sum + c.durationMs,
     0,
   );
+  const totalDurationMs = project.settings?.durationMs
+    ? Math.min(clipSumMs, project.settings.durationMs)
+    : clipSumMs;
 
   const job = jobQueue.enqueue(projectId, "export", async (job: Job) => {
     const args = buildExportArgs(project, assetsBase, outputPath);
