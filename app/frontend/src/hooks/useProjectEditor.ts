@@ -7,11 +7,13 @@ export function useProjectEditor(
   sequence: Sequence,
   pushState: (seq: Sequence) => void,
 ) {
+  const maxDurationMs = project.settings.durationMs;
+
   const addClipFromAsset = useCallback(
     (asset: Asset) => {
-      pushState(SeqOps.addClipFromAsset(sequence, asset));
+      pushState(SeqOps.addClipFromAsset(sequence, asset, maxDurationMs));
     },
-    [sequence, pushState],
+    [sequence, pushState, maxDurationMs],
   );
 
   const removeClip = useCallback(
@@ -23,9 +25,9 @@ export function useProjectEditor(
 
   const moveClip = useCallback(
     (clipId: string, newStartMs: number) => {
-      pushState(SeqOps.moveClip(sequence, clipId, newStartMs));
+      pushState(SeqOps.moveClip(sequence, clipId, newStartMs, maxDurationMs));
     },
-    [sequence, pushState],
+    [sequence, pushState, maxDurationMs],
   );
 
   const trimClip = useCallback(
@@ -43,16 +45,16 @@ export function useProjectEditor(
           break;
         }
       }
-      pushState(SeqOps.trimClip(sequence, clipId, side, deltaMs, maxSourceDurationMs));
+      pushState(SeqOps.trimClip(sequence, clipId, side, deltaMs, maxSourceDurationMs, maxDurationMs));
     },
-    [sequence, project.assets, pushState],
+    [sequence, project.assets, pushState, maxDurationMs],
   );
 
   const addTextClip = useCallback(
     (startMs: number, durationMs: number, text: ClipText) => {
-      pushState(SeqOps.addTextClip(sequence, startMs, durationMs, text));
+      pushState(SeqOps.addTextClip(sequence, startMs, durationMs, text, maxDurationMs));
     },
-    [sequence, pushState],
+    [sequence, pushState, maxDurationMs],
   );
 
   const updateClip = useCallback(

@@ -4,6 +4,7 @@ import { generateId, DEFAULT_IMAGE_DURATION_MS } from "@video/shared";
 export function addClipFromAsset(
   sequence: Sequence,
   asset: Asset,
+  maxDurationMs?: number,
 ): Sequence {
   const tracks = sequence.tracks.map((t) => ({ ...t, clips: [...t.clips] }));
   const trackKind = asset.kind === "audio" ? "audio" : "video";
@@ -18,10 +19,20 @@ export function addClipFromAsset(
     0,
   );
 
+  // Reject if start position is already at or beyond the limit
+  if (maxDurationMs != null && lastEnd >= maxDurationMs) {
+    return sequence;
+  }
+
   const isImage = asset.kind === "image";
-  const durationMs = isImage
+  let durationMs = isImage
     ? DEFAULT_IMAGE_DURATION_MS
     : (asset.durationMs ?? DEFAULT_IMAGE_DURATION_MS);
+
+  // Clamp duration to fit within the limit
+  if (maxDurationMs != null && lastEnd + durationMs > maxDurationMs) {
+    durationMs = maxDurationMs - lastEnd;
+  }
 
   const clip: Clip = {
     id: generateId(),
@@ -50,8 +61,20 @@ export function moveClip(
   sequence: Sequence,
   clipId: string,
   newStartMs: number,
+  maxDurationMs?: number,
 ): Sequence {
-  const startMs = Math.max(0, Math.round(newStartMs));
+  let startMs = Math.max(0, Math.round(newStartMs));
+  if (maxDurationMs != null) {
+    // Find the clip to get its duration for clamping
+    for (const track of sequence.tracks) {
+      const clip = track.clips.find((c) => c.id === clipId);
+      if (clip) {
+        const maxStart = Math.max(0, maxDurationMs - clip.durationMs);
+        startMs = Math.min(startMs, maxStart);
+        break;
+      }
+    }
+  }
   const tracks = sequence.tracks.map((track) => ({
     ...track,
     clips: track.clips
@@ -66,7 +89,19 @@ export function addTextClip(
   startMs: number,
   durationMs: number,
   text: ClipText,
+  maxDurationMs?: number,
 ): Sequence {
+  // Reject if start is beyond the limit
+  if (maxDurationMs != null && startMs >= maxDurationMs) {
+    return sequence;
+  }
+
+  // Clamp duration
+  let clampedDuration = durationMs;
+  if (maxDurationMs != null && startMs + clampedDuration > maxDurationMs) {
+    clampedDuration = maxDurationMs - startMs;
+  }
+
   const tracks = sequence.tracks.map((t) => ({ ...t, clips: [...t.clips] }));
   let track = tracks.find((t) => t.kind === "title");
   if (!track) {
@@ -78,9 +113,9 @@ export function addTextClip(
     id: generateId(),
     assetId: "",
     startMs,
-    durationMs,
+    durationMs: clampedDuration,
     inMs: 0,
-    outMs: durationMs,
+    outMs: clampedDuration,
     text,
   };
 
@@ -109,6 +144,7 @@ export function trimClip(
   side: "left" | "right",
   deltaMs: number,
   maxSourceDurationMs?: number,
+  maxTimelineDurationMs?: number,
 ): Sequence {
   const tracks = sequence.tracks.map((track) => ({
     ...track,
@@ -127,6 +163,9 @@ export function trimClip(
         let newDuration = Math.max(100, c.durationMs + deltaMs);
         if (maxSourceDurationMs != null) {
           newDuration = Math.min(newDuration, maxSourceDurationMs - c.inMs);
+        }
+        if (maxTimelineDurationMs != null) {
+          newDuration = Math.min(newDuration, maxTimelineDurationMs - c.startMs);
         }
         return {
           ...c,

@@ -7,6 +7,7 @@ type Props = {
   msToPx: (ms: number) => number;
   pxToMs: (px: number) => number;
   totalWidth: number;
+  maxDurationMs: number;
   selectedClipId: string | null;
   onSelectClip: (clipId: string) => void;
   onMoveClip: (clipId: string, newStartMs: number) => void;
@@ -26,6 +27,7 @@ export function TimelineTrack({
   msToPx,
   pxToMs,
   totalWidth,
+  maxDurationMs,
   selectedClipId,
   onSelectClip,
   onMoveClip,
@@ -69,6 +71,7 @@ export function TimelineTrack({
             asset={assetMap.get(clip.assetId)}
             msToPx={msToPx}
             pxToMs={pxToMs}
+            maxDurationMs={maxDurationMs}
             isSelected={selectedClipId === clip.id}
             onSelect={onSelectClip}
             onMove={onMoveClip}

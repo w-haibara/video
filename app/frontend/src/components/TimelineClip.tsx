@@ -6,6 +6,7 @@ type Props = {
   asset: Asset | undefined;
   msToPx: (ms: number) => number;
   pxToMs: (px: number) => number;
+  maxDurationMs: number;
   isSelected: boolean;
   onSelect: (clipId: string) => void;
   onMove: (clipId: string, newStartMs: number) => void;
@@ -20,6 +21,7 @@ export function TimelineClip({
   asset,
   msToPx,
   pxToMs,
+  maxDurationMs,
   isSelected,
   onSelect,
   onMove,
@@ -66,7 +68,11 @@ export function TimelineClip({
         if (!dragRef.current) return;
         const dx = ev.clientX - dragRef.current.startX;
         const deltaMs = pxToMs(dx);
-        onMove(clip.id, dragRef.current.startMs + deltaMs);
+        const newStartMs = Math.min(
+          dragRef.current.startMs + deltaMs,
+          Math.max(0, maxDurationMs - clip.durationMs),
+        );
+        onMove(clip.id, newStartMs);
       };
 
       const handleMouseUp = () => {

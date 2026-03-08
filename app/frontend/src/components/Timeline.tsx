@@ -18,14 +18,7 @@ type Props = {
 };
 
 function getTimelineDuration(project: Project): number {
-  let maxMs = 0;
-  for (const track of project.sequence.tracks) {
-    for (const clip of track.clips) {
-      const end = clip.startMs + clip.durationMs;
-      if (end > maxMs) maxMs = end;
-    }
-  }
-  return Math.max(maxMs + 5000, 10000);
+  return project.settings.durationMs;
 }
 
 export function Timeline({
@@ -226,6 +219,7 @@ export function Timeline({
                   msToPx={msToPx}
                   pxToMs={pxToMs}
                   totalWidth={totalWidth}
+                  maxDurationMs={project.settings.durationMs}
                   selectedClipId={selectedClipId}
                   onSelectClip={onSelectClip}
                   onMoveClip={handleMove}
@@ -234,6 +228,19 @@ export function Timeline({
                 />
               ))
             )}
+
+            {/* Duration end marker */}
+            <div
+              style={{
+                position: "absolute",
+                left: `${msToPx(project.settings.durationMs) + 32}px`,
+                top: 0,
+                bottom: 0,
+                borderLeft: "2px dashed rgba(255, 100, 100, 0.5)",
+                pointerEvents: "none",
+                zIndex: 1,
+              }}
+            />
 
             {/* Playhead (spans seek bar + tracks) */}
             <Playhead positionPx={playheadPx + 32} />
