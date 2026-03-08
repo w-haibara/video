@@ -82,6 +82,7 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip }: Props)
       {(trackKind === "video") && onUpdateClip && (
         <TransformEditor
           clip={clip}
+          asset={asset}
           onUpdate={(updates) => onUpdateClip(clip.id, updates)}
         />
       )}
@@ -360,14 +361,19 @@ const ROTATIONS = [0, 90, 180, 270] as const;
 
 function TransformEditor({
   clip,
+  asset,
   onUpdate,
 }: {
   clip: Clip;
+  asset: Asset | undefined;
   onUpdate: (updates: Partial<Clip>) => void;
 }) {
   const transform = clip.transform ?? {};
   const crop = clip.crop;
   const currentRotation = transform.rotation ?? 0;
+
+  const defaultW = asset?.width ?? 100;
+  const defaultH = asset?.height ?? 100;
 
   const updateTransform = (field: Partial<ClipTransform>) => {
     onUpdate({ transform: { ...transform, ...field } });
@@ -377,7 +383,7 @@ function TransformEditor({
     if (crop) {
       onUpdate({ crop: { ...crop, ...field } });
     } else {
-      onUpdate({ crop: { x: 0, y: 0, width: 100, height: 100, ...field } });
+      onUpdate({ crop: { x: 0, y: 0, width: defaultW, height: defaultH, ...field } });
     }
   };
 
@@ -431,6 +437,7 @@ function TransformEditor({
             value={crop?.x ?? 0}
             onChange={(e) => updateCrop({ x: Number(e.target.value) })}
             min={0}
+            max={asset?.width ? asset.width - 1 : undefined}
             style={inputStyle}
           />
         </div>
@@ -441,6 +448,7 @@ function TransformEditor({
             value={crop?.y ?? 0}
             onChange={(e) => updateCrop({ y: Number(e.target.value) })}
             min={0}
+            max={asset?.height ? asset.height - 1 : undefined}
             style={inputStyle}
           />
         </div>
@@ -448,9 +456,10 @@ function TransformEditor({
           <label style={{ color: "#666", fontSize: "10px" }}>W</label>
           <input
             type="number"
-            value={crop?.width ?? 100}
+            value={crop?.width ?? defaultW}
             onChange={(e) => updateCrop({ width: Number(e.target.value) })}
             min={1}
+            max={asset?.width}
             style={inputStyle}
           />
         </div>
@@ -458,9 +467,10 @@ function TransformEditor({
           <label style={{ color: "#666", fontSize: "10px" }}>H</label>
           <input
             type="number"
-            value={crop?.height ?? 100}
+            value={crop?.height ?? defaultH}
             onChange={(e) => updateCrop({ height: Number(e.target.value) })}
             min={1}
+            max={asset?.height}
             style={inputStyle}
           />
         </div>
