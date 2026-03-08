@@ -55,6 +55,9 @@
 | 49 | 先頭から全体再生ボタンの追加 | [x] Done | 12, 44 |
 | 50 | 同一トラック内のクリップ重なり防止 | [x] Done | 11, 47 |
 | 51 | アセットインポート完了前のクリップ追加防止とサムネイル表示改善 | [x] Done | 05, 08 |
+| 52 | Crop 初期値をアセットサイズに合わせる | [x] Done | 19 |
+| 53 | クリップの位置・拡大縮小 UI とプレビュー対応 | [ ] Todo | 19, 52 |
+| 54 | クリップ開始位置の数値入力 | [ ] Todo | 11, 50 |
 
 ## Phase 1 Tasks
 
@@ -1044,3 +1047,90 @@ EditorLayout のグリッド構造を全面的に変更し、プレビューを�
 - [ ] ジョブ進行中: スピナーまたはプログレスバーを表示 (既存の JobProgress を使用)
 - [ ] ジョブ完了でサムネイルがまだ表示されない場合: 「Processing...」表示
 - [ ] サムネイルがある場合: 画像を表示 (現状通り)
+
+## Phase 15 Tasks — インスペクタ機能強化
+
+### 現状の課題
+
+1. **Crop の初期値問題**: Crop の W/H がハードコード `100` で初期化されている。元動画のサイズ (`asset.width/height`) がアセットメタデータとして取得済みなのに活用されていない
+2. **クリップの位置・拡大縮小**: `ClipTransform` 型に `x`, `y`, `scale` フィールドが定義済みだが、UI (InspectorPanel) もプレビュー描画 (PreviewPlayer) もエクスポート (export-service) も未実装。回転のみ対応
+3. **クリップ開始位置の数値入力**: `startMs` は InspectorPanel に読み取り専用テキストで表示されるのみ。タイムライン上のドラッグでしか変更できない
+
+### 52: Crop 初期値をアセットサイズに合わせる
+
+現状: `InspectorPanel.tsx` の `updateCrop()` で Crop が未設定の場合のデフォルト値が `{ x: 0, y: 0, width: 100, height: 100 }` にハードコードされている。これはアセットの実際のピクセルサイズと無関係な値であり、Crop を初めて設定したときに意図しない範囲になる。
+
+目標: Crop の初期 W/H をアセットの実サイズ (`asset.width`, `asset.height`) に合わせる。
+
+**A. TransformEditor にアセット情報を渡す** (`app/frontend/src/components/InspectorPanel.tsx`)
+- [ ] `TransformEditor` の props に `asset: Asset | undefined` を追加
+- [ ] `InspectorPanel` から `TransformEditor` に `asset` を渡す
+
+**B. Crop デフォルト値をアセットサイズで初期化**
+- [ ] `updateCrop()` 内のフォールバック値を変更:
+  - 旧: `{ x: 0, y: 0, width: 100, height: 100, ...field }`
+  - 新: `{ x: 0, y: 0, width: asset?.width ?? 100, height: asset?.height ?? 100, ...field }`
+- [ ] Crop の W/H 入力フィールドのプレースホルダー表示も変更:
+  - 旧: `crop?.width ?? 100`, `crop?.height ?? 100`
+  - 新: `crop?.width ?? (asset?.width ?? 100)`, `crop?.height ?? (asset?.height ?? 100)`
+
+**C. バリデーション**
+- [ ] W > 0 かつ W <= asset.width (存在する場合)
+- [ ] H > 0 かつ H <= asset.height (存在する場合)
+- [ ] X + W <= asset.width, Y + H <= asset.height (存在する場合)
+
+### 53: クリップの位置・拡大縮小 UI とプレビュー対応
+
+現状: `ClipTransform` 型に `x`, `y`, `scale` が定義済みだが、UI・プレビュー描画・エクスポートのいずれにも未実装。
+
+目標: インスペクタから位置 (X, Y) と拡大縮小 (Scale) を設定でき、プレビューにリアルタイム反映される。
+
+**A. TransformEditor に Position / Scale UI を追加** (`app/frontend/src/components/InspectorPanel.tsx`)
+- [ ] Rotation セクションの下に Position セクションを追加:
+  - X: `<input type="number">` (ピクセル単位、step=1、デフォルト 0)
+  - Y: `<input type="number">` (ピクセル単位、step=1、デフォルト 0)
+  - 2 カラムグリッドで X, Y を横並び表示
+- [ ] Position セクションの下に Scale セクションを追加:
+  - Scale: `<input type="number">` (倍率、step=0.1、min=0.1、max=5.0、デフォルト 1.0)
+  - `{Math.round(scale * 100)}%` でパーセント表示を添える
+- [ ] 「Reset Transform」ボタンを追加: `onUpdate({ transform: undefined })` でリセット
+- [ ] 各入力値変更時に `updateTransform({ x: ... })` 等で `onUpdateClip` を呼ぶ
+
+**B. PreviewPlayer でのトランスフォーム描画** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [ ] `activeClip.clip.transform` から `x`, `y`, `scale` を取得 (デフォルト: x=0, y=0, scale=1)
+- [ ] 映像/画像要素の CSS `transform` を拡張:
+  - 現状: `transform: rotate(${rotation}deg)`
+  - 変更: `transform: translate(${x}px, ${y}px) scale(${scale}) rotate(${rotation}deg)`
+  - `transformOrigin: "center center"` を設定
+- [ ] クロップとの組み合わせ: クロップコンテナの外側に position/scale を適用
+
+**C. エクスポートでの反映** (`app/backend/src/services/export-service.ts`)
+- [ ] `buildExportArgs()` で `transform.x`, `transform.y`, `transform.scale` を FFmpeg フィルターに変換
+  - Scale: `scale=iw*{scale}:ih*{scale}` フィルター
+  - Position: `pad` または `overlay` フィルターで座標指定
+  - 回転と合わせて filtergraph に挿入
+
+### 54: クリップ開始位置の数値入力
+
+現状: InspectorPanel の `<Row label="Start" value={formatMs(clip.startMs)} />` は読み取り専用。タイムライン上のドラッグ移動でしか `startMs` を変更できない。
+
+目標: インスペクタから `startMs` を数値入力で変更でき、タイムライン上のクリップ位置がリアルタイムに更新される。
+
+**A. Start 行を編集可能にする** (`app/frontend/src/components/InspectorPanel.tsx`)
+- [ ] `<Row label="Start" value={formatMs(clip.startMs)} />` を `TrimEditor` と同様の数値入力フィールドに変更
+  - 秒単位の入力 (小数第 1 位まで、step=0.1)
+  - `useState` で入力値を管理、`onBlur` / `Enter` キーでコミット
+- [ ] InspectorPanel の props に `onMoveClip?: (clipId: string, newStartMs: number) => void` を追加
+- [ ] 値変更時: `onMoveClip(clip.id, newStartMs)` を呼ぶ
+  - これにより `sequence-ops.moveClip()` 経由で重なり防止・maxDurationMs 制約が適用される
+
+**B. EditorPage からの接続** (`app/frontend/src/pages/EditorPage.tsx`)
+- [ ] InspectorPanel に `onMoveClip` を渡す
+  - `useProjectEditor` の `moveClip` を使用
+- [ ] EditorMainPanel 経由で props を伝播
+
+**C. バリデーション**
+- [ ] startMs >= 0
+- [ ] startMs + clip.durationMs <= project.settings.durationMs (タイムライン制約)
+- [ ] 不正な値の場合は入力を元の値に戻す
+- [ ] 同一トラック内の重なり防止は `moveClip()` のロジックで自動適用される
