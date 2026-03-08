@@ -95,6 +95,7 @@ export function PreviewPlayer({
   const lastClipIdRef = useRef<string | null>(null);
   const lastMediaUrlRef = useRef<string>("");
   const videoEndedRef = useRef(false);
+  const sourceChangingRef = useRef(false);
   const currentTimeMsRef = useRef(currentTimeMs);
   currentTimeMsRef.current = currentTimeMs;
 
@@ -132,11 +133,13 @@ export function PreviewPlayer({
         const urlChanged = lastMediaUrlRef.current !== mediaUrl;
         if (urlChanged || srcMissing) {
           lastMediaUrlRef.current = mediaUrl;
+          sourceChangingRef.current = true;
           video.src = mediaUrl;
           // Wait for load before seeking when source changes
           const seekTarget = activeClip.clipTimeMs / 1000;
           const onLoadedData = () => {
             video.removeEventListener("loadeddata", onLoadedData);
+            sourceChangingRef.current = false;
             video.currentTime = seekTarget;
             if (isPlayingRef.current) {
               video.play().catch(() => {});
@@ -267,6 +270,8 @@ export function PreviewPlayer({
   useEffect(() => {
     const video = videoRef.current;
     if (!video || isPlaying || !activeClip) return;
+    // Skip seek while a source change is loading — the loadeddata handler will seek
+    if (sourceChangingRef.current) return;
     if (activeClip.asset.kind === "video") {
       video.currentTime = activeClip.clipTimeMs / 1000;
     }
