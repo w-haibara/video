@@ -7,6 +7,7 @@ type Props = {
   onTimeUpdate: (ms: number) => void;
   isPlaying: boolean;
   onPlayPause: () => void;
+  selectedClipId?: string | null;
 };
 
 type ActiveClip = {
@@ -60,6 +61,15 @@ function getSequenceEndMs(project: Project): number {
   return endMs;
 }
 
+function findClipById(project: Project, clipId: string): Clip | null {
+  for (const track of project.sequence.tracks) {
+    for (const clip of track.clips) {
+      if (clip.id === clipId) return clip;
+    }
+  }
+  return null;
+}
+
 function getMediaUrl(asset: Asset, projectId: string): string {
   if (asset.kind === "video" && asset.proxyPath) {
     const filename = asset.proxyPath.split("/").pop();
@@ -78,6 +88,7 @@ export function PreviewPlayer({
   onTimeUpdate,
   isPlaying,
   onPlayPause,
+  selectedClipId,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const animFrameRef = useRef<number>(0);
@@ -96,6 +107,8 @@ export function PreviewPlayer({
   onPlayPauseRef.current = onPlayPause;
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
+  const selectedClipIdRef = useRef(selectedClipId);
+  selectedClipIdRef.current = selectedClipId;
 
   const activeClip = findActiveClip(project, currentTimeMs);
   const activeTextClips = findActiveTextClips(project, currentTimeMs);
@@ -180,8 +193,13 @@ export function PreviewPlayer({
       const proj = projectRef.current;
       const seqEnd = getSequenceEndMs(proj);
 
-      // Stop at end of sequence
-      if (seqEnd <= 0 || curTime >= seqEnd) {
+      // Determine playback end point based on selected clip
+      const selId = selectedClipIdRef.current;
+      const selClip = selId ? findClipById(proj, selId) : null;
+      const playEnd = selClip ? selClip.startMs + selClip.durationMs : seqEnd;
+
+      // Stop at end of playback range
+      if (playEnd <= 0 || curTime >= playEnd) {
         onPlayPauseRef.current();
         return;
       }
@@ -229,10 +247,10 @@ export function PreviewPlayer({
       } else {
         // No active clip — advance time to find the next clip
         const newTime = curTime + deltaMs;
-        if (newTime < seqEnd) {
+        if (newTime < playEnd) {
           onTimeUpdateRef.current(newTime);
         } else {
-          onTimeUpdateRef.current(seqEnd);
+          onTimeUpdateRef.current(playEnd);
           onPlayPauseRef.current();
           return;
         }
@@ -374,11 +392,20 @@ export function PreviewPlayer({
       >
         <button
           onClick={() => {
-            // If at the end of sequence, reset to start before playing
             if (!isPlaying) {
-              const seqEnd = getSequenceEndMs(project);
-              if (seqEnd > 0 && currentTimeMs >= seqEnd) {
-                onTimeUpdate(0);
+              const selClip = selectedClipId ? findClipById(project, selectedClipId) : null;
+              if (selClip) {
+                // Selected clip: reset to clip start if at or past clip end
+                const clipEnd = selClip.startMs + selClip.durationMs;
+                if (currentTimeMs >= clipEnd) {
+                  onTimeUpdate(selClip.startMs);
+                }
+              } else {
+                // No selection: reset to sequence start if at end
+                const seqEnd = getSequenceEndMs(project);
+                if (seqEnd > 0 && currentTimeMs >= seqEnd) {
+                  onTimeUpdate(0);
+                }
               }
             }
             onPlayPause();

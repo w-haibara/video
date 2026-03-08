@@ -67,10 +67,23 @@ function EditorPageLoaded({
 
   const currentProject: Project = { ...project, sequence };
 
+  const handleSelectClip = useCallback((clipId: string | null) => {
+    onSelectClip(clipId);
+    if (clipId) {
+      for (const track of sequence.tracks) {
+        const clip = track.clips.find((c: { id: string }) => c.id === clipId);
+        if (clip) {
+          onSeek(clip.startMs);
+          break;
+        }
+      }
+    }
+  }, [onSelectClip, onSeek, sequence.tracks]);
+
   const handleDeleteClip = useCallback((clipId: string) => {
     removeClip(clipId);
-    onSelectClip(null);
-  }, [removeClip, onSelectClip]);
+    handleSelectClip(null);
+  }, [removeClip, handleSelectClip]);
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
@@ -102,6 +115,7 @@ function EditorPageLoaded({
           onTimeUpdate={onSeek}
           isPlaying={isPlaying}
           onPlayPause={onPlayPause}
+          selectedClipId={selectedClipId}
         />
       }
       mainPanel={
@@ -209,7 +223,7 @@ function EditorPageLoaded({
           currentTimeMs={currentTimeMs}
           onSeek={onSeek}
           selectedClipId={selectedClipId}
-          onSelectClip={onSelectClip}
+          onSelectClip={handleSelectClip}
           onDeleteClip={handleDeleteClip}
           onMoveClip={moveClip}
           onTrimClip={trimClip}
