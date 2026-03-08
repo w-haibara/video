@@ -2,3 +2,5 @@ node_modules/
 dist/
 workspace/
 *.tsbuildinfo
+.playwright-mcp/
+screenshots/
