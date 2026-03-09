@@ -82,7 +82,7 @@
 | 76 | InspectorPanel セクションラベルの視認性改善 | [x] Done | 60 |
 | 77 | 共有型に canvasWidth / canvasHeight を追加 | [x] Done | 02, 45 |
 | 78 | Settings タブにキャンバスサイズ設定 UI を追加 | [x] Done | 46, 77 |
-| 79 | プレビュープレーヤーのキャンバスサイズ対応 | [ ] Todo | 12, 77 |
+| 79 | プレビュープレーヤーのキャンバスサイズ対応 | [x] Done | 12, 77 |
 | 80 | エクスポートのキャンバスサイズ対応 | [ ] Todo | 15, 77 |
 | 81 | キャンバスサイズ機能のテスト・Story 更新 | [ ] Todo | 77, 78, 79, 80 |
 
@@ -1984,15 +1984,15 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - `app/frontend/src/components/PreviewPlayer.stories.tsx`
 
 **変更内容:**
-- [ ] プレビュー表示領域をキャンバスのアスペクト比（canvasWidth:canvasHeight）で固定
+- [x] プレビュー表示領域をキャンバスのアスペクト比（canvasWidth:canvasHeight）で固定
   - 親コンテナ内で letterbox/pillarbox 表示（黒帯で余白を埋める）
-- [ ] 素材の表示サイズをキャンバスサイズとの比率で計算
+- [x] 素材の表示サイズをキャンバスサイズとの比率で計算
   - `displayWidth = (assetWidth / canvasWidth) * containerWidth`
   - `displayHeight = (assetHeight / canvasHeight) * containerHeight`
-- [ ] 素材がキャンバスより大きい場合: `overflow: hidden` ではみ出し部分を非表示（自動クロップ効果）
-- [ ] 素材がキャンバスより小さい場合: 黒背景にセンタリング表示
-- [ ] クリップの transform (position/scale) をキャンバス座標系で適用
-- [ ] Storybook の Story を更新（異なるキャンバスサイズでの表示確認用バリエーション追加）
+- [x] 素材がキャンバスより大きい場合: `overflow: hidden` ではみ出し部分を非表示（自動クロップ効果）
+- [x] 素材がキャンバスより小さい場合: 黒背景にセンタリング表示
+- [x] クリップの transform (position/scale) をキャンバス座標系で適用
+- [x] Storybook の Story を更新（異なるキャンバスサイズでの表示確認用バリエーション追加）
 
 **確認方法:** プレビューで以下を確認
 - 1920×1080 キャンバスに 4K 素材 → 画面内に収まり、はみ出し部分がクロップ
