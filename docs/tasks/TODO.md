@@ -83,7 +83,7 @@
 | 77 | 共有型に canvasWidth / canvasHeight を追加 | [x] Done | 02, 45 |
 | 78 | Settings タブにキャンバスサイズ設定 UI を追加 | [x] Done | 46, 77 |
 | 79 | プレビュープレーヤーのキャンバスサイズ対応 | [x] Done | 12, 77 |
-| 80 | エクスポートのキャンバスサイズ対応 | [ ] Todo | 15, 77 |
+| 80 | エクスポートのキャンバスサイズ対応 | [x] Done | 15, 77 |
 | 81 | キャンバスサイズ機能のテスト・Story 更新 | [ ] Todo | 77, 78, 79, 80 |
 
 ## Phase 1 Tasks
@@ -2007,15 +2007,14 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - `app/backend/src/services/export-service.ts`
 
 **変更内容:**
-- [ ] `buildExportArgs` でキャンバスサイズ（`project.settings.canvasWidth` / `canvasHeight`）をエクスポート解像度として使用
+- [x] `buildExportArgs` でキャンバスサイズ（`project.settings.canvasWidth` / `canvasHeight`）をエクスポート解像度として使用
   - `exportPreset` が未指定の場合、キャンバスサイズをそのまま出力解像度にする
   - `exportPreset` が指定されている場合、`exportPreset` の width/height を優先（キャンバスサイズと異なる解像度でのエクスポートも可能）
-- [ ] 素材がキャンバスより大きい場合の FFmpeg フィルタ:
-  - `scale` で元サイズを維持したまま `crop` でキャンバスサイズにクロップ（中央クロップ）
-  - 現状の `scale=W:H:force_original_aspect_ratio=decrease,pad=W:H` は素材を縮小してフィットさせるため、クロップ動作に変更が必要
-- [ ] 素材がキャンバスより小さい場合の FFmpeg フィルタ:
-  - `pad` で黒背景を追加しキャンバスサイズに拡張（中央配置）— 現状の動作を維持
-- [ ] `buildTransformFilter` のキャンバスサイズ参照を更新
+- [x] 素材がキャンバスより大きい場合の FFmpeg フィルタ:
+  - `pad+crop` 方式: `pad=w='max(iw,W)':h='max(ih,H)'` で最低キャンバスサイズまで拡張後、`crop=W:H` で中央クロップ
+- [x] 素材がキャンバスより小さい場合の FFmpeg フィルタ:
+  - `pad` で黒背景を追加しキャンバスサイズに拡張（中央配置）— pad+crop で自動対応
+- [x] `buildTransformFilter` は既にキャンバスサイズ（preset）を参照しているため変更不要
 
 **確認方法:** 以下のケースでエクスポートが正しく動作すること
 - 大きい素材 → キャンバスサイズで中央クロップされた動画が出力
