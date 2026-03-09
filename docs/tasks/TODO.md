@@ -73,7 +73,7 @@
 | 67 | Export タブ再設計: インライン操作化 + View Jobs 移動 | [x] Done | 18, 38, 40 |
 | 68 | textDisabled ラベルの視認性改善（全 UI） | [x] Done | 60 |
 | 69 | テーマシステム拡張: スペーシング・フォントサイズ・角丸の定数化 | [x] Done | 60 |
-| 70 | ハードコード色のテーマ変数置換 | [ ] Todo | 69 |
+| 70 | ハードコード色のテーマ変数置換 | [x] Done | 69 |
 | 71 | ボタンスタイルの統一 | [ ] Todo | 69 |
 | 72 | 入力フィールド・見出し・ラベルスタイルの統一 | [ ] Todo | 69 |
 | 73 | Storybook 導入 + 全コンポーネントの Story 定義 | [ ] Todo | - |
@@ -1708,30 +1708,30 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - 必要に応じて `theme.ts` に新しい色定数を追加する
 
 **A. theme.ts への色定数追加** (`app/frontend/src/theme.ts`)
-- [ ] `white: '#FFFFFF'` を追加（クリップラベル・ボタンテキスト等で使用）
-- [ ] `black: '#000000'` を追加（プレビュー背景等で使用）
-- [ ] `overlayLight: 'rgba(255,255,255,0.2)'` を追加（サムネイルボタン等）
-- [ ] `overlayDark: 'rgba(0,0,0,0.85)'` を追加（ツールチップ背景等）
-- [ ] `clipLabelText: '#FFFFFF'` を追加（クリップ上の白テキスト用）
+- [x] `white: '#FFFFFF'` を追加（クリップラベル・ボタンテキスト等で使用）
+- [x] `black: '#000000'` を追加（プレビュー背景等で使用）
+- [x] `overlayLight: 'rgba(255,255,255,0.2)'` を追加（サムネイルボタン等）
+- [x] `overlayDark: 'rgba(0,0,0,0.85)'` を追加（ツールチップ背景等）
+- [x] `clipLabelText: '#FFFFFF'` を追加（クリップ上の白テキスト用）
 
 **B. AssetThumbnail.tsx のハードコード色置換** (`app/frontend/src/components/AssetThumbnail.tsx`)
-- [ ] L120: `color: "#fff"` → `color: theme.clipLabelText`
-- [ ] L144: `background: "rgba(248,85,82,0.5)"` → `background: theme.error` + opacity を CSS で表現、または `theme.ts` に `errorOverlay` を追加
-- [ ] L161, L175: `background: "rgba(255,255,255,0.2)"` → `background: theme.overlayLight`
-- [ ] L162, L176: `border: "1px solid rgba(255,255,255,0.5)"` → theme 変数化
+- [x] L120: `color: "#fff"` → `color: theme.clipLabelText`
+- [x] L144: `background: "rgba(248,85,82,0.5)"` → `background: theme.errorOverlay`
+- [x] L161, L175: `background: "rgba(255,255,255,0.2)"` → `background: theme.overlayLight`
+- [x] L162, L176: `border: "1px solid rgba(255,255,255,0.5)"` → `theme.overlayLightBorder` 変数化
 
 **C. TimelineClip.tsx のハードコード色置換** (`app/frontend/src/components/TimelineClip.tsx`)
-- [ ] L175: `color: "#fff"` → `color: theme.clipLabelText`
-- [ ] L200: `background: "rgba(0,0,0,0.85)"` → `background: theme.overlayDark`
-- [ ] L201: `color: "#fff"` → `color: theme.white`
-- [ ] L241: `background: "rgba(255,255,255,0.3)"` → `background: theme.overlayLight`
-- [ ] L243-244: `rgba(255,255,255,...)` → theme 変数化
+- [x] L175: `color: "#fff"` → `color: theme.clipLabelText`
+- [x] L200: `background: "rgba(0,0,0,0.85)"` → `background: theme.overlayDark`
+- [x] L201: `color: "#fff"` → `color: theme.white`
+- [x] L241: `background: "rgba(255,255,255,0.3)"` → `background: theme.overlayLightMed`
+- [x] L243-244: `rgba(255,255,255,...)` → `theme.overlayLightBorder`, `theme.overlayLightSubtle` 変数化
 
 **D. PreviewPlayer.tsx のハードコード色置換** (`app/frontend/src/components/PreviewPlayer.tsx`)
-- [ ] L315: `"#000"` → `theme.black`
+- [x] L315: `"#000"` → `theme.black`
 
 **E. EditorPage.tsx のハードコード色置換** (`app/frontend/src/pages/EditorPage.tsx`)
-- [ ] L198-199: `color: "#ffffff"`, `backgroundColor: "#000000"` → `theme.white`, `theme.black`
+- [x] L198-199: `color: "#ffffff"`, `backgroundColor: "#000000"` → `theme.white`, `theme.black`
 
 ### 71: ボタンスタイルの統一
 
