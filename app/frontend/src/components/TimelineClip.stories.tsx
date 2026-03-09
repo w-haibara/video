@@ -1,29 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
-import type { Asset, Clip } from "@video/shared";
+import { mockAsset, mockClip } from "../stories/fixtures";
 import { TimelineClip } from "./TimelineClip";
-
-const mockAsset = (overrides?: Partial<Asset>): Asset => ({
-  id: "asset-1",
-  kind: "video",
-  originalPath: "/videos/sample.mp4",
-  proxyPath: "/proxy/sample.mp4",
-  thumbnailPath: "/thumb/sample.jpg",
-  width: 1920,
-  height: 1080,
-  durationMs: 10000,
-  ...overrides,
-});
-
-const mockClip = (overrides?: Partial<Clip>): Clip => ({
-  id: "clip-1",
-  assetId: "asset-1",
-  startMs: 0,
-  durationMs: 5000,
-  inMs: 0,
-  outMs: 5000,
-  ...overrides,
-});
 
 const msToPx = (ms: number) => ms * 0.05;
 const pxToMs = (px: number) => px / 0.05;

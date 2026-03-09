@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { EditorMainPanel } from "./EditorMainPanel";
 
+import { theme } from "../theme";
+
 const PlaceholderContent = ({ label }: { label: string }) => (
-  <div style={{ padding: 8, color: "#ccc", fontSize: 13 }}>
+  <div style={{ padding: 8, color: theme.textMuted, fontSize: 13 }}>
     {label} content goes here
   </div>
 );

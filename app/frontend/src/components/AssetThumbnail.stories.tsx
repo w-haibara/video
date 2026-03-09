@@ -1,34 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { Asset } from "@video/shared";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { createStoryQueryClient, mockAsset } from "../stories/fixtures";
 import { AssetThumbnail } from "./AssetThumbnail";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { retry: false },
-    mutations: { retry: false },
-  },
-});
-
-const mockAsset = (overrides?: Partial<Asset>): Asset => ({
-  id: "asset-1",
-  kind: "video",
-  originalPath: "/videos/sample.mp4",
-  proxyPath: "/proxy/sample.mp4",
-  thumbnailPath: "/thumb/sample.jpg",
-  width: 1920,
-  height: 1080,
-  durationMs: 10000,
-  ...overrides,
-});
 
 const meta: Meta<typeof AssetThumbnail> = {
   title: "Components/AssetThumbnail",
   component: AssetThumbnail,
   decorators: [
     (Story) => (
-      <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={createStoryQueryClient()}>
         <div style={{ width: 160 }}>
           <Story />
         </div>

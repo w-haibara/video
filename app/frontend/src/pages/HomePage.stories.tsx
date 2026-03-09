@@ -1,18 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
+import { createStoryQueryClient } from "../stories/fixtures";
 import { HomePage } from "./HomePage";
-
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false } },
-});
 
 const meta: Meta<typeof HomePage> = {
   title: "Pages/HomePage",
   component: HomePage,
   decorators: [
     (Story) => (
-      <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={createStoryQueryClient()}>
         <MemoryRouter>
           <Story />
         </MemoryRouter>
