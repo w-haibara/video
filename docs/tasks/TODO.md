@@ -85,6 +85,8 @@
 | 79 | プレビュープレーヤーのキャンバスサイズ対応 | [x] Done | 12, 77 |
 | 80 | エクスポートのキャンバスサイズ対応 | [x] Done | 15, 77 |
 | 81 | キャンバスサイズ機能のテスト・Story 更新 | [x] Done | 77, 78, 79, 80 |
+| 82 | エクスポートへの clip.crop 反映 | [x] Done | 15, 19, 80 |
+| 83 | エクスポート crop のテスト追加 | [x] Done | 82 |
 
 ## Phase 1 Tasks
 
@@ -2041,3 +2043,49 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - [x] export-service テストにキャンバスサイズ考慮のケース追加（大きい素材、小さい素材）
 
 **確認方法:** `bun run test` と `bun run storybook` で全テスト・Story が正常動作すること
+
+### 82: エクスポートへの clip.crop 反映
+
+**背景:** クリップに crop（x, y, width, height）を設定するとプレビューでは CSS `clipPath: inset()` により正しく切り抜きが表示されるが、エクスポートした動画には crop が反映されない。`buildExportArgs()` が `clip.crop` フィールドを読み取っていないことが原因。
+
+**問題の詳細:**
+- プレビュー（`PreviewPlayer.tsx:474-483` `cropContainerStyle`）は `clip.crop` を CSS `clipPath` で適用
+- エクスポート（`export-service.ts:126-131`）のフィルタチェーンは `trim → pad → crop(center)` で、ユーザー crop を無視
+- `clip.crop` は `ClipCrop` 型（x, y, width, height）として共有型に定義済み
+
+**対象ファイル:**
+- `app/backend/src/services/export-service.ts`
+
+**変更内容:**
+- [x] `buildExportArgs()` 内で各クリップの `clip.crop` を参照し、値がある場合は FFmpeg `crop` フィルタを挿入
+- [x] フィルタ挿入位置: `trim` / `setpts` の直後、`pad` の前（ソース映像から先に切り抜く）
+- [x] 動画クリップ: `[i:v]trim=...,setpts=...,crop=W:H:X:Y,pad=...,crop=...` の順
+- [x] 画像クリップ: `[i:v]crop=W:H:X:Y,pad=...,crop=...,setsar=1` の順
+- [x] crop 未設定（undefined）のクリップは従来通り変更なし
+
+**FFmpeg crop フィルタ仕様:**
+```
+crop=width:height:x:y
+```
+- width, height: 切り抜き後のサイズ（ピクセル）
+- x, y: 切り抜き開始位置（ソース映像の左上が原点）
+
+**確認方法:**
+- crop を設定したプロジェクトをエクスポートし、出力動画が crop 範囲のみ含むこと
+- crop 未設定のクリップは従来通り全体が表示されること
+- crop + transform（position/scale）の組み合わせが正しく動作すること
+
+### 83: エクスポート crop のテスト追加
+
+**背景:** タスク 82 の変更に対するユニットテストを追加する。
+
+**対象ファイル:**
+- `app/backend/src/services/export-service.test.ts`
+
+**変更内容:**
+- [x] crop 設定ありのクリップでフィルタに `crop=W:H:X:Y` が含まれることを確認するテスト
+- [x] crop 未設定のクリップでフィルタに余分な crop が追加されないことを確認するテスト
+- [x] crop + transform 併用時にフィルタ順序が正しいことを確認するテスト
+- [x] 画像クリップの crop テスト
+
+**確認方法:** `bun run test` で全テストが通ること
