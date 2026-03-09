@@ -55,4 +55,37 @@ export const theme = {
   overlay:   'rgba(92, 106, 114, 0.5)',   // モーダルオーバーレイ
 } as const;
 
+// ── スペーシングスケール (px) ──
+export const spacing = {
+  xs: 4,   // ラベル〜入力間、密なギャップ
+  sm: 8,   // セクション内マージン、パネルパディング
+  md: 12,  // セクション間マージン
+  lg: 16,  // ヘッダー・ダイアログ内パディング
+  xl: 24,  // ページレベルパディング
+} as const;
+
+// ── フォントサイズスケール ──
+export const fontSize = {
+  xs:       '10px',  // メタ情報（タイムスタンプ等）
+  sm:       '11px',  // フィールドラベル、タイムラインクリップ
+  md:       '12px',  // 本文テキスト、入力フィールド、ボタン（小）
+  lg:       '13px',  // タブテキスト、ボタン（標準）
+  xl:       '14px',  // ボタン（大）
+  heading3: '16px',  // セクション見出し
+  heading2: '18px',  // ダイアログ見出し
+  heading1: '20px',  // ページ見出し
+} as const;
+
+// ── 角丸スケール ──
+export const radius = {
+  xs: '2px',  // プログレスバー
+  sm: '3px',  // 入力フィールド、小ボタン
+  md: '4px',  // 標準ボタン、カード内要素
+  lg: '6px',  // ダイアログボタン
+  xl: '8px',  // カード、ダイアログ
+} as const;
+
 export type Theme = typeof theme;
+export type Spacing = typeof spacing;
+export type FontSize = typeof fontSize;
+export type Radius = typeof radius;
