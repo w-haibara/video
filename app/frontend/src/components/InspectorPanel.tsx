@@ -201,7 +201,7 @@ function TrimEditor({
 
   return (
     <div style={{ marginTop: "8px" }}>
-      <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
+      <label style={{ color: theme.text, display: "block", marginBottom: "4px" }}>
         Trim
       </label>
       <div style={{ display: "grid", gridTemplateColumns: hasSourceTrim ? "1fr 1fr 1fr" : "1fr", gap: "4px" }}>
@@ -268,7 +268,7 @@ function TextEditor({
 
   return (
     <div style={{ marginTop: "8px" }}>
-      <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
+      <label style={{ color: theme.text, display: "block", marginBottom: "4px" }}>
         Text
       </label>
       <textarea
@@ -385,7 +385,7 @@ function TransformEditor({
 
   return (
     <div style={{ marginTop: "8px" }}>
-      <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
+      <label style={{ color: theme.text, display: "block", marginBottom: "4px" }}>
         Rotation
       </label>
       <div style={{ display: "flex", gap: "4px" }}>
@@ -400,7 +400,7 @@ function TransformEditor({
         ))}
       </div>
 
-      <label style={{ color: theme.textMuted, display: "block", marginTop: "8px", marginBottom: "4px" }}>
+      <label style={{ color: theme.text, display: "block", marginTop: "8px", marginBottom: "4px" }}>
         Position
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
@@ -426,7 +426,7 @@ function TransformEditor({
         </div>
       </div>
 
-      <label style={{ color: theme.textMuted, display: "block", marginTop: "8px", marginBottom: "4px" }}>
+      <label style={{ color: theme.text, display: "block", marginTop: "8px", marginBottom: "4px" }}>
         Scale ({Math.round((transform.scale ?? 1) * 100)}%)
       </label>
       <input
@@ -448,7 +448,7 @@ function TransformEditor({
         </button>
       )}
 
-      <label style={{ color: theme.textMuted, display: "block", marginTop: "8px", marginBottom: "4px" }}>
+      <label style={{ color: theme.text, display: "block", marginTop: "8px", marginBottom: "4px" }}>
         Crop {crop ? "(active)" : ""}
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
@@ -533,7 +533,7 @@ function StartEndEditor({
 
   return (
     <div style={{ marginTop: "8px" }}>
-      <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
+      <label style={{ color: theme.text, display: "block", marginBottom: "4px" }}>
         Position
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
@@ -567,7 +567,7 @@ function StartEndEditor({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <tr>
-      <td style={{ padding: "2px 4px 2px 0", color: theme.textMuted, whiteSpace: "nowrap" }}>
+      <td style={{ padding: "2px 4px 2px 0", color: theme.text, whiteSpace: "nowrap" }}>
         {label}
       </td>
       <td style={{ padding: "2px 0", wordBreak: "break-all" }}>{value}</td>

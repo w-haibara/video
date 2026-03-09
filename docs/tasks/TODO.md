@@ -78,6 +78,8 @@
 | 72 | 入力フィールド・見出し・ラベルスタイルの統一 | [x] Done | 69 |
 | 73 | Storybook 導入 + 全コンポーネントの Story 定義 | [x] Done | - |
 | 74 | Vitest ブラウザテスト導入 + 全 Story のテスト整備 | [x] Done | 73 |
+| 75 | テーマフォントサイズの一段階拡大 | [x] Done | 69 |
+| 76 | InspectorPanel セクションラベルの視認性改善 | [x] Done | 60 |
 
 ## Phase 1 Tasks
 
@@ -1894,3 +1896,41 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - [x] `CreateProjectDialog.test.tsx` — ダイアログ表示、入力、送信
 - [x] `ProjectCard.test.tsx` — カード表示、リンク先
 - [x] `JobProgress.test.tsx` — 各状態の描画（プログレスバー表示）
+
+### 75: テーマフォントサイズの一段階拡大
+
+**背景:** Theme Overview の Typography セクションで、全体的にフォントサイズが小さいため一回り大きくしたい。
+
+**対象ファイル:** `app/frontend/src/theme.ts` (L78-88 `fontSize` 定数)
+
+**変更内容:**
+- [x] `xs`: 10px → 11px
+- [x] `sm`: 11px → 12px
+- [x] `md`: 12px → 13px
+- [x] `lg`: 13px → 14px
+- [x] `xl`: 14px → 16px
+- [x] `heading3`: 16px → 18px
+- [x] `heading2`: 18px → 20px
+- [x] `heading1`: 20px → 22px
+
+**確認方法:** Storybook Theme Overview (`theme--overview`) で Typography セクションの表示を確認
+
+### 76: InspectorPanel セクションラベルの視認性改善
+
+**背景:** InspectorPanel の「File」「Type」「Rotation」「Position」「Scale」「Crop」「Trim」等のラベルが `theme.textMuted`（#939F91）で表示されており、ライト背景（#FDF6E3）に対してコントラストが不十分で視認性が悪い。
+
+**対象ファイル:** `app/frontend/src/components/InspectorPanel.tsx`
+
+**問題箇所:** セクション見出し `<label>` と情報テーブル `<td>` で `theme.textMuted` を使用
+- L204: Trim ラベル
+- L271: Text ラベル
+- L388: Rotation ラベル
+- L403: Position ラベル
+- L429: Scale ラベル
+- L451: Crop ラベル
+- L536: Position ラベル (StartEndEditor)
+- L570: Row コンポーネント (File, Type, Size, Codec)
+
+**修正方針:** これらのラベルの色を `theme.textMuted`（#939F91）→ `theme.text`（#5C6A72）に変更する。`theme.text` は本文テキスト色であり、背景色との十分なコントラストがある。
+
+**確認方法:** Storybook InspectorPanel (`components-inspectorpanel--video-clip`) でラベルの視認性を確認
