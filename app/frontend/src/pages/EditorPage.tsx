@@ -195,8 +195,8 @@ function EditorPageLoaded({
                       addTextClip(currentTimeMs, 3000, {
                         value: "Text",
                         fontSize: 48,
-                        color: "#ffffff",
-                        backgroundColor: "#000000",
+                        color: theme.white,
+                        backgroundColor: theme.black,
                       });
                     }}
                     style={{

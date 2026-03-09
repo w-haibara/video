@@ -172,7 +172,7 @@ export function TimelineClip({
       <span
         style={{
           fontSize: "11px",
-          color: "#fff",
+          color: theme.clipLabelText,
           whiteSpace: "nowrap",
           overflow: "hidden",
           textOverflow: "ellipsis",
@@ -197,8 +197,8 @@ export function TimelineClip({
             position: "absolute",
             top: "-22px",
             [trimTooltip.side === "left" ? "left" : "right"]: 0,
-            background: "rgba(0,0,0,0.85)",
-            color: "#fff",
+            background: theme.overlayDark,
+            color: theme.white,
             fontSize: "10px",
             padding: "2px 6px",
             borderRadius: "3px",
@@ -238,10 +238,10 @@ function TrimHandle({
         bottom: 0,
         width: hovered ? "8px" : `${TRIM_HANDLE_WIDTH}px`,
         cursor: "col-resize",
-        background: active ? "rgba(255,255,255,0.3)" : "transparent",
+        background: active ? theme.overlayLightMed : "transparent",
         [side === "left" ? "borderRight" : "borderLeft"]: active
-          ? "1px solid rgba(255,255,255,0.5)"
-          : "1px solid rgba(255,255,255,0.15)",
+          ? `1px solid ${theme.overlayLightBorder}`
+          : `1px solid ${theme.overlayLightSubtle}`,
         transition: "width 0.1s, background 0.1s",
         display: "flex",
         alignItems: "center",
@@ -253,8 +253,8 @@ function TrimHandle({
           style={{
             width: "2px",
             height: "12px",
-            borderLeft: "1px solid rgba(255,255,255,0.5)",
-            borderRight: "1px solid rgba(255,255,255,0.5)",
+            borderLeft: `1px solid ${theme.overlayLightBorder}`,
+            borderRight: `1px solid ${theme.overlayLightBorder}`,
             pointerEvents: "none",
           }}
         />

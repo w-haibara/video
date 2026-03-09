@@ -51,8 +51,17 @@ export const theme = {
   seekBar:         '#35A77C',  // シークバー (Cyan)
 
   // ── その他 ──
-  shadow:    'rgba(92, 106, 114, 0.12)',  // ドロップシャドウ
-  overlay:   'rgba(92, 106, 114, 0.5)',   // モーダルオーバーレイ
+  white:        '#FFFFFF',                    // 汎用ホワイト
+  black:        '#000000',                    // 汎用ブラック
+  clipLabelText:'#FFFFFF',                    // クリップ上の白テキスト
+  overlayLight: 'rgba(255, 255, 255, 0.2)',   // 明るい半透明オーバーレイ
+  overlayLightBorder: 'rgba(255, 255, 255, 0.5)', // 明るい半透明ボーダー
+  overlayLightSubtle: 'rgba(255, 255, 255, 0.15)', // 薄い半透明ボーダー
+  overlayLightMed: 'rgba(255, 255, 255, 0.3)', // やや明るい半透明オーバーレイ
+  overlayDark:  'rgba(0, 0, 0, 0.85)',        // 暗い半透明オーバーレイ（ツールチップ等）
+  errorOverlay: 'rgba(248, 85, 82, 0.5)',     // エラー半透明オーバーレイ
+  shadow:       'rgba(92, 106, 114, 0.12)',   // ドロップシャドウ
+  overlay:      'rgba(92, 106, 114, 0.5)',    // モーダルオーバーレイ
 } as const;
 
 // ── スペーシングスケール (px) ──

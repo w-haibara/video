@@ -117,7 +117,7 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
               style={{
                 background: theme.overlay,
                 border: "none",
-                color: "#fff",
+                color: theme.clipLabelText,
                 fontSize: "14px",
                 width: "22px",
                 height: "22px",
@@ -141,13 +141,13 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
           style={{
             position: "absolute",
             inset: 0,
-            background: "rgba(248,85,82,0.5)",
+            background: theme.errorOverlay,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             gap: "4px",
-            color: "#fff",
+            color: theme.clipLabelText,
             fontSize: "12px",
           }}
           title={job.error ?? "Import failed"}
@@ -158,9 +158,9 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
               onClick={() => retryJob.mutate(job.id)}
               disabled={retryJob.isPending}
               style={{
-                background: "rgba(255,255,255,0.2)",
-                border: "1px solid rgba(255,255,255,0.5)",
-                color: "#fff",
+                background: theme.overlayLight,
+                border: `1px solid ${theme.overlayLightBorder}`,
+                color: theme.clipLabelText,
                 fontSize: "10px",
                 padding: "2px 8px",
                 borderRadius: "3px",
@@ -173,8 +173,8 @@ export function AssetThumbnail({ asset, projectId, jobId, onAddToTimeline, onDel
               <button
                 onClick={() => onDelete(asset.id)}
                 style={{
-                  background: "rgba(255,255,255,0.2)",
-                  border: "1px solid rgba(255,255,255,0.5)",
+                  background: theme.overlayLight,
+                  border: `1px solid ${theme.overlayLightBorder}`,
                   color: theme.error,
                   fontSize: "10px",
                   padding: "2px 8px",
