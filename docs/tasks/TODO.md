@@ -80,7 +80,7 @@
 | 74 | Vitest ブラウザテスト導入 + 全 Story のテスト整備 | [x] Done | 73 |
 | 75 | テーマフォントサイズの一段階拡大 | [x] Done | 69 |
 | 76 | InspectorPanel セクションラベルの視認性改善 | [x] Done | 60 |
-| 77 | 共有型に canvasWidth / canvasHeight を追加 | [ ] Todo | 02, 45 |
+| 77 | 共有型に canvasWidth / canvasHeight を追加 | [x] Done | 02, 45 |
 | 78 | Settings タブにキャンバスサイズ設定 UI を追加 | [ ] Todo | 46, 77 |
 | 79 | プレビュープレーヤーのキャンバスサイズ対応 | [ ] Todo | 12, 77 |
 | 80 | エクスポートのキャンバスサイズ対応 | [ ] Todo | 15, 77 |
@@ -1950,10 +1950,10 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - `app/backend/src/services/project-service.ts`
 
 **変更内容:**
-- [ ] `ProjectSettings` に `canvasWidth: number` と `canvasHeight: number` を追加
-- [ ] `constants.ts` に `DEFAULT_CANVAS_WIDTH = 1920` と `DEFAULT_CANVAS_HEIGHT = 1080` を追加
-- [ ] `project-service.ts` の新規プロジェクト作成時に `canvasWidth` / `canvasHeight` のデフォルト値を設定
-- [ ] 既存プロジェクトの後方互換性: データ読み込み時に `canvasWidth` / `canvasHeight` が未設定の場合、デフォルト値にフォールバック
+- [x] `ProjectSettings` に `canvasWidth: number` と `canvasHeight: number` を追加
+- [x] `constants.ts` に `DEFAULT_CANVAS_WIDTH = 1920` と `DEFAULT_CANVAS_HEIGHT = 1080` を追加
+- [x] `project-service.ts` の新規プロジェクト作成時に `canvasWidth` / `canvasHeight` のデフォルト値を設定
+- [x] 既存プロジェクトの後方互換性: データ読み込み時に `canvasWidth` / `canvasHeight` が未設定の場合、デフォルト値にフォールバック
 
 **確認方法:** TypeScript コンパイルが通ること、既存テストが Pass すること
 
