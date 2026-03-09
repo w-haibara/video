@@ -15,3 +15,9 @@ export const JOB_POLL_INTERVAL_MS = 1000;
 
 /** プロジェクトのデフォルト動画時間 (ms) */
 export const DEFAULT_PROJECT_DURATION_MS = 10_000;
+
+/** デフォルトキャンバス幅 (px) */
+export const DEFAULT_CANVAS_WIDTH = 1920;
+
+/** デフォルトキャンバス高さ (px) */
+export const DEFAULT_CANVAS_HEIGHT = 1080;

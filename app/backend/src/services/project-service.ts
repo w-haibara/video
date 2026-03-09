@@ -1,5 +1,5 @@
 import type { Project } from "@video/shared";
-import { generateId, DEFAULT_PROJECT_DURATION_MS } from "@video/shared";
+import { generateId, DEFAULT_PROJECT_DURATION_MS, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT } from "@video/shared";
 import {
   projectDir,
   projectJsonPath,
@@ -20,7 +20,11 @@ export async function createProject(name: string): Promise<Project> {
     updatedAt: now,
     assets: [],
     sequence: { tracks: [] },
-    settings: { durationMs: DEFAULT_PROJECT_DURATION_MS },
+    settings: {
+      durationMs: DEFAULT_PROJECT_DURATION_MS,
+      canvasWidth: DEFAULT_CANVAS_WIDTH,
+      canvasHeight: DEFAULT_CANVAS_HEIGHT,
+    },
   };
   await mkdir(projectDir(id), { recursive: true });
   await mkdir(assetsDir(id), { recursive: true });
@@ -32,7 +36,15 @@ export async function createProject(name: string): Promise<Project> {
 
 export async function getProject(id: string): Promise<Project> {
   const data = await readFile(projectJsonPath(id), "utf-8");
-  return JSON.parse(data) as Project;
+  const project = JSON.parse(data) as Project;
+  // Backward compatibility: fill in canvasWidth/canvasHeight if missing
+  if (project.settings && !project.settings.canvasWidth) {
+    project.settings.canvasWidth = DEFAULT_CANVAS_WIDTH;
+  }
+  if (project.settings && !project.settings.canvasHeight) {
+    project.settings.canvasHeight = DEFAULT_CANVAS_HEIGHT;
+  }
+  return project;
 }
 
 export async function listProjects(): Promise<Project[]> {

@@ -80,6 +80,11 @@
 | 74 | Vitest ブラウザテスト導入 + 全 Story のテスト整備 | [x] Done | 73 |
 | 75 | テーマフォントサイズの一段階拡大 | [x] Done | 69 |
 | 76 | InspectorPanel セクションラベルの視認性改善 | [x] Done | 60 |
+| 77 | 共有型に canvasWidth / canvasHeight を追加 | [ ] Todo | 02, 45 |
+| 78 | Settings タブにキャンバスサイズ設定 UI を追加 | [ ] Todo | 46, 77 |
+| 79 | プレビュープレーヤーのキャンバスサイズ対応 | [ ] Todo | 12, 77 |
+| 80 | エクスポートのキャンバスサイズ対応 | [ ] Todo | 15, 77 |
+| 81 | キャンバスサイズ機能のテスト・Story 更新 | [ ] Todo | 77, 78, 79, 80 |
 
 ## Phase 1 Tasks
 
@@ -1934,3 +1939,106 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 **修正方針:** これらのラベルの色を `theme.textMuted`（#939F91）→ `theme.text`（#5C6A72）に変更する。`theme.text` は本文テキスト色であり、背景色との十分なコントラストがある。
 
 **確認方法:** Storybook InspectorPanel (`components-inspectorpanel--video-clip`) でラベルの視認性を確認
+
+### 77: 共有型に canvasWidth / canvasHeight を追加
+
+**背景:** 動画全体の画面サイズ（キャンバスサイズ）を設定可能にする。キャンバスより大きい素材は自動でクロップされ、小さい素材は黒背景にセンタリング表示される。まず共有型定義とデフォルト定数を追加する。
+
+**対象ファイル:**
+- `app/shared/src/types/project.ts`
+- `app/shared/src/utils/constants.ts`
+- `app/backend/src/services/project-service.ts`
+
+**変更内容:**
+- [ ] `ProjectSettings` に `canvasWidth: number` と `canvasHeight: number` を追加
+- [ ] `constants.ts` に `DEFAULT_CANVAS_WIDTH = 1920` と `DEFAULT_CANVAS_HEIGHT = 1080` を追加
+- [ ] `project-service.ts` の新規プロジェクト作成時に `canvasWidth` / `canvasHeight` のデフォルト値を設定
+- [ ] 既存プロジェクトの後方互換性: データ読み込み時に `canvasWidth` / `canvasHeight` が未設定の場合、デフォルト値にフォールバック
+
+**確認方法:** TypeScript コンパイルが通ること、既存テストが Pass すること
+
+### 78: Settings タブにキャンバスサイズ設定 UI を追加
+
+**背景:** ユーザーがキャンバスサイズを Settings タブから変更できるようにする。
+
+**対象ファイル:**
+- `app/frontend/src/components/ProjectSettingsPanel.tsx`
+- `app/frontend/src/components/ProjectSettingsPanel.stories.tsx`
+
+**変更内容:**
+- [ ] ProjectSettingsPanel に「Canvas Size」セクションを追加
+- [ ] 幅 (Width) と高さ (Height) の数値入力フィールド（最小: 320、最大: 3840）
+- [ ] よく使うプリセットの選択ボタン: 1920×1080 (16:9)、1280×720 (16:9)、1080×1920 (9:16 縦動画)、1080×1080 (1:1 正方形)
+- [ ] 入力値のバリデーション（偶数制約: FFmpeg の要件により幅・高さは偶数が必要）
+- [ ] onUpdateSettings コールバック経由で canvasWidth / canvasHeight を親に通知
+- [ ] Storybook の Story を更新
+
+**確認方法:** Storybook ProjectSettingsPanel でキャンバスサイズ入力・プリセット選択が機能すること
+
+### 79: プレビュープレーヤーのキャンバスサイズ対応
+
+**背景:** プレビュー表示をキャンバスサイズに基づく固定アスペクト比で行い、素材がキャンバスからはみ出す場合はクロップ、小さい場合は黒背景にセンタリングする。
+
+**対象ファイル:**
+- `app/frontend/src/components/PreviewPlayer.tsx`
+- `app/frontend/src/components/PreviewPlayer.stories.tsx`
+
+**変更内容:**
+- [ ] プレビュー表示領域をキャンバスのアスペクト比（canvasWidth:canvasHeight）で固定
+  - 親コンテナ内で letterbox/pillarbox 表示（黒帯で余白を埋める）
+- [ ] 素材の表示サイズをキャンバスサイズとの比率で計算
+  - `displayWidth = (assetWidth / canvasWidth) * containerWidth`
+  - `displayHeight = (assetHeight / canvasHeight) * containerHeight`
+- [ ] 素材がキャンバスより大きい場合: `overflow: hidden` ではみ出し部分を非表示（自動クロップ効果）
+- [ ] 素材がキャンバスより小さい場合: 黒背景にセンタリング表示
+- [ ] クリップの transform (position/scale) をキャンバス座標系で適用
+- [ ] Storybook の Story を更新（異なるキャンバスサイズでの表示確認用バリエーション追加）
+
+**確認方法:** プレビューで以下を確認
+- 1920×1080 キャンバスに 4K 素材 → 画面内に収まり、はみ出し部分がクロップ
+- 1920×1080 キャンバスに 640×480 素材 → 黒背景の中央に小さく表示
+- 1080×1080 正方形キャンバスでの表示
+
+### 80: エクスポートのキャンバスサイズ対応
+
+**背景:** エクスポート時の FFmpeg フィルタチェーンでキャンバスサイズを使用し、プレビューと同じ見た目の動画を出力する。
+
+**対象ファイル:**
+- `app/backend/src/services/export-service.ts`
+
+**変更内容:**
+- [ ] `buildExportArgs` でキャンバスサイズ（`project.settings.canvasWidth` / `canvasHeight`）をエクスポート解像度として使用
+  - `exportPreset` が未指定の場合、キャンバスサイズをそのまま出力解像度にする
+  - `exportPreset` が指定されている場合、`exportPreset` の width/height を優先（キャンバスサイズと異なる解像度でのエクスポートも可能）
+- [ ] 素材がキャンバスより大きい場合の FFmpeg フィルタ:
+  - `scale` で元サイズを維持したまま `crop` でキャンバスサイズにクロップ（中央クロップ）
+  - 現状の `scale=W:H:force_original_aspect_ratio=decrease,pad=W:H` は素材を縮小してフィットさせるため、クロップ動作に変更が必要
+- [ ] 素材がキャンバスより小さい場合の FFmpeg フィルタ:
+  - `pad` で黒背景を追加しキャンバスサイズに拡張（中央配置）— 現状の動作を維持
+- [ ] `buildTransformFilter` のキャンバスサイズ参照を更新
+
+**確認方法:** 以下のケースでエクスポートが正しく動作すること
+- 大きい素材 → キャンバスサイズで中央クロップされた動画が出力
+- 小さい素材 → 黒背景にセンタリングされた動画が出力
+- transform (position/scale) 適用時の正しい表示
+
+### 81: キャンバスサイズ機能のテスト・Story 更新
+
+**背景:** キャンバスサイズ機能の追加に伴い、テストデータとストーリーを更新する。
+
+**対象ファイル:**
+- `app/frontend/src/stories/fixtures.ts`
+- `app/frontend/src/components/ProjectSettingsPanel.stories.tsx`
+- `app/frontend/src/components/PreviewPlayer.stories.tsx`
+- `app/frontend/src/components/EditorLayout.stories.tsx`
+- `app/frontend/src/pages/EditorPage.stories.tsx`
+- `app/backend/src/services/__tests__/` (export-service テスト)
+
+**変更内容:**
+- [ ] `fixtures.ts` のモックプロジェクトデータに `canvasWidth` / `canvasHeight` を追加
+- [ ] ProjectSettingsPanel Story にキャンバスサイズプリセット選択のインタラクションテスト追加
+- [ ] PreviewPlayer Story にキャンバスサイズバリエーション追加（16:9、9:16、1:1）
+- [ ] EditorPage / EditorLayout Story のモックデータ更新
+- [ ] export-service テストにキャンバスサイズ考慮のケース追加（大きい素材、小さい素材）
+
+**確認方法:** `bun run test` と `bun run storybook` で全テスト・Story が正常動作すること

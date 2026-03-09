@@ -37,7 +37,7 @@ export const mockProject = (overrides?: Partial<Project>): Project => ({
       { id: "track-a", kind: "audio", clips: [] },
     ],
   },
-  settings: { durationMs: 30000 },
+  settings: { durationMs: 30000, canvasWidth: 1920, canvasHeight: 1080 },
   ...overrides,
 });
 
@@ -106,7 +106,7 @@ export const projectWithClips: Project = {
 };
 
 export const projectWithTextOverlay: Project = {
-  ...projectWithClips,
+  ...mockProject({ name: "Test Project" }),
   assets: [
     mockAsset({
       id: "asset-v1",
@@ -148,7 +148,7 @@ export const projectWithTextOverlay: Project = {
       },
     ],
   },
-  settings: { durationMs: 10000 },
+  settings: { durationMs: 10000, canvasWidth: 1920, canvasHeight: 1080 },
 };
 
 // ── Shared QueryClient ──
@@ -160,3 +160,8 @@ export const createStoryQueryClient = () =>
       mutations: { retry: false },
     },
   });
+
+// ── Shared conversion functions for timeline stories ──
+
+export const storyMsToPx = (ms: number) => ms * 0.05;
+export const storyPxToMs = (px: number) => px / 0.05;

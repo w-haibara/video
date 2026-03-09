@@ -25,7 +25,7 @@ export function ProjectSettingsPanel({ project, onUpdateSettings, projectId }: P
     }
     const ms = Math.round(sec * 1000);
     if (ms !== project.settings.durationMs) {
-      onUpdateSettings({ durationMs: ms });
+      onUpdateSettings({ ...project.settings, durationMs: ms });
     }
   };
 

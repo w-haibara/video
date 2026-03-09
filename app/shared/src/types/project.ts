@@ -2,6 +2,8 @@ import type { Asset } from "./asset";
 
 export type ProjectSettings = {
   durationMs: number; // 動画全体の目標尺 (ミリ秒)
+  canvasWidth: number; // キャンバス幅 (px)
+  canvasHeight: number; // キャンバス高さ (px)
 };
 
 export type Project = {

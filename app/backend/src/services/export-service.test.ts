@@ -35,7 +35,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
         },
       ],
     },
-    settings: { durationMs: 10000 },
+    settings: { durationMs: 10000, canvasWidth: 1920, canvasHeight: 1080 },
     ...overrides,
   };
 }
@@ -296,7 +296,7 @@ describe("buildExportArgs", () => {
           },
         ],
       },
-      settings: { durationMs: 6000 },
+      settings: { durationMs: 6000, canvasWidth: 1920, canvasHeight: 1080 },
     });
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
@@ -325,7 +325,7 @@ describe("buildExportArgs", () => {
           },
         ],
       },
-      settings: { durationMs: 8000 },
+      settings: { durationMs: 8000, canvasWidth: 1920, canvasHeight: 1080 },
     });
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
@@ -362,7 +362,7 @@ describe("buildExportArgs", () => {
           },
         ],
       },
-      settings: { durationMs: 6000 },
+      settings: { durationMs: 6000, canvasWidth: 1920, canvasHeight: 1080 },
     });
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
@@ -507,7 +507,7 @@ describe("buildExportArgs", () => {
           },
         ],
       },
-      settings: { durationMs: 3000 },
+      settings: { durationMs: 3000, canvasWidth: 1920, canvasHeight: 1080 },
     });
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
