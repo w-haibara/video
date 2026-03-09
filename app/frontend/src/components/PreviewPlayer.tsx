@@ -421,8 +421,6 @@ export function PreviewPlayer({
             }
             onSelectClip(null); // clear clip selection for full playback
             onTimeUpdate(0); // seek to start
-            // Start playback on next tick so state updates propagate
-            setTimeout(() => onPlayPause(), 0);
           }}
           style={{
             background: "none",
@@ -434,7 +432,7 @@ export function PreviewPlayer({
             fontSize: "13px",
             minWidth: "36px",
           }}
-          title="Play from start"
+          title="Go to start"
         >
           ⏮
         </button>
