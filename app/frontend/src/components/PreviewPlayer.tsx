@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useEffect } from "react";
 import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
 import { theme, buttonStyle } from "../theme";
 
@@ -220,22 +220,15 @@ export function PreviewPlayer({
         if (!video) {
           // No video element — skip
         } else if (!videoReady) {
-          // Video source not yet updated for this clip (effect hasn't run).
-          // Use deltaMs-based advancement to avoid reading stale video.currentTime.
           const newTime = curTime + deltaMs;
           onTimeUpdateRef.current(Math.min(newTime, clipEndMs));
         } else if (video.ended || videoEndedRef.current) {
-          // Video file finished but clip may still have remaining time
-          // Advance gradually (last frame stays visible)
           videoEndedRef.current = false;
           const newTime = curTime + deltaMs;
           onTimeUpdateRef.current(Math.min(newTime, clipEndMs));
         } else if (video.readyState >= 2 && !video.paused) {
-          // Video is playing and has data
           const videoTimeMs = video.currentTime * 1000;
           const expectedVideoTime = clip.clip.inMs + (curTime - clip.clip.startMs);
-          // If video.currentTime is far from expected, seek hasn't completed yet
-          // (e.g. after source change). Use deltaMs-based advancement instead.
           if (Math.abs(videoTimeMs - expectedVideoTime) > 500) {
             const newTime = curTime + deltaMs;
             onTimeUpdateRef.current(Math.min(newTime, clipEndMs));
@@ -245,13 +238,11 @@ export function PreviewPlayer({
             onTimeUpdateRef.current(clampedMs);
           }
         }
-        // else: video still loading or buffering — wait, don't skip
       } else if (clip && clip.asset.kind === "image") {
         const newTime = curTime + deltaMs;
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
         onTimeUpdateRef.current(Math.min(newTime, clipEndMs));
       } else {
-        // No active clip — advance time to find the next clip
         const newTime = curTime + deltaMs;
         if (newTime < playEnd) {
           onTimeUpdateRef.current(newTime);
@@ -273,28 +264,35 @@ export function PreviewPlayer({
   useEffect(() => {
     const video = videoRef.current;
     if (!video || isPlaying || !activeClip) return;
-    // Skip seek while a source change is loading — the loadeddata handler will seek
     if (sourceChangingRef.current) return;
     if (activeClip.asset.kind === "video") {
       video.currentTime = activeClip.clipTimeMs / 1000;
     }
   }, [currentTimeMs, isPlaying]);
 
+  // Canvas dimensions
+  const canvasW = project.settings.canvasWidth;
+  const canvasH = project.settings.canvasHeight;
+
+  // Asset dimensions & transform
+  const assetW = activeClip?.asset.width ?? canvasW;
+  const assetH = activeClip?.asset.height ?? canvasH;
   const clipTransform = activeClip?.clip.transform;
-  const rotation = clipTransform?.rotation ?? 0;
   const translateX = clipTransform?.x ?? 0;
   const translateY = clipTransform?.y ?? 0;
   const scale = clipTransform?.scale ?? 1;
+  const rotation = clipTransform?.rotation ?? 0;
   const crop = activeClip?.clip.crop;
 
-  const buildTransformCss = (): string | undefined => {
-    const parts: string[] = [];
-    if (translateX || translateY) parts.push(`translate(${translateX}px, ${translateY}px)`);
-    if (scale !== 1) parts.push(`scale(${scale})`);
-    if (rotation) parts.push(`rotate(${rotation}deg)`);
-    return parts.length > 0 ? parts.join(" ") : undefined;
-  };
-  const transformCss = buildTransformCss();
+  // Compute asset position & size as percentages of the canvas container
+  // Asset fills (assetW/canvasW * 100)% of canvas width, centered
+  const assetWidthPct = (assetW / canvasW) * 100 * scale;
+  const assetHeightPct = (assetH / canvasH) * 100 * scale;
+  const offsetXPct = (translateX / canvasW) * 100;
+  const offsetYPct = (translateY / canvasH) * 100;
+
+  // Build CSS transform for rotation only (position handled via top/left)
+  const rotationCss = rotation ? `rotate(${rotation}deg)` : undefined;
 
   const isImage = activeClip?.asset.kind === "image";
   const thumbnailUrl = activeClip
@@ -312,10 +310,10 @@ export function PreviewPlayer({
         flexDirection: "column",
         width: "100%",
         height: "100%",
-        background: activeClip ? theme.black : theme.bgDark,
+        background: theme.bgDark,
       }}
     >
-      {/* Preview area */}
+      {/* Preview area — centers the canvas */}
       <div
         style={{
           flex: 1,
@@ -324,79 +322,95 @@ export function PreviewPlayer({
           justifyContent: "center",
           overflow: "hidden",
           position: "relative",
+          background: theme.bgDark,
         }}
       >
         {!activeClip ? (
           <span style={{ color: theme.textMuted, fontSize: "14px" }}>No clip at playhead</span>
         ) : (
-          <div style={{
-            overflow: "hidden",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            maxWidth: "100%",
-            maxHeight: "100%",
-            ...cropContainerStyle(crop, activeClip.asset),
-          }}>
-            {isImage ? (
-              <img
-                src={thumbnailUrl}
-                alt=""
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "100%",
-                  objectFit: "contain",
-                  transform: transformCss,
-                  transformOrigin: "center center",
-                }}
-              />
-            ) : (
-              <video
-                ref={videoRef}
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "100%",
-                  objectFit: "contain",
-                  transform: transformCss,
-                  transformOrigin: "center center",
-                }}
-                muted
-              />
-            )}
-          </div>
-        )}
-        {/* Text overlay layer */}
-        {activeTextClips.length > 0 && (
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            pointerEvents: "none",
-            padding: "16px",
-          }}>
-            {activeTextClips.map(({ clip, text }) => (
-              <div
-                key={clip.id}
-                style={{
-                  fontSize: `${text.fontSize ?? 48}px`,
-                  color: text.color ?? "#ffffff",
-                  backgroundColor: text.backgroundColor ?? "transparent",
-                  textAlign: (text.align as React.CSSProperties["textAlign"]) ?? "center",
-                  fontFamily: text.fontFamily ?? "sans-serif",
-                  padding: "4px 12px",
-                  borderRadius: "4px",
-                  marginBottom: "8px",
-                  maxWidth: "90%",
-                  wordBreak: "break-word",
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {text.value}
+          /* Canvas container — fixed aspect ratio, black background */
+          <div
+            data-testid="preview-canvas"
+            style={{
+              aspectRatio: `${canvasW} / ${canvasH}`,
+              maxWidth: "100%",
+              maxHeight: "100%",
+              width: "100%",
+              position: "relative",
+              overflow: "hidden",
+              background: theme.black,
+            }}
+          >
+            {/* Media element — sized & positioned relative to canvas */}
+            <div
+              style={{
+                position: "absolute",
+                width: `${assetWidthPct}%`,
+                height: `${assetHeightPct}%`,
+                left: `calc(50% + ${offsetXPct}%)`,
+                top: `calc(50% + ${offsetYPct}%)`,
+                transform: `translate(-50%, -50%)${rotationCss ? ` ${rotationCss}` : ""}`,
+                transformOrigin: "center center",
+                ...cropContainerStyle(crop, activeClip.asset),
+              }}
+            >
+              {isImage ? (
+                <img
+                  src={thumbnailUrl}
+                  alt=""
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "fill",
+                  }}
+                />
+              ) : (
+                <video
+                  ref={videoRef}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "fill",
+                  }}
+                  muted
+                />
+              )}
+            </div>
+
+            {/* Text overlay layer — within canvas bounds */}
+            {activeTextClips.length > 0 && (
+              <div style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                pointerEvents: "none",
+                padding: "16px",
+              }}>
+                {activeTextClips.map(({ clip, text }) => (
+                  <div
+                    key={clip.id}
+                    style={{
+                      fontSize: `${text.fontSize ?? 48}px`,
+                      color: text.color ?? "#ffffff",
+                      backgroundColor: text.backgroundColor ?? "transparent",
+                      textAlign: (text.align as React.CSSProperties["textAlign"]) ?? "center",
+                      fontFamily: text.fontFamily ?? "sans-serif",
+                      padding: "4px 12px",
+                      borderRadius: "4px",
+                      marginBottom: "8px",
+                      maxWidth: "90%",
+                      wordBreak: "break-word",
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    {text.value}
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
@@ -417,10 +431,10 @@ export function PreviewPlayer({
         <button
           onClick={() => {
             if (isPlaying) {
-              onPlayPause(); // stop first
+              onPlayPause();
             }
-            onSelectClip(null); // clear clip selection for full playback
-            onTimeUpdate(0); // seek to start
+            onSelectClip(null);
+            onTimeUpdate(0);
           }}
           style={{ ...buttonStyle.secondary, padding: "4px 16px", fontSize: "13px", minWidth: "36px" }}
           title="Go to start"
@@ -432,13 +446,11 @@ export function PreviewPlayer({
             if (!isPlaying) {
               const selClip = selectedClipId ? findClipById(project, selectedClipId) : null;
               if (selClip) {
-                // Selected clip: reset to clip start if at or past clip end
                 const clipEnd = selClip.startMs + selClip.durationMs;
                 if (currentTimeMs >= clipEnd) {
                   onTimeUpdate(selClip.startMs);
                 }
               } else {
-                // No selection: reset to sequence start if at end
                 const seqEnd = getSequenceEndMs(project);
                 if (seqEnd > 0 && currentTimeMs >= seqEnd) {
                   onTimeUpdate(0);
