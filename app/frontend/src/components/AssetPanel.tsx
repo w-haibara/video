@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Project, Asset } from "@video/shared";
 import { useImportAsset, useDeleteAsset } from "../api/assets";
 import { AssetThumbnail } from "./AssetThumbnail";
-import { theme } from "../theme";
+import { theme, buttonStyle } from "../theme";
 
 type Props = {
   project: Project;
@@ -59,15 +59,7 @@ export function AssetPanel({ project, onAddToTimeline }: Props) {
         <h3 style={{ margin: 0 }}>Assets</h3>
         <button
           onClick={() => fileInputRef.current?.click()}
-          style={{
-            padding: "4px 12px",
-            background: theme.button,
-            color: theme.buttonText,
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "12px",
-          }}
+          style={{ ...buttonStyle.primary, padding: "4px 12px" }}
         >
           + Import
         </button>

@@ -17,7 +17,7 @@ import { useProjectEditor } from "../hooks/useProjectEditor";
 import { clampClipsToDuration } from "../lib/sequence-ops";
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { useAutoSave } from "../hooks/useAutoSave";
-import { theme } from "../theme";
+import { theme, buttonStyle } from "../theme";
 
 function EditorPageInner({ projectId }: { projectId: string }) {
   const { data: project, isLoading, error } = useProject(projectId);
@@ -199,16 +199,7 @@ function EditorPageLoaded({
                         backgroundColor: theme.black,
                       });
                     }}
-                    style={{
-                      width: "100%",
-                      padding: "6px",
-                      background: theme.clipText,
-                      color: theme.buttonText,
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                    }}
+                    style={{ ...buttonStyle.primary, width: "100%", padding: "6px", background: theme.clipText }}
                   >
                     + Add Text
                   </button>

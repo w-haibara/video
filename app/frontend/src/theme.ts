@@ -1,3 +1,5 @@
+import type React from 'react';
+
 export const theme = {
   // ── ベースカラー ──
   bg:          '#FDF6E3',  // メイン背景 (Background)
@@ -94,7 +96,40 @@ export const radius = {
   xl: '8px',  // カード、ダイアログ
 } as const;
 
+// ── ボタンスタイルプリセット ──
+const buttonBase: React.CSSProperties = {
+  border: 'none',
+  borderRadius: radius.md,
+  padding: '6px 12px',
+  fontSize: fontSize.md,
+  cursor: 'pointer',
+};
+
+export const buttonStyle = {
+  primary: {
+    ...buttonBase,
+    background: theme.button,
+    color: theme.buttonText,
+  } as React.CSSProperties,
+  secondary: {
+    ...buttonBase,
+    background: 'none',
+    border: `1px solid ${theme.border}`,
+    color: theme.text,
+  } as React.CSSProperties,
+  danger: {
+    ...buttonBase,
+    background: theme.buttonDanger,
+    color: theme.buttonText,
+  } as React.CSSProperties,
+  small: {
+    padding: '2px 8px',
+    fontSize: fontSize.sm,
+  } as React.CSSProperties,
+} as const;
+
 export type Theme = typeof theme;
 export type Spacing = typeof spacing;
 export type FontSize = typeof fontSize;
 export type Radius = typeof radius;
+export type ButtonStyle = typeof buttonStyle;

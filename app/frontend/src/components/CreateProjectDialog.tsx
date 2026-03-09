@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCreateProject } from "../api/projects";
-import { theme } from "../theme";
+import { theme, buttonStyle } from "../theme";
 
 type Props = { onClose: () => void };
 
@@ -81,12 +81,8 @@ export function CreateProjectDialog({ onClose }: Props) {
             type="submit"
             disabled={createProject.isPending}
             style={{
+              ...buttonStyle.primary,
               padding: "8px 16px",
-              background: theme.button,
-              color: theme.buttonText,
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
               fontSize: "14px",
               opacity: createProject.isPending ? 0.6 : 1,
             }}

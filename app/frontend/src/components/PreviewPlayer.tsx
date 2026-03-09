@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
-import { theme } from "../theme";
+import { theme, buttonStyle } from "../theme";
 
 type Props = {
   project: Project;
@@ -422,16 +422,7 @@ export function PreviewPlayer({
             onSelectClip(null); // clear clip selection for full playback
             onTimeUpdate(0); // seek to start
           }}
-          style={{
-            background: "none",
-            border: `1px solid ${theme.border}`,
-            color: theme.text,
-            padding: "4px 16px",
-            cursor: "pointer",
-            borderRadius: "3px",
-            fontSize: "13px",
-            minWidth: "36px",
-          }}
+          style={{ ...buttonStyle.secondary, padding: "4px 16px", fontSize: "13px", minWidth: "36px" }}
           title="Go to start"
         >
           ⏮
@@ -456,16 +447,7 @@ export function PreviewPlayer({
             }
             onPlayPause();
           }}
-          style={{
-            background: "none",
-            border: `1px solid ${theme.border}`,
-            color: theme.text,
-            padding: "4px 16px",
-            cursor: "pointer",
-            borderRadius: "3px",
-            fontSize: "13px",
-            minWidth: "60px",
-          }}
+          style={{ ...buttonStyle.secondary, padding: "4px 16px", fontSize: "13px", minWidth: "60px" }}
         >
           {isPlaying ? "Pause" : "Play"}
         </button>

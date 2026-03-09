@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Project, Clip, Asset, ClipText, ClipTransform, ClipCrop } from "@video/shared";
-import { theme } from "../theme";
+import { theme, buttonStyle } from "../theme";
 
 type Props = {
   project: Project;
@@ -453,16 +453,7 @@ function TransformEditor({
       {(transform.x || transform.y || (transform.scale && transform.scale !== 1)) && (
         <button
           onClick={() => onUpdate({ transform: { rotation: currentRotation } })}
-          style={{
-            marginTop: "4px",
-            padding: "2px 8px",
-            background: theme.bgPanel,
-            color: theme.textMuted,
-            border: `1px solid ${theme.border}`,
-            borderRadius: "3px",
-            cursor: "pointer",
-            fontSize: "11px",
-          }}
+          style={{ ...buttonStyle.secondary, ...buttonStyle.small, marginTop: "4px", color: theme.textMuted }}
         >
           Reset Position/Scale
         </button>
@@ -520,16 +511,7 @@ function TransformEditor({
       {crop && (
         <button
           onClick={() => onUpdate({ crop: undefined })}
-          style={{
-            marginTop: "4px",
-            padding: "2px 8px",
-            background: theme.bgPanel,
-            color: theme.textMuted,
-            border: `1px solid ${theme.border}`,
-            borderRadius: "3px",
-            cursor: "pointer",
-            fontSize: "11px",
-          }}
+          style={{ ...buttonStyle.secondary, ...buttonStyle.small, marginTop: "4px", color: theme.textMuted }}
         >
           Reset Crop
         </button>
