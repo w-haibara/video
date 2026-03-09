@@ -70,7 +70,7 @@
 | 64 | プレビュー "No clip at playhead" 表示の全幅化 | [x] Done | 12 |
 | 65 | エディタ画面からホームへの導線追加 | [x] Done | 07, 39 |
 | 66 | ⏮ ボタンの動作変更: 先頭シークのみ（再生開始しない） | [x] Done | 12, 49 |
-| 67 | Export タブ再設計: インライン操作化 + View Jobs 移動 | [ ] Todo | 18, 38, 40 |
+| 67 | Export タブ再設計: インライン操作化 + View Jobs 移動 | [x] Done | 18, 38, 40 |
 
 ## Phase 1 Tasks
 
@@ -1591,36 +1591,36 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - View Jobs リンクを Export タブから除去し、Settings タブ内に移動する
 
 **A. Export タブのインラインコンテンツ作成** (`app/frontend/src/pages/EditorPage.tsx`)
-- [ ] `exportContent` の中身を変更: 現在の「Start Export」ボタン + 「View Jobs」リンクを削除
-- [ ] ExportDialog の主要 UI をタブ内に直接配置:
+- [x] `exportContent` の中身を変更: 現在の「Start Export」ボタン + 「View Jobs」リンクを削除
+- [x] ExportDialog の主要 UI をタブ内に直接配置:
   - ファイル名入力フィールド (`export-{timestamp}.mp4` をデフォルト値)
   - 「Start Export」ボタン（直接エクスポートを実行）
   - エクスポート進捗表示 (`JobProgress` コンポーネント)
   - 完了/失敗メッセージ
-- [ ] 状態管理を EditorPage に移動:
+- [x] 状態管理を EditorPage に移動:
   - `filename` state: エクスポートファイル名
   - `activeJobId` state: 実行中のジョブ ID
   - `exportedFilenameRef` / `downloadedRef`: 自動ダウンロード用 ref
   - `useExport` / `useJob` hooks を EditorPage で直接使用
-- [ ] 自動ダウンロード処理 (`useEffect` でジョブ完了を監視 → `<a>` タグ経由でダウンロード) を EditorPage に移動
+- [x] 自動ダウンロード処理 (`useEffect` でジョブ完了を監視 → `<a>` タグ経由でダウンロード) を EditorPage に移動
 
 **B. ExportDialog モーダルの廃止**
-- [ ] `showExport` state を削除 (`EditorPage.tsx`)
-- [ ] `ExportDialog` コンポーネントの `import` とレンダリングを削除 (`EditorPage.tsx`)
-- [ ] `app/frontend/src/components/ExportDialog.tsx` ファイルを削除
+- [x] `showExport` state を削除 (`EditorPage.tsx`)
+- [x] `ExportDialog` コンポーネントの `import` とレンダリングを削除 (`EditorPage.tsx`)
+- [x] `app/frontend/src/components/ExportDialog.tsx` ファイルを削除
 
 **C. View Jobs リンクを Settings タブに移動** (`app/frontend/src/pages/EditorPage.tsx`, `app/frontend/src/components/ProjectSettingsPanel.tsx`)
-- [ ] Export タブから `View Jobs` リンクを削除
-- [ ] `ProjectSettingsPanel` の末尾に「View Jobs」リンクを追加:
+- [x] Export タブから `View Jobs` リンクを削除
+- [x] `ProjectSettingsPanel` の末尾に「View Jobs」リンクを追加:
   - `Link to={/projects/${project.id}/jobs}` (既存のルーティングをそのまま利用)
   - セクション区切り線の下に配置し、設定項目と視覚的に分離する
   - スタイル: `theme.bgDark` 背景、`theme.text` テキスト（現状と同じ）
-- [ ] `ProjectSettingsPanel` の props に `projectId: string` を追加（Link のパス生成に必要）
+- [x] `ProjectSettingsPanel` の props に `projectId: string` を追加（Link のパス生成に必要）
 
 **D. Export タブ内の UI スタイル調整** (`app/frontend/src/pages/EditorPage.tsx`)
-- [ ] ファイル名入力: `theme.bgPanel` 背景、`theme.border` ボーダー、`theme.text` テキスト
-- [ ] Start Export ボタン: `theme.button` 背景、`theme.buttonText` テキスト、エクスポート中は `theme.bgDark` に変更
-- [ ] 進捗表示: `JobProgress` をそのまま使用
-- [ ] 完了メッセージ: `theme.success` テキスト
-- [ ] 失敗メッセージ: `theme.error` テキスト
-- [ ] 各要素間のマージンを適切に設定（モーダル内と同等の 12px 間隔）
+- [x] ファイル名入力: `theme.bgPanel` 背景、`theme.border` ボーダー、`theme.text` テキスト
+- [x] Start Export ボタン: `theme.button` 背景、`theme.buttonText` テキスト、エクスポート中は `theme.bgDark` に変更
+- [x] 進捗表示: `JobProgress` をそのまま使用
+- [x] 完了メッセージ: `theme.success` テキスト
+- [x] 失敗メッセージ: `theme.error` テキスト
+- [x] 各要素間のマージンを適切に設定（モーダル内と同等の 12px 間隔）
