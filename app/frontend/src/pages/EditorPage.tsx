@@ -17,7 +17,7 @@ import { useProjectEditor } from "../hooks/useProjectEditor";
 import { clampClipsToDuration } from "../lib/sequence-ops";
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { useAutoSave } from "../hooks/useAutoSave";
-import { theme, buttonStyle } from "../theme";
+import { theme, buttonStyle, inputStyle } from "../theme";
 
 function EditorPageInner({ projectId }: { projectId: string }) {
   const { data: project, isLoading, error } = useProject(projectId);
@@ -215,17 +215,7 @@ function EditorPageLoaded({
                   type="text"
                   value={exportFilename}
                   onChange={(e) => setExportFilename(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "6px 8px",
-                    background: theme.bgPanel,
-                    color: theme.text,
-                    border: `1px solid ${theme.border}`,
-                    borderRadius: "4px",
-                    fontSize: "13px",
-                    marginBottom: "12px",
-                    boxSizing: "border-box",
-                  }}
+                  style={{ ...inputStyle, padding: "6px 8px", fontSize: "13px", marginBottom: "12px" }}
                 />
                 <button
                   onClick={handleExport}

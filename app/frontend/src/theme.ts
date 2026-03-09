@@ -128,6 +128,25 @@ export const buttonStyle = {
   } as React.CSSProperties,
 } as const;
 
+// ── 入力フィールド共通スタイル ──
+export const inputStyle: React.CSSProperties = {
+  width: '100%',
+  background: theme.bgPanel,
+  color: theme.text,
+  border: `1px solid ${theme.border}`,
+  borderRadius: radius.sm,
+  padding: '4px 6px',
+  fontSize: fontSize.md,
+  boxSizing: 'border-box',
+};
+
+// ── セクション見出し共通スタイル ──
+export const sectionHeadingStyle: React.CSSProperties = {
+  fontSize: fontSize.heading3,
+  fontWeight: 600,
+  margin: '0 0 8px',
+};
+
 export type Theme = typeof theme;
 export type Spacing = typeof spacing;
 export type FontSize = typeof fontSize;

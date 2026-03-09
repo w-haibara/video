@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import type { Project, ProjectSettings } from "@video/shared";
-import { theme } from "../theme";
+import { theme, inputStyle, sectionHeadingStyle } from "../theme";
 
 type Props = {
   project: Project;
@@ -29,20 +29,9 @@ export function ProjectSettingsPanel({ project, onUpdateSettings, projectId }: P
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    background: theme.bgPanel,
-    color: theme.text,
-    border: `1px solid ${theme.border}`,
-    borderRadius: "3px",
-    padding: "4px 6px",
-    fontSize: "12px",
-    boxSizing: "border-box",
-  };
-
   return (
     <div style={{ padding: "8px", fontSize: "12px", color: theme.text }}>
-      <h4 style={{ margin: "0 0 12px" }}>Project Settings</h4>
+      <h3 style={sectionHeadingStyle}>Project Settings</h3>
       <div>
         <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
           Duration (sec)

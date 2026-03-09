@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Project, Clip, Asset, ClipText, ClipTransform, ClipCrop } from "@video/shared";
-import { theme, buttonStyle } from "../theme";
+import { theme, buttonStyle, inputStyle, sectionHeadingStyle } from "../theme";
 
 type Props = {
   project: Project;
@@ -52,7 +52,7 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveCl
 
   return (
     <div style={{ padding: "8px", fontSize: "12px", color: theme.text }}>
-      <h4 style={{ margin: "0 0 8px" }}>Inspector</h4>
+      <h3 style={sectionHeadingStyle}>Inspector</h3>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <tbody>
           {!isTextClip && <Row label="File" value={fileName} />}
@@ -122,17 +122,6 @@ function msToSec(ms: number): string {
 function secToMs(sec: string): number {
   return Math.round(parseFloat(sec) * 1000);
 }
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  background: theme.bgPanel,
-  color: theme.text,
-  border: `1px solid ${theme.border}`,
-  borderRadius: "3px",
-  padding: "2px 4px",
-  fontSize: "12px",
-  boxSizing: "border-box",
-};
 
 function TrimEditor({
   clip,

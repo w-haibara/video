@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCreateProject } from "../api/projects";
-import { theme, buttonStyle } from "../theme";
+import { theme, buttonStyle, inputStyle } from "../theme";
 
 type Props = { onClose: () => void };
 
@@ -51,15 +51,7 @@ export function CreateProjectDialog({ onClose }: Props) {
           onChange={(e) => setName(e.target.value)}
           placeholder="Project name"
           autoFocus
-          style={{
-            padding: "10px 12px",
-            background: theme.bgPanel,
-            color: theme.text,
-            border: `1px solid ${theme.border}`,
-            borderRadius: "6px",
-            fontSize: "14px",
-            outline: "none",
-          }}
+          style={{ ...inputStyle, padding: "10px 12px", borderRadius: "6px", fontSize: "14px", outline: "none" }}
         />
         <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
           <button
