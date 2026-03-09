@@ -1,4 +1,4 @@
-import { storybookTest } from "@storybook/experimental-addon-test/vitest-plugin";
+import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,6 +14,11 @@ export default defineConfig({
     include: ["react-dom/client"],
   },
   test: {
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html"],
+      reportsDirectory: "./coverage",
+    },
     projects: [
       {
         extends: "./vite.config.ts",
@@ -21,6 +26,11 @@ export default defineConfig({
           storybookTest({
             configDir: path.join(dirname, ".storybook"),
             storybookScript: "bun run storybook --ci",
+            tags: {
+              include: ["test"],
+              exclude: ["no-tests"],
+              skip: [],
+            },
           }),
         ],
         test: {
@@ -31,19 +41,6 @@ export default defineConfig({
             instances: [{ browser: "chromium" }],
           },
           setupFiles: [".storybook/vitest.setup.ts"],
-        },
-      },
-      {
-        extends: "./vite.config.ts",
-        test: {
-          name: "browser",
-          browser: {
-            enabled: true,
-            provider: playwright(),
-            instances: [{ browser: "chromium" }],
-          },
-          setupFiles: [".storybook/vitest.setup.ts"],
-          include: ["src/**/*.test.?(m)[jt]sx"],
         },
       },
     ],

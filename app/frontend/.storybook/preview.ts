@@ -1,8 +1,15 @@
-import type { Preview } from "@storybook/react";
+import addonDocs from "@storybook/addon-docs";
+import { definePreview } from "@storybook/react-vite";
+import { sb } from "storybook/test";
+
 import "../src/index.css";
 import { theme } from "../src/theme";
 
-const preview: Preview = {
+// Mock API layer to prevent real HTTP requests in stories
+sb.mock(import("../src/api/client.ts"));
+
+export default definePreview({
+  addons: [addonDocs()],
   decorators: [
     (Story) => {
       document.body.style.background = theme.bg;
@@ -10,6 +17,5 @@ const preview: Preview = {
       return Story();
     },
   ],
-};
-
-export default preview;
+  tags: ["test", "autodocs"],
+});
