@@ -69,6 +69,8 @@
 | 63 | タイムライン・クリップコンポーネントの色彩更新 | [x] Done | 60 |
 | 64 | プレビュー "No clip at playhead" 表示の全幅化 | [x] Done | 12 |
 | 65 | エディタ画面からホームへの導線追加 | [x] Done | 07, 39 |
+| 66 | ⏮ ボタンの動作変更: 先頭シークのみ（再生開始しない） | [x] Done | 12, 49 |
+| 67 | Export タブ再設計: インライン操作化 + View Jobs 移動 | [ ] Todo | 18, 38, 40 |
 
 ## Phase 1 Tasks
 
@@ -1536,3 +1538,89 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - [x] EditorPage の toolbar prop にホームリンク (`react-router-dom` の `Link` で `/` へ遷移) を追加する
 - [x] リンクのスタイルを Everforest Light テーマに合わせる（`theme.text` / `theme.textMuted` を使用）
 - [x] ホームリンクのテキストは「← Home」等シンプルなものにする
+
+## Phase 18 Tasks — プレビュー操作改善 + Export タブ再設計
+
+### 現状の課題
+
+1. **⏮ ボタンが自動再生する**: プレビュー UI の ⏮ ボタン（先頭から再生）は、クリップ選択解除 → 先頭シーク → 再生開始 の 3 アクションを一括実行する。しかし「先頭に戻る」操作と「再生する」操作は別の意図であり、⏮ は先頭フレームへのシークのみ行い、再生は開始しないのが自然。
+2. **Export タブに View Jobs がある不自然さ**: View Jobs はエクスポート履歴を別ページで閲覧する機能であり、エクスポート操作を行う Export タブ内に置くのは導線として不自然。
+3. **Export タブがモーダル起動のみ**: Export タブの中身が「Start Export」ボタン（モーダル起動）と「View Jobs」リンクだけ。タブ内に直接エクスポート操作（ファイル名入力・実行・進捗表示）を配置すれば、モーダルを開く手間がなくなり操作が直感的になる。
+
+### 66: ⏮ ボタンの動作変更: 先頭シークのみ（再生開始しない）
+
+現状: `PreviewPlayer.tsx` の ⏮ ボタンは `onTimeUpdate(0)` で先頭にシーク後、`setTimeout(() => onPlayPause(), 0)` で自動再生を開始する。
+
+目標: ⏮ ボタンは先頭フレーム (0ms) にシークするのみで、再生は開始しない。再生中に押した場合は再生を停止してから先頭にシークする。
+
+**A. ⏮ ボタンの onClick ハンドラー変更** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [x] 現在のハンドラー:
+  ```tsx
+  onClick={() => {
+    if (isPlaying) {
+      onPlayPause(); // stop first
+    }
+    onSelectClip(null);
+    onTimeUpdate(0);
+    setTimeout(() => onPlayPause(), 0); // ← 自動再生
+  }}
+  ```
+- [x] 変更後:
+  ```tsx
+  onClick={() => {
+    if (isPlaying) {
+      onPlayPause(); // 再生中なら停止
+    }
+    onSelectClip(null); // クリップ選択解除（全体再生モード）
+    onTimeUpdate(0);    // 先頭にシーク
+    // 再生は開始しない
+  }}
+  ```
+- [x] `setTimeout(() => onPlayPause(), 0)` の行を削除
+
+**B. ボタンの title 属性変更** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [x] `title="Play from start"` → `title="Go to start"` に変更（動作に合わせた説明）
+
+### 67: Export タブ再設計: インライン操作化 + View Jobs 移動
+
+現状: Export タブには「Start Export」ボタン（ExportDialog モーダルを開く）と「View Jobs」リンクがある。エクスポート操作はモーダル内で行われる。
+
+目標:
+- Export タブ内に直接エクスポート操作 UI（ファイル名入力・実行ボタン・進捗表示）を配置する
+- ExportDialog モーダルを廃止する
+- View Jobs リンクを Export タブから除去し、Settings タブ内に移動する
+
+**A. Export タブのインラインコンテンツ作成** (`app/frontend/src/pages/EditorPage.tsx`)
+- [ ] `exportContent` の中身を変更: 現在の「Start Export」ボタン + 「View Jobs」リンクを削除
+- [ ] ExportDialog の主要 UI をタブ内に直接配置:
+  - ファイル名入力フィールド (`export-{timestamp}.mp4` をデフォルト値)
+  - 「Start Export」ボタン（直接エクスポートを実行）
+  - エクスポート進捗表示 (`JobProgress` コンポーネント)
+  - 完了/失敗メッセージ
+- [ ] 状態管理を EditorPage に移動:
+  - `filename` state: エクスポートファイル名
+  - `activeJobId` state: 実行中のジョブ ID
+  - `exportedFilenameRef` / `downloadedRef`: 自動ダウンロード用 ref
+  - `useExport` / `useJob` hooks を EditorPage で直接使用
+- [ ] 自動ダウンロード処理 (`useEffect` でジョブ完了を監視 → `<a>` タグ経由でダウンロード) を EditorPage に移動
+
+**B. ExportDialog モーダルの廃止**
+- [ ] `showExport` state を削除 (`EditorPage.tsx`)
+- [ ] `ExportDialog` コンポーネントの `import` とレンダリングを削除 (`EditorPage.tsx`)
+- [ ] `app/frontend/src/components/ExportDialog.tsx` ファイルを削除
+
+**C. View Jobs リンクを Settings タブに移動** (`app/frontend/src/pages/EditorPage.tsx`, `app/frontend/src/components/ProjectSettingsPanel.tsx`)
+- [ ] Export タブから `View Jobs` リンクを削除
+- [ ] `ProjectSettingsPanel` の末尾に「View Jobs」リンクを追加:
+  - `Link to={/projects/${project.id}/jobs}` (既存のルーティングをそのまま利用)
+  - セクション区切り線の下に配置し、設定項目と視覚的に分離する
+  - スタイル: `theme.bgDark` 背景、`theme.text` テキスト（現状と同じ）
+- [ ] `ProjectSettingsPanel` の props に `projectId: string` を追加（Link のパス生成に必要）
+
+**D. Export タブ内の UI スタイル調整** (`app/frontend/src/pages/EditorPage.tsx`)
+- [ ] ファイル名入力: `theme.bgPanel` 背景、`theme.border` ボーダー、`theme.text` テキスト
+- [ ] Start Export ボタン: `theme.button` 背景、`theme.buttonText` テキスト、エクスポート中は `theme.bgDark` に変更
+- [ ] 進捗表示: `JobProgress` をそのまま使用
+- [ ] 完了メッセージ: `theme.success` テキスト
+- [ ] 失敗メッセージ: `theme.error` テキスト
+- [ ] 各要素間のマージンを適切に設定（モーダル内と同等の 12px 間隔）
