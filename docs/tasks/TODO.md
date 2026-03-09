@@ -71,6 +71,13 @@
 | 65 | エディタ画面からホームへの導線追加 | [x] Done | 07, 39 |
 | 66 | ⏮ ボタンの動作変更: 先頭シークのみ（再生開始しない） | [x] Done | 12, 49 |
 | 67 | Export タブ再設計: インライン操作化 + View Jobs 移動 | [x] Done | 18, 38, 40 |
+| 68 | textDisabled ラベルの視認性改善（全 UI） | [x] Done | 60 |
+| 69 | テーマシステム拡張: スペーシング・フォントサイズ・角丸の定数化 | [ ] Todo | 60 |
+| 70 | ハードコード色のテーマ変数置換 | [ ] Todo | 69 |
+| 71 | ボタンスタイルの統一 | [ ] Todo | 69 |
+| 72 | 入力フィールド・見出し・ラベルスタイルの統一 | [ ] Todo | 69 |
+| 73 | Storybook 導入 + 全コンポーネントの Story 定義 | [ ] Todo | - |
+| 74 | Vitest ブラウザテスト導入 + 全 Story のテスト整備 | [ ] Todo | 73 |
 
 ## Phase 1 Tasks
 
@@ -1624,3 +1631,266 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - [x] 完了メッセージ: `theme.success` テキスト
 - [x] 失敗メッセージ: `theme.error` テキスト
 - [x] 各要素間のマージンを適切に設定（モーダル内と同等の 12px 間隔）
+
+### 68: textDisabled ラベルの視認性改善（全 UI）
+
+現状: 複数のコンポーネントでフィールドラベルや補助テキストに `theme.textDisabled`（`#A9B3A5`）が使われており、ベージュ背景（`#FDF6E3` / `#F4F0D9`）に対してコントラストが不十分で視認性が悪い。
+
+`theme.textDisabled` の全使用箇所（6 ファイル・17 箇所）を精査し、「無効状態の表現」として意図的に使用している箇所は維持、「読ませるべきラベル・テキスト」には `theme.textMuted`（`#939F91`）への変更とフォントサイズの引き上げを行う。
+
+目標:
+- フィールドラベル・補助テキストの色を `theme.textMuted` に変更してコントラスト比を改善する
+- `fontSize: "10px"` のラベルは `"11px"` に引き上げて可読性を向上させる
+- 無効状態（disabled ボタン・メニュー項目）の `textDisabled` 使用は変更しない
+
+**A. InspectorPanel のフィールドラベル** (`app/frontend/src/components/InspectorPanel.tsx`)
+- [x] `StartEndEditor` 内の "Start (s)" ラベル (L570): `color: theme.textDisabled` → `color: theme.textMuted`、`fontSize: "10px"` → `fontSize: "11px"`
+- [x] `StartEndEditor` 内の "End (s)" ラベル (L583): 同上
+- [x] `TrimEditor` 内の "In (s)" ラベル (L221): 同上
+- [x] `TrimEditor` 内の "Out (s)" ラベル (L236): 同上
+- [x] `TrimEditor` 内の "Duration (s)" ラベル (L250): 同上
+- [x] `TransformEditor` 内の "X (px)", "Y (px)" ラベル (L419, L429): 同上
+- [x] `TransformEditor` 内の Crop "X", "Y", "W", "H" ラベル (L476, L487, L498, L509): 同上
+
+**B. ProjectSettingsPanel のヘルプテキスト** (`app/frontend/src/components/ProjectSettingsPanel.tsx`)
+- [x] L61: "Min: 1s / Max: 3600s (1 hour)" テキスト — `color: theme.textDisabled` → `color: theme.textMuted`、`fontSize: "10px"` → `fontSize: "11px"`
+
+**C. PreviewPlayer のプレースホルダテキスト** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [x] L330: "No clip at playhead" — `color: theme.textDisabled` → `color: theme.textMuted`
+
+**D. ProjectCard の日付表示** (`app/frontend/src/components/ProjectCard.tsx`)
+- [x] L34: `<time>` 要素 — `color: theme.textDisabled` → `color: theme.textMuted`
+
+**E. 変更しない箇所（無効状態の表現として意図的に使用）**
+- SaveIndicator.tsx L50, L65: Undo/Redo ボタンの無効時テキスト色 — `canUndo ? theme.text : theme.textDisabled` → 変更不要
+- ContextMenu.tsx L68: disabled メニュー項目のテキスト色 — `item.disabled ? theme.textDisabled : theme.text` → 変更不要
+
+### 69: テーマシステム拡張: スペーシング・フォントサイズ・角丸の定数化
+
+現状: `theme.ts` は色定数のみを定義しており、スペーシング・フォントサイズ・角丸はコンポーネントごとにバラバラな値がハードコードされている。
+
+目標:
+- `theme.ts` にスペーシングスケール、フォントサイズスケール、角丸スケールを追加し、UI 全体の統一基盤を作る
+
+**A. スペーシングスケールの追加** (`app/frontend/src/theme.ts`)
+- [ ] `spacing` オブジェクトを追加:
+  - `xs: 4` (px) — ラベル〜入力間、密なギャップ
+  - `sm: 8` — セクション内マージン、パネルパディング
+  - `md: 12` — セクション間マージン
+  - `lg: 16` — ヘッダー・ダイアログ内パディング
+  - `xl: 24` — ページレベルパディング
+
+**B. フォントサイズスケールの追加** (`app/frontend/src/theme.ts`)
+- [ ] `fontSize` オブジェクトを追加:
+  - `xs: "10px"` — メタ情報（タイムスタンプ等）
+  - `sm: "11px"` — フィールドラベル、タイムラインクリップ
+  - `md: "12px"` — 本文テキスト、入力フィールド、ボタン（小）
+  - `lg: "13px"` — タブテキスト、ボタン（標準）
+  - `xl: "14px"` — ボタン（大）
+  - `heading3: "16px"` — セクション見出し
+  - `heading2: "18px"` — ダイアログ見出し
+  - `heading1: "20px"` — ページ見出し
+
+**C. 角丸スケールの追加** (`app/frontend/src/theme.ts`)
+- [ ] `radius` オブジェクトを追加:
+  - `xs: "2px"` — プログレスバー
+  - `sm: "3px"` — 入力フィールド、小ボタン
+  - `md: "4px"` — 標準ボタン、カード内要素
+  - `lg: "6px"` — ダイアログボタン
+  - `xl: "8px"` — カード、ダイアログ
+
+### 70: ハードコード色のテーマ変数置換
+
+現状: 複数のコンポーネントで `"#fff"`, `"#000"`, `rgba(...)` などの色がハードコードされており、テーマとの一貫性が損なわれている。
+
+目標:
+- すべてのハードコード色を `theme` 変数に置換する
+- 必要に応じて `theme.ts` に新しい色定数を追加する
+
+**A. theme.ts への色定数追加** (`app/frontend/src/theme.ts`)
+- [ ] `white: '#FFFFFF'` を追加（クリップラベル・ボタンテキスト等で使用）
+- [ ] `black: '#000000'` を追加（プレビュー背景等で使用）
+- [ ] `overlayLight: 'rgba(255,255,255,0.2)'` を追加（サムネイルボタン等）
+- [ ] `overlayDark: 'rgba(0,0,0,0.85)'` を追加（ツールチップ背景等）
+- [ ] `clipLabelText: '#FFFFFF'` を追加（クリップ上の白テキスト用）
+
+**B. AssetThumbnail.tsx のハードコード色置換** (`app/frontend/src/components/AssetThumbnail.tsx`)
+- [ ] L120: `color: "#fff"` → `color: theme.clipLabelText`
+- [ ] L144: `background: "rgba(248,85,82,0.5)"` → `background: theme.error` + opacity を CSS で表現、または `theme.ts` に `errorOverlay` を追加
+- [ ] L161, L175: `background: "rgba(255,255,255,0.2)"` → `background: theme.overlayLight`
+- [ ] L162, L176: `border: "1px solid rgba(255,255,255,0.5)"` → theme 変数化
+
+**C. TimelineClip.tsx のハードコード色置換** (`app/frontend/src/components/TimelineClip.tsx`)
+- [ ] L175: `color: "#fff"` → `color: theme.clipLabelText`
+- [ ] L200: `background: "rgba(0,0,0,0.85)"` → `background: theme.overlayDark`
+- [ ] L201: `color: "#fff"` → `color: theme.white`
+- [ ] L241: `background: "rgba(255,255,255,0.3)"` → `background: theme.overlayLight`
+- [ ] L243-244: `rgba(255,255,255,...)` → theme 変数化
+
+**D. PreviewPlayer.tsx のハードコード色置換** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [ ] L315: `"#000"` → `theme.black`
+
+**E. EditorPage.tsx のハードコード色置換** (`app/frontend/src/pages/EditorPage.tsx`)
+- [ ] L198-199: `color: "#ffffff"`, `backgroundColor: "#000000"` → `theme.white`, `theme.black`
+
+### 71: ボタンスタイルの統一
+
+現状: ボタンのスタイル（padding, fontSize, borderRadius）がコンポーネントごとに異なり、視覚的な一貫性がない。
+
+目標:
+- `theme.ts` にボタンスタイルのプリセットを定義し、全コンポーネントで統一する
+
+**A. theme.ts にボタンスタイルプリセットを追加** (`app/frontend/src/theme.ts`)
+- [ ] `buttonStyle` オブジェクトを追加:
+  - `primary`: `{ background: theme.button, color: theme.buttonText, border: "none", borderRadius: radius.md, padding: "6px 12px", fontSize: fontSize.md, cursor: "pointer" }`
+  - `secondary`: `{ background: theme.bgDark, color: theme.text, border: "none", borderRadius: radius.md, padding: "6px 12px", fontSize: fontSize.md, cursor: "pointer" }`
+  - `danger`: `{ background: theme.buttonDanger, color: theme.buttonText, ... }`
+  - `small`: `{ padding: "2px 8px", fontSize: fontSize.sm }`（サイズバリアント）
+
+**B. AssetPanel の Import ボタン統一** (`app/frontend/src/components/AssetPanel.tsx`)
+- [ ] L64-70: ボタンスタイルを `buttonStyle.primary` ベースに統一
+
+**C. PreviewPlayer のトランスポートボタン統一** (`app/frontend/src/components/PreviewPlayer.tsx`)
+- [ ] L427, L461 等: トランスポートボタン（⏮, Play, etc.）のスタイルを `buttonStyle.secondary` ベースに統一
+- [ ] ホバー時の `background` を `theme.bgHover` に統一
+
+**D. EditorPage の "+ Add Text" ボタン統一** (`app/frontend/src/pages/EditorPage.tsx`)
+- [ ] L202-211: `theme.clipText` 背景は意図的だが、padding/fontSize/borderRadius を `buttonStyle.primary` ベースに合わせる
+
+**E. InspectorPanel のリセットボタン統一** (`app/frontend/src/components/InspectorPanel.tsx`)
+- [ ] L459, L526 等: `buttonStyle.small` + `secondary` ベースに統一
+
+**F. CreateProjectDialog のボタン統一** (`app/frontend/src/components/CreateProjectDialog.tsx`)
+- [ ] L85-92: `buttonStyle.primary` ベースに統一（borderRadius を `radius.md` に）
+
+### 72: 入力フィールド・見出し・ラベルスタイルの統一
+
+現状: 入力フィールドの padding、見出しの h タグレベル・マージン、セクションラベルのスタイルがコンポーネント間で不統一。
+
+目標:
+- 共通の入力スタイル・見出しスタイルを `theme.ts` に定義し、全コンポーネントで適用する
+
+**A. theme.ts に共通スタイルを追加** (`app/frontend/src/theme.ts`)
+- [ ] `inputStyle` オブジェクトを追加:
+  - `{ background: theme.bgPanel, color: theme.text, border: "1px solid " + theme.border, borderRadius: radius.sm, padding: "4px 6px", fontSize: fontSize.md, boxSizing: "border-box" }`
+- [ ] `sectionHeadingStyle` を追加:
+  - `{ fontSize: fontSize.heading3, fontWeight: 600, margin: "0 0 8px" }`
+
+**B. InspectorPanel の inputStyle を theme から参照** (`app/frontend/src/components/InspectorPanel.tsx`)
+- [ ] L126-135: ローカル `inputStyle` を `theme.inputStyle` に置換
+
+**C. CreateProjectDialog の入力フィールド統一** (`app/frontend/src/components/CreateProjectDialog.tsx`)
+- [ ] L55: `padding: "10px 12px"` → theme の `inputStyle` に合わせる（ダイアログ用に padding のみオーバーライド）
+
+**D. EditorPage の Export ファイル名入力統一** (`app/frontend/src/pages/EditorPage.tsx`)
+- [ ] L229: `padding: "6px 8px"` → theme の `inputStyle` に合わせる
+
+**E. ProjectSettingsPanel の入力フィールド統一** (`app/frontend/src/components/ProjectSettingsPanel.tsx`)
+- [ ] L38: `padding: "4px 6px"` → theme の `inputStyle` を使用
+
+**F. 見出しタグの統一**
+- [ ] `InspectorPanel.tsx` L55: `<h4>` → `<h3>` に変更し `sectionHeadingStyle` を適用
+- [ ] `AssetPanel.tsx` L59: `<h3>` の margin を `sectionHeadingStyle` に合わせる
+- [ ] `ProjectSettingsPanel.tsx` L45: `<h4>` → `<h3>` に変更、margin を `"0 0 8px"` に統一
+
+### 73: Storybook 導入 + 全コンポーネントの Story 定義
+
+現状: フロントエンドに Storybook が未導入で、コンポーネントの視覚的なカタログやインタラクティブなドキュメントがない。
+
+目標:
+- Storybook 8 を導入し、全 17 コンポーネント + 3 ページの Story を定義する
+- 各 Story で主要なバリエーション（props の組み合わせ）をカバーする
+
+**A. Storybook のインストールと設定** (`app/frontend/`)
+- [ ] `bun add -D @storybook/react-vite @storybook/react @storybook/addon-essentials @storybook/blocks storybook` を実行
+- [ ] `app/frontend/.storybook/main.ts` を作成:
+  - `framework: "@storybook/react-vite"`
+  - `stories: ["../src/**/*.stories.@(ts|tsx)"]`
+  - `addons: ["@storybook/addon-essentials"]`
+- [ ] `app/frontend/.storybook/preview.ts` を作成:
+  - グローバル CSS (`../src/index.css`) の import
+  - デコレーターでテーマ背景色（`theme.bg`）を適用
+- [ ] `package.json` に `"storybook": "storybook dev -p 6006"`, `"build-storybook": "storybook build"` スクリプトを追加
+- [ ] `bun run storybook` で起動確認
+
+**B. テーマ定義の確認 Story** (`app/frontend/src/stories/`)
+- [ ] `Theme.stories.tsx` — テーマ全体を視覚的に確認するための Story:
+  - **Colors**: ベースカラー（bg, bgPanel, bgHover, bgDark）、テキストカラー（text, textMuted, textDisabled）、セマンティックカラー（primary, accent, error, warning, success, info）、クリップタイプカラー（clipVideo, clipAudio, clipText + 選択時）、UI 部品カラー（tab, button, timeline 等）をスウォッチで一覧表示
+  - **Typography**: fontSize スケール（xs〜heading1）の実サイズ比較、各テキストカラーとの組み合わせ表示
+  - **Spacing**: spacing スケール（xs〜xl）のボックス視覚化
+  - **Border Radius**: radius スケール（xs〜xl）の適用サンプル
+  - **Buttons**: buttonStyle プリセット（primary, secondary, danger, small）の実レンダリング
+  - **Inputs**: inputStyle の実レンダリング、各状態（通常・フォーカス・無効）
+  - **Shadows & Overlays**: shadow, overlay, overlayLight, overlayDark の視覚サンプル
+
+**C. ページコンポーネントの Story** (`app/frontend/src/pages/`)
+- [ ] `HomePage.stories.tsx` — プロジェクト一覧表示（0件・複数件）、新規作成ダイアログ表示
+- [ ] `EditorPage.stories.tsx` — クリップ未選択・選択時、各タブ表示
+- [ ] `JobLogPage.stories.tsx` — ジョブ一覧表示（空・進行中・完了・失敗）
+
+**D. エディタ系コンポーネントの Story** (`app/frontend/src/components/`)
+- [ ] `EditorLayout.stories.tsx` — 3 カラムレイアウトのモック
+- [ ] `EditorMainPanel.stories.tsx` — タブ切り替え
+- [ ] `InspectorPanel.stories.tsx` — video/audio/text クリップ別の表示
+- [ ] `AssetPanel.stories.tsx` — アセットなし・あり、インポート中
+- [ ] `AssetThumbnail.stories.tsx` — 各状態（ready, importing, failed）
+- [ ] `ProjectSettingsPanel.stories.tsx` — 設定表示
+- [ ] `SaveIndicator.stories.tsx` — 保存中・完了・Undo/Redo 状態
+
+**E. タイムライン系コンポーネントの Story** (`app/frontend/src/components/`)
+- [ ] `Timeline.stories.tsx` — 空タイムライン・クリップあり・ズーム状態
+- [ ] `TimelineTrack.stories.tsx` — トラック表示
+- [ ] `TimelineClip.stories.tsx` — video/audio/text・選択状態・トリム中
+- [ ] `TimelineRuler.stories.tsx` — ルーラー表示
+- [ ] `Playhead.stories.tsx` — プレイヘッド位置バリエーション
+
+**F. プレビュー・その他コンポーネントの Story** (`app/frontend/src/components/`)
+- [ ] `PreviewPlayer.stories.tsx` — 再生中・停止・テキストオーバーレイ
+- [ ] `ContextMenu.stories.tsx` — 表示・非表示
+- [ ] `CreateProjectDialog.stories.tsx` — ダイアログ表示
+- [ ] `ProjectCard.stories.tsx` — カード表示バリエーション
+- [ ] `JobProgress.stories.tsx` — 各進捗状態（pending, processing, completed, failed）
+
+### 74: Vitest ブラウザテスト導入 + 全 Story のテスト整備
+
+現状: フロントエンドテストは `bun:test` によるユニットテスト（sequence-ops, timeline-utils, undo-redo）のみ。コンポーネントの描画テストやインタラクションテストがない。
+
+目標:
+- Vitest のブラウザモードを導入し、Storybook の各 Story に対応するテストを整備する
+- `@storybook/experimental-addon-test` を活用し、Story ベースのコンポーネントテストを実現する
+
+**A. Vitest + Storybook テストのインストールと設定** (`app/frontend/`)
+- [ ] `bun add -D vitest @vitest/browser playwright @storybook/experimental-addon-test @storybook/test` を実行
+- [ ] `app/frontend/vitest.config.ts` を作成:
+  - `plugins: [storybookTest()]` を設定
+  - `browser: { enabled: true, provider: "playwright", instances: [{ browser: "chromium" }] }` を設定
+  - `setupFiles: [".storybook/vitest.setup.ts"]` を設定
+- [ ] `app/frontend/.storybook/vitest.setup.ts` を作成:
+  - `@storybook/experimental-addon-test/vitest-plugin` からの `setProjectAnnotations` を呼び出し
+- [ ] `.storybook/main.ts` の `addons` に `"@storybook/experimental-addon-test"` を追加
+- [ ] `package.json` に `"test:browser": "vitest --project=storybook"` スクリプトを追加
+
+**B. ページコンポーネントのテスト** (`app/frontend/src/pages/`)
+- [ ] `HomePage.test.tsx` — プロジェクト一覧の描画、新規作成ボタンクリック
+- [ ] `EditorPage.test.tsx` — タブ切り替え、クリップ選択でインスペクタ表示
+- [ ] `JobLogPage.test.tsx` — ジョブ一覧の描画
+
+**C. エディタ系コンポーネントのテスト** (`app/frontend/src/components/`)
+- [ ] `InspectorPanel.test.tsx` — 各クリップタイプの表示、トリム値入力、回転ボタン
+- [ ] `AssetPanel.test.tsx` — アセット表示、Import ボタン
+- [ ] `AssetThumbnail.test.tsx` — 各状態の描画、+ ボタンクリック
+- [ ] `ProjectSettingsPanel.test.tsx` — Duration 入力、View Jobs リンク
+- [ ] `SaveIndicator.test.tsx` — Undo/Redo ボタンの活性・非活性
+
+**D. タイムライン系コンポーネントのテスト** (`app/frontend/src/components/`)
+- [ ] `Timeline.test.tsx` — ズームイン・アウト、タイムライン描画
+- [ ] `TimelineClip.test.tsx` — クリップ表示、選択、右クリックメニュー
+- [ ] `TimelineRuler.test.tsx` — ルーラー目盛りの描画
+- [ ] `Playhead.test.tsx` — プレイヘッド位置の描画
+
+**E. その他コンポーネントのテスト** (`app/frontend/src/components/`)
+- [ ] `PreviewPlayer.test.tsx` — 再生ボタン、時間表示
+- [ ] `ContextMenu.test.tsx` — メニュー表示・項目クリック
+- [ ] `CreateProjectDialog.test.tsx` — ダイアログ表示、入力、送信
+- [ ] `ProjectCard.test.tsx` — カード表示、リンク先
+- [ ] `JobProgress.test.tsx` — 各状態の描画（プログレスバー表示）
