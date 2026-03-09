@@ -218,7 +218,7 @@ function TrimEditor({
       <div style={{ display: "grid", gridTemplateColumns: hasSourceTrim ? "1fr 1fr 1fr" : "1fr", gap: "4px" }}>
         {hasSourceTrim && (
           <div>
-            <label style={{ color: theme.textDisabled, fontSize: "10px" }}>In (s)</label>
+            <label style={{ color: theme.textMuted, fontSize: "11px" }}>In (s)</label>
             <input
               type="number"
               value={inVal}
@@ -233,7 +233,7 @@ function TrimEditor({
         )}
         {hasSourceTrim && (
           <div>
-            <label style={{ color: theme.textDisabled, fontSize: "10px" }}>Out (s)</label>
+            <label style={{ color: theme.textMuted, fontSize: "11px" }}>Out (s)</label>
             <input
               type="number"
               value={outVal}
@@ -247,7 +247,7 @@ function TrimEditor({
           </div>
         )}
         <div>
-          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>Duration (s)</label>
+          <label style={{ color: theme.textMuted, fontSize: "11px" }}>Duration (s)</label>
           <input
             type="number"
             value={durationVal}
@@ -416,7 +416,7 @@ function TransformEditor({
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
         <div>
-          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>X (px)</label>
+          <label style={{ color: theme.textMuted, fontSize: "11px" }}>X (px)</label>
           <input
             type="number"
             value={transform.x ?? 0}
@@ -426,7 +426,7 @@ function TransformEditor({
           />
         </div>
         <div>
-          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>Y (px)</label>
+          <label style={{ color: theme.textMuted, fontSize: "11px" }}>Y (px)</label>
           <input
             type="number"
             value={transform.y ?? 0}
@@ -473,7 +473,7 @@ function TransformEditor({
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
         <div>
-          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>X</label>
+          <label style={{ color: theme.textMuted, fontSize: "11px" }}>X</label>
           <input
             type="number"
             value={crop?.x ?? 0}
@@ -484,7 +484,7 @@ function TransformEditor({
           />
         </div>
         <div>
-          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>Y</label>
+          <label style={{ color: theme.textMuted, fontSize: "11px" }}>Y</label>
           <input
             type="number"
             value={crop?.y ?? 0}
@@ -495,7 +495,7 @@ function TransformEditor({
           />
         </div>
         <div>
-          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>W</label>
+          <label style={{ color: theme.textMuted, fontSize: "11px" }}>W</label>
           <input
             type="number"
             value={crop?.width ?? defaultW}
@@ -506,7 +506,7 @@ function TransformEditor({
           />
         </div>
         <div>
-          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>H</label>
+          <label style={{ color: theme.textMuted, fontSize: "11px" }}>H</label>
           <input
             type="number"
             value={crop?.height ?? defaultH}
@@ -567,7 +567,7 @@ function StartEndEditor({
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
         <div>
-          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>Start (s)</label>
+          <label style={{ color: theme.textMuted, fontSize: "11px" }}>Start (s)</label>
           <input
             type="number"
             value={val}
@@ -580,7 +580,7 @@ function StartEndEditor({
           />
         </div>
         <div>
-          <label style={{ color: theme.textDisabled, fontSize: "10px" }}>End (s)</label>
+          <label style={{ color: theme.textMuted, fontSize: "11px" }}>End (s)</label>
           <input
             type="number"
             value={msToSec(clip.startMs + clip.durationMs)}

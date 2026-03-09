@@ -31,7 +31,7 @@ export function ProjectCard({ project }: Props) {
         <p style={{ fontSize: "13px", color: theme.textMuted, marginBottom: "4px" }}>
           {project.assets.length} assets
         </p>
-        <time style={{ fontSize: "12px", color: theme.textDisabled }}>
+        <time style={{ fontSize: "12px", color: theme.textMuted }}>
           {new Date(project.updatedAt).toLocaleDateString()}
         </time>
       </div>

@@ -58,7 +58,7 @@ export function ProjectSettingsPanel({ project, onUpdateSettings, projectId }: P
           step={1}
           style={inputStyle}
         />
-        <div style={{ color: theme.textDisabled, fontSize: "10px", marginTop: "4px" }}>
+        <div style={{ color: theme.textMuted, fontSize: "11px", marginTop: "4px" }}>
           Min: 1s / Max: 3600s (1 hour)
         </div>
       </div>

@@ -327,7 +327,7 @@ export function PreviewPlayer({
         }}
       >
         {!activeClip ? (
-          <span style={{ color: theme.textDisabled, fontSize: "14px" }}>No clip at playhead</span>
+          <span style={{ color: theme.textMuted, fontSize: "14px" }}>No clip at playhead</span>
         ) : (
           <div style={{
             overflow: "hidden",
