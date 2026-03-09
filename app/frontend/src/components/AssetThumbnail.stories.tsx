@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
+import { expect, fn } from "storybook/test";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { createStoryQueryClient, mockAsset } from "../stories/fixtures";
+import preview from "../../.storybook/preview";
+import { createStoryQueryClient, mockAsset, mockJob } from "../stories/fixtures";
 import { AssetThumbnail } from "./AssetThumbnail";
 
-const meta: Meta<typeof AssetThumbnail> = {
+const meta = preview.meta({
   title: "Components/AssetThumbnail",
   component: AssetThumbnail,
   decorators: [
@@ -22,20 +22,17 @@ const meta: Meta<typeof AssetThumbnail> = {
     onDelete: fn(),
     onJobComplete: fn(),
   },
-};
-export default meta;
+});
 
-type Story = StoryObj<typeof AssetThumbnail>;
-
-export const Ready: Story = {
+export const Ready = meta.story({
   args: {
     asset: mockAsset(),
     jobId: null,
     isInUse: false,
   },
-};
+});
 
-export const Importing: Story = {
+export const Importing = meta.story({
   args: {
     asset: mockAsset({
       proxyPath: undefined,
@@ -44,17 +41,17 @@ export const Importing: Story = {
     jobId: "job-1",
     isInUse: false,
   },
-};
+});
 
-export const InUse: Story = {
+export const InUse = meta.story({
   args: {
     asset: mockAsset(),
     jobId: null,
     isInUse: true,
   },
-};
+});
 
-export const AudioAsset: Story = {
+export const AudioAsset = meta.story({
   args: {
     asset: mockAsset({
       id: "asset-audio",
@@ -68,4 +65,44 @@ export const AudioAsset: Story = {
     jobId: null,
     isInUse: false,
   },
-};
+});
+
+export const Failed = meta.story({
+  decorators: [
+    (Story) => {
+      const client = createStoryQueryClient();
+      client.setQueryData(["jobs", "job-fail"], mockJob({
+        id: "job-fail",
+        status: "failed",
+        progress: 0.3,
+        error: "Import failed: unsupported codec",
+      }));
+      return (
+        <QueryClientProvider client={client}>
+          <Story />
+        </QueryClientProvider>
+      );
+    },
+  ],
+  args: {
+    asset: mockAsset(),
+    jobId: "job-fail",
+    isInUse: false,
+  },
+});
+
+Ready.test("renders add-to-timeline button", async ({ canvas }) => {
+  await canvas.findByTitle("Add to timeline");
+});
+
+Ready.test("renders delete button for asset not in use", async ({ canvas }) => {
+  await canvas.findByTitle("Delete asset");
+});
+
+Importing.test("renders importing asset fallback", async ({ canvas }) => {
+  await canvas.findByText("video");
+});
+
+AudioAsset.test("renders audio asset label", async ({ canvas }) => {
+  await canvas.findByText(/audio/i);
+});

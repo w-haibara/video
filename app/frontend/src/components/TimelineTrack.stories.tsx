@@ -1,17 +1,14 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
-import { mockAsset, mockClip } from "../stories/fixtures";
+import { fn } from "storybook/test";
+import preview from "../../.storybook/preview";
+import { mockAsset, mockClip, storyMsToPx, storyPxToMs } from "../stories/fixtures";
 import { TimelineTrack } from "./TimelineTrack";
 
-const msToPx = (ms: number) => ms * 0.05;
-const pxToMs = (px: number) => px / 0.05;
-
-const meta: Meta<typeof TimelineTrack> = {
+const meta = preview.meta({
   title: "Components/TimelineTrack",
   component: TimelineTrack,
   args: {
-    msToPx,
-    pxToMs,
+    msToPx: storyMsToPx,
+    pxToMs: storyPxToMs,
     totalWidth: 1500,
     maxDurationMs: 30000,
     selectedClipId: null,
@@ -20,10 +17,7 @@ const meta: Meta<typeof TimelineTrack> = {
     onTrimClip: fn(),
     onContextMenu: fn(),
   },
-};
-export default meta;
-
-type Story = StoryObj<typeof TimelineTrack>;
+});
 
 const videoAsset = mockAsset();
 const secondClip = mockClip({
@@ -34,7 +28,7 @@ const secondClip = mockClip({
   outMs: 4000,
 });
 
-export const VideoTrack: Story = {
+export const VideoTrack = meta.story({
   args: {
     track: {
       id: "track-v",
@@ -43,9 +37,9 @@ export const VideoTrack: Story = {
     },
     assets: [videoAsset],
   },
-};
+});
 
-export const EmptyTrack: Story = {
+export const EmptyTrack = meta.story({
   args: {
     track: {
       id: "track-v",
@@ -54,7 +48,7 @@ export const EmptyTrack: Story = {
     },
     assets: [],
   },
-};
+});
 
 const audioAsset = mockAsset({
   id: "asset-audio",
@@ -75,7 +69,7 @@ const audioClip = mockClip({
   outMs: 8000,
 });
 
-export const AudioTrack: Story = {
+export const AudioTrack = meta.story({
   args: {
     track: {
       id: "track-a",
@@ -84,4 +78,4 @@ export const AudioTrack: Story = {
     },
     assets: [audioAsset],
   },
-};
+});

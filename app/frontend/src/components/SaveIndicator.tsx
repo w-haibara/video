@@ -43,6 +43,7 @@ export function SaveIndicator({
       <button
         onClick={onUndo}
         disabled={!canUndo}
+        aria-label="Undo"
         title="Undo (Ctrl+Z)"
         style={{
           background: "none",
@@ -58,6 +59,7 @@ export function SaveIndicator({
       <button
         onClick={onRedo}
         disabled={!canRedo}
+        aria-label="Redo"
         title="Redo (Ctrl+Shift+Z)"
         style={{
           background: "none",

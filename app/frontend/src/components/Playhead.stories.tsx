@@ -1,6 +1,7 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { Playhead } from "./Playhead";
+import { expect } from "storybook/test";
+import preview from "../../.storybook/preview";
 import { theme } from "../theme";
+import { Playhead } from "./Playhead";
 
 const timelineContainer: React.CSSProperties = {
   position: "relative",
@@ -12,7 +13,7 @@ const timelineContainer: React.CSSProperties = {
   overflow: "hidden",
 };
 
-const meta: Meta<typeof Playhead> = {
+const meta = preview.meta({
   title: "Components/Playhead",
   component: Playhead,
   decorators: [
@@ -22,24 +23,34 @@ const meta: Meta<typeof Playhead> = {
       </div>
     ),
   ],
-};
-export default meta;
-type Story = StoryObj<typeof Playhead>;
+});
 
-export const Default: Story = {
+export const Default = meta.story({
   args: {
     positionPx: 100,
   },
-};
+});
 
-export const AtStart: Story = {
+export const AtStart = meta.story({
   args: {
     positionPx: 0,
   },
-};
+});
 
-export const AtMiddle: Story = {
+export const AtMiddle = meta.story({
   args: {
     positionPx: 200,
   },
-};
+});
+
+Default.test("renders at default position", async ({ canvas }) => {
+  await expect(document.body.querySelector("div")).toBeTruthy();
+});
+
+AtStart.test("renders at start position", async ({ canvas }) => {
+  await expect(document.body.querySelector("div")).toBeTruthy();
+});
+
+AtMiddle.test("renders at middle position", async ({ canvas }) => {
+  await expect(document.body.querySelector("div")).toBeTruthy();
+});

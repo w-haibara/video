@@ -1,33 +1,30 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
+import { expect, fn } from "storybook/test";
+import preview from "../../.storybook/preview";
 import { mockAsset, mockClip, mockProject } from "../stories/fixtures";
 import { InspectorPanel } from "./InspectorPanel";
 
-const meta: Meta<typeof InspectorPanel> = {
+const meta = preview.meta({
   title: "Components/InspectorPanel",
   component: InspectorPanel,
   args: {
     onUpdateClip: fn(),
     onMoveClip: fn(),
   },
-};
-export default meta;
+});
 
-type Story = StoryObj<typeof InspectorPanel>;
-
-export const NoSelection: Story = {
+export const NoSelection = meta.story({
   args: {
     project: mockProject(),
     selectedClipId: null,
   },
-};
+});
 
-export const VideoClip: Story = {
+export const VideoClip = meta.story({
   args: {
     project: mockProject(),
     selectedClipId: "clip-1",
   },
-};
+});
 
 const audioAsset = mockAsset({
   id: "asset-audio",
@@ -47,7 +44,7 @@ const audioClip = mockClip({
   volume: 0.75,
 });
 
-export const AudioClip: Story = {
+export const AudioClip = meta.story({
   args: {
     project: mockProject({
       assets: [mockAsset(), audioAsset],
@@ -60,7 +57,7 @@ export const AudioClip: Story = {
     }),
     selectedClipId: "clip-audio",
   },
-};
+});
 
 const textClip = mockClip({
   id: "clip-text",
@@ -70,7 +67,7 @@ const textClip = mockClip({
   text: { value: "Hello World", fontSize: 48 },
 });
 
-export const TextClip: Story = {
+export const TextClip = meta.story({
   args: {
     project: mockProject({
       sequence: {
@@ -83,4 +80,64 @@ export const TextClip: Story = {
     }),
     selectedClipId: "clip-text",
   },
-};
+});
+
+export const ClipNotFound = meta.story({
+  args: {
+    project: mockProject(),
+    selectedClipId: "nonexistent-clip",
+  },
+});
+
+const imageAsset = mockAsset({
+  id: "asset-image",
+  kind: "image",
+  originalPath: "/images/photo.jpg",
+  durationMs: undefined,
+});
+
+const imageClip = mockClip({
+  id: "clip-image",
+  assetId: "asset-image",
+  durationMs: 5000,
+  outMs: 5000,
+});
+
+export const ImageClip = meta.story({
+  args: {
+    project: mockProject({
+      assets: [mockAsset(), imageAsset],
+      sequence: {
+        tracks: [
+          {
+            id: "track-v",
+            kind: "video",
+            clips: [mockClip(), imageClip],
+          },
+          { id: "track-a", kind: "audio", clips: [] },
+        ],
+      },
+    }),
+    selectedClipId: "clip-image",
+  },
+});
+
+NoSelection.test("shows placeholder when no clip is selected", async ({ canvas }) => {
+  await canvas.findByText(/Select a clip/);
+});
+
+VideoClip.test("shows trim inputs for video clip", async ({ canvas }) => {
+  await canvas.findByText(/Trim/);
+});
+
+VideoClip.test("shows rotation buttons for video clip", async ({ canvas }) => {
+  await canvas.findByRole("button", { name: "0°" });
+});
+
+AudioClip.test("shows volume slider for audio clip", async ({ canvas }) => {
+  await canvas.findByText(/Volume/);
+});
+
+TextClip.test("shows text editor for text clip", async ({ canvas }) => {
+  await canvas.findByRole("textbox");
+});

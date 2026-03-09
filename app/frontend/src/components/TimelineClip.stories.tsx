@@ -1,12 +1,9 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
-import { mockAsset, mockClip } from "../stories/fixtures";
+import { expect, fn } from "storybook/test";
+import preview from "../../.storybook/preview";
+import { mockAsset, mockClip, storyMsToPx, storyPxToMs } from "../stories/fixtures";
 import { TimelineClip } from "./TimelineClip";
 
-const msToPx = (ms: number) => ms * 0.05;
-const pxToMs = (px: number) => px / 0.05;
-
-const meta: Meta<typeof TimelineClip> = {
+const meta = preview.meta({
   title: "Components/TimelineClip",
   component: TimelineClip,
   decorators: [
@@ -17,28 +14,25 @@ const meta: Meta<typeof TimelineClip> = {
     ),
   ],
   args: {
-    msToPx,
-    pxToMs,
+    msToPx: storyMsToPx,
+    pxToMs: storyPxToMs,
     maxDurationMs: 30000,
     onSelect: fn(),
     onMove: fn(),
     onTrim: fn(),
     onContextMenu: fn(),
   },
-};
-export default meta;
+});
 
-type Story = StoryObj<typeof TimelineClip>;
-
-export const VideoClip: Story = {
+export const VideoClip = meta.story({
   args: {
     clip: mockClip(),
     asset: mockAsset(),
     isSelected: false,
   },
-};
+});
 
-export const AudioClip: Story = {
+export const AudioClip = meta.story({
   args: {
     clip: mockClip({
       id: "clip-audio",
@@ -57,9 +51,9 @@ export const AudioClip: Story = {
     }),
     isSelected: false,
   },
-};
+});
 
-export const TextClip: Story = {
+export const TextClip = meta.story({
   args: {
     clip: mockClip({
       id: "clip-text",
@@ -71,12 +65,28 @@ export const TextClip: Story = {
     asset: undefined,
     isSelected: false,
   },
-};
+});
 
-export const Selected: Story = {
+export const Selected = meta.story({
   args: {
     clip: mockClip(),
     asset: mockAsset(),
     isSelected: true,
   },
-};
+});
+
+VideoClip.test("renders video clip with filename", async ({ canvas }) => {
+  await canvas.findByText(/sample\.mp4/);
+});
+
+AudioClip.test("renders audio clip with filename", async ({ canvas }) => {
+  await canvas.findByText(/track\.mp3/);
+});
+
+TextClip.test("renders text clip with text value", async ({ canvas }) => {
+  await canvas.findByText(/Hello World/);
+});
+
+Selected.test("renders selected clip", async ({ canvas }) => {
+  await expect(canvas.getByText(/.+/)).toBeTruthy();
+});

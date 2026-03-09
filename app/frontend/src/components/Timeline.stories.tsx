@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
+import { expect, fn } from "storybook/test";
+import preview from "../../.storybook/preview";
 import { mockProject, projectWithClips } from "../stories/fixtures";
 import { Timeline } from "./Timeline";
 
-const meta: Meta<typeof Timeline> = {
+const meta = preview.meta({
   title: "Components/Timeline",
   component: Timeline,
   args: {
@@ -13,12 +13,9 @@ const meta: Meta<typeof Timeline> = {
     onMoveClip: fn(),
     onTrimClip: fn(),
   },
-};
-export default meta;
+});
 
-type Story = StoryObj<typeof Timeline>;
-
-export const Empty: Story = {
+export const Empty = meta.story({
   args: {
     project: mockProject({
       name: "Test Project",
@@ -33,20 +30,39 @@ export const Empty: Story = {
     currentTimeMs: 0,
     selectedClipId: null,
   },
-};
+});
 
-export const WithClips: Story = {
+export const WithClips = meta.story({
   args: {
     project: projectWithClips,
     currentTimeMs: 5000,
     selectedClipId: null,
   },
-};
+});
 
-export const WithSelectedClip: Story = {
+export const WithSelectedClip = meta.story({
   args: {
     project: projectWithClips,
     currentTimeMs: 5000,
     selectedClipId: "clip-v1",
   },
-};
+});
+
+Empty.test("renders zoom controls", async ({ canvas }) => {
+  await canvas.findByRole("button", { name: "+" });
+  await canvas.findByRole("button", { name: "-" });
+});
+
+Empty.test("renders time display", async ({ canvas }) => {
+  const matches = canvas.getAllByText(/0:00/);
+  await expect(matches.length).toBeGreaterThan(0);
+});
+
+WithClips.test("renders timeline with clips", async ({ canvas }) => {
+  const matches = canvas.getAllByText(/0:05/);
+  await expect(matches.length).toBeGreaterThan(0);
+});
+
+WithSelectedClip.test("renders with selected clip", async ({ canvasElement }) => {
+  await expect(canvasElement.textContent?.length).toBeGreaterThan(0);
+});

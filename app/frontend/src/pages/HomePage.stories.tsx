@@ -1,12 +1,14 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import { expect } from "storybook/test";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
-import { createStoryQueryClient } from "../stories/fixtures";
+import preview from "../../.storybook/preview";
+import { createStoryQueryClient, mockAsset, mockProject } from "../stories/fixtures";
 import { HomePage } from "./HomePage";
 
-const meta: Meta<typeof HomePage> = {
+const meta = preview.meta({
   title: "Pages/HomePage",
   component: HomePage,
+  tags: ["page"],
   decorators: [
     (Story) => (
       <QueryClientProvider client={createStoryQueryClient()}>
@@ -16,9 +18,53 @@ const meta: Meta<typeof HomePage> = {
       </QueryClientProvider>
     ),
   ],
-};
-export default meta;
+});
 
-type Story = StoryObj<typeof HomePage>;
+export const Default = meta.story({});
 
-export const Default: Story = {};
+export const WithProjects = meta.story({
+  decorators: [
+    (Story) => {
+      const client = createStoryQueryClient();
+      client.setQueryData(["projects"], {
+        projects: [
+          mockProject(),
+          mockProject({
+            id: "proj-2",
+            name: "Another Project",
+            assets: [
+              mockAsset({ id: "asset-2", kind: "audio", thumbnailPath: undefined }),
+            ],
+          }),
+        ],
+      });
+      return (
+        <QueryClientProvider client={client}>
+          <Story />
+        </QueryClientProvider>
+      );
+    },
+  ],
+});
+
+export const Empty = meta.story({
+  decorators: [
+    (Story) => {
+      const client = createStoryQueryClient();
+      client.setQueryData(["projects"], { projects: [] });
+      return (
+        <QueryClientProvider client={client}>
+          <Story />
+        </QueryClientProvider>
+      );
+    },
+  ],
+});
+
+Default.test("renders project list heading", async ({ canvas }) => {
+  await canvas.findByRole("heading", { name: "Projects" });
+});
+
+Default.test("renders new project button", async ({ canvas }) => {
+  await canvas.findByRole("button", { name: /New Project/i });
+});

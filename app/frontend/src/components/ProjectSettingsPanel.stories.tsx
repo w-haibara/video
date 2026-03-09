@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
+import { expect, fn } from "storybook/test";
 import { MemoryRouter } from "react-router-dom";
+import preview from "../../.storybook/preview";
 import { mockProject } from "../stories/fixtures";
 import { ProjectSettingsPanel } from "./ProjectSettingsPanel";
 
-const meta: Meta<typeof ProjectSettingsPanel> = {
+const meta = preview.meta({
   title: "Components/ProjectSettingsPanel",
   component: ProjectSettingsPanel,
   decorators: [
@@ -17,14 +17,24 @@ const meta: Meta<typeof ProjectSettingsPanel> = {
   args: {
     onUpdateSettings: fn(),
   },
-};
-export default meta;
+});
 
-type Story = StoryObj<typeof ProjectSettingsPanel>;
-
-export const Default: Story = {
+export const Default = meta.story({
   args: {
     project: mockProject(),
     projectId: "proj-1",
   },
-};
+});
+
+Default.test("renders heading", async ({ canvas }) => {
+  await canvas.findByRole("heading", { name: "Project Settings" });
+});
+
+Default.test("renders duration input", async ({ canvas }) => {
+  await canvas.findByText(/Duration/);
+  await canvas.findByRole("spinbutton");
+});
+
+Default.test("renders view jobs link", async ({ canvas }) => {
+  await canvas.findByRole("link", { name: /View Jobs/ });
+});

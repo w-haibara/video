@@ -1,7 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { EditorMainPanel } from "./EditorMainPanel";
-
+import preview from "../../.storybook/preview";
 import { theme } from "../theme";
+import { EditorMainPanel } from "./EditorMainPanel";
 
 const PlaceholderContent = ({ label }: { label: string }) => (
   <div style={{ padding: 8, color: theme.textMuted, fontSize: 13 }}>
@@ -9,7 +8,7 @@ const PlaceholderContent = ({ label }: { label: string }) => (
   </div>
 );
 
-const meta: Meta<typeof EditorMainPanel> = {
+const meta = preview.meta({
   title: "Components/EditorMainPanel",
   component: EditorMainPanel,
   args: {
@@ -18,19 +17,16 @@ const meta: Meta<typeof EditorMainPanel> = {
     exportContent: <PlaceholderContent label="Export" />,
     settingsContent: <PlaceholderContent label="Settings" />,
   },
-};
-export default meta;
+});
 
-type Story = StoryObj<typeof EditorMainPanel>;
-
-export const Default: Story = {
+export const Default = meta.story({
   args: {
     selectedClipId: null,
   },
-};
+});
 
-export const WithSelectedClip: Story = {
+export const WithSelectedClip = meta.story({
   args: {
     selectedClipId: "clip-1",
   },
-};
+});

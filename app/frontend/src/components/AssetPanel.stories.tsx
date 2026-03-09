@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
+import { expect, fn } from "storybook/test";
 import { QueryClientProvider } from "@tanstack/react-query";
+import preview from "../../.storybook/preview";
 import {
   createStoryQueryClient,
   mockAsset,
@@ -8,7 +8,7 @@ import {
 } from "../stories/fixtures";
 import { AssetPanel } from "./AssetPanel";
 
-const meta: Meta<typeof AssetPanel> = {
+const meta = preview.meta({
   title: "Components/AssetPanel",
   component: AssetPanel,
   decorators: [
@@ -21,18 +21,15 @@ const meta: Meta<typeof AssetPanel> = {
   args: {
     onAddToTimeline: fn(),
   },
-};
-export default meta;
+});
 
-type Story = StoryObj<typeof AssetPanel>;
-
-export const Empty: Story = {
+export const Empty = meta.story({
   args: {
     project: mockProject({ assets: [] }),
   },
-};
+});
 
-export const WithAssets: Story = {
+export const WithAssets = meta.story({
   args: {
     project: mockProject({
       assets: [
@@ -56,4 +53,17 @@ export const WithAssets: Story = {
       ],
     }),
   },
-};
+});
+
+Empty.test("renders heading", async ({ canvas }) => {
+  await canvas.findByRole("heading", { name: "Assets" });
+});
+
+Empty.test("renders import button", async ({ canvas }) => {
+  await canvas.findByRole("button", { name: /Import/ });
+});
+
+WithAssets.test("renders asset thumbnails when assets exist", async ({ canvas }) => {
+  await canvas.findByRole("heading", { name: "Assets" });
+  await canvas.findByRole("button", { name: /Import/ });
+});

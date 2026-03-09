@@ -1,9 +1,10 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import { expect } from "storybook/test";
 import { MemoryRouter } from "react-router-dom";
+import preview from "../../.storybook/preview";
 import { mockAsset, mockProject } from "../stories/fixtures";
 import { ProjectCard } from "./ProjectCard";
 
-const meta: Meta<typeof ProjectCard> = {
+const meta = preview.meta({
   title: "Components/ProjectCard",
   component: ProjectCard,
   decorators: [
@@ -15,11 +16,9 @@ const meta: Meta<typeof ProjectCard> = {
       </MemoryRouter>
     ),
   ],
-};
-export default meta;
-type Story = StoryObj<typeof ProjectCard>;
+});
 
-export const Default: Story = {
+export const Default = meta.story({
   args: {
     project: mockProject({
       assets: [
@@ -28,18 +27,18 @@ export const Default: Story = {
       ],
     }),
   },
-};
+});
 
-export const LongName: Story = {
+export const LongName = meta.story({
   args: {
     project: mockProject({
       id: "proj-2",
       name: "This Is A Very Long Project Name That Should Test Text Overflow Behavior",
     }),
   },
-};
+});
 
-export const NewProject: Story = {
+export const NewProject = meta.story({
   args: {
     project: mockProject({
       id: "proj-3",
@@ -47,4 +46,25 @@ export const NewProject: Story = {
       assets: [],
     }),
   },
-};
+});
+
+Default.test("renders project name", async ({ canvas }) => {
+  await canvas.findByText("My Video Project");
+});
+
+Default.test("renders link to project editor", async ({ canvas }) => {
+  const link = await canvas.findByRole("link");
+  await expect(link).toHaveAttribute("href", "/projects/proj-1");
+});
+
+Default.test("renders asset count", async ({ canvas }) => {
+  await canvas.findByText(/2 assets/);
+});
+
+LongName.test("renders long project name", async ({ canvas }) => {
+  await canvas.findByText(/This Is A Very Long Project Name/);
+});
+
+NewProject.test("renders new project with zero assets", async ({ canvas }) => {
+  await canvas.findByText(/0 assets/);
+});

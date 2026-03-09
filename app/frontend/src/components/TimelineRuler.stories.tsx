@@ -1,8 +1,10 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { TimelineRuler } from "./TimelineRuler";
+import { expect } from "storybook/test";
+import preview from "../../.storybook/preview";
+import { storyMsToPx } from "../stories/fixtures";
 import { theme } from "../theme";
+import { TimelineRuler } from "./TimelineRuler";
 
-const meta: Meta<typeof TimelineRuler> = {
+const meta = preview.meta({
   title: "Components/TimelineRuler",
   component: TimelineRuler,
   decorators: [
@@ -12,27 +14,37 @@ const meta: Meta<typeof TimelineRuler> = {
       </div>
     ),
   ],
-};
-export default meta;
-type Story = StoryObj<typeof TimelineRuler>;
+  args: {
+    msToPx: storyMsToPx,
+  },
+});
 
-export const Default: Story = {
+export const Default = meta.story({
   args: {
     durationMs: 30000,
-    msToPx: (ms: number) => ms / 100,
   },
-};
+});
 
-export const Short: Story = {
+export const Short = meta.story({
   args: {
     durationMs: 5000,
-    msToPx: (ms: number) => ms / 100,
   },
-};
+});
 
-export const Long: Story = {
+export const Long = meta.story({
   args: {
     durationMs: 120000,
-    msToPx: (ms: number) => ms / 100,
   },
-};
+});
+
+Default.test("renders time markers for default duration", async ({ canvas }) => {
+  await canvas.findByText(/0:00/);
+});
+
+Short.test("renders time markers for short duration", async ({ canvas }) => {
+  await canvas.findByText(/0:00/);
+});
+
+Long.test("renders time markers for long duration", async ({ canvas }) => {
+  await canvas.findByText(/0:00/);
+});

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import preview from "../../.storybook/preview";
 import { theme, spacing, fontSize, radius, buttonStyle, inputStyle, sectionHeadingStyle } from "../theme";
 
 const ThemeDisplay = () => {
@@ -126,10 +126,10 @@ const ThemeDisplay = () => {
   );
 };
 
-const meta: Meta<typeof ThemeDisplay> = {
+const meta = preview.meta({
   title: "Theme",
   component: ThemeDisplay,
-};
-export default meta;
-type Story = StoryObj<typeof ThemeDisplay>;
-export const Overview: Story = {};
+  tags: ["design-system", "no-tests"],
+});
+
+export const Overview = meta.story({});
