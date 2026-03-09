@@ -36,15 +36,7 @@ export async function createProject(name: string): Promise<Project> {
 
 export async function getProject(id: string): Promise<Project> {
   const data = await readFile(projectJsonPath(id), "utf-8");
-  const project = JSON.parse(data) as Project;
-  // Backward compatibility: fill in canvasWidth/canvasHeight if missing
-  if (project.settings && !project.settings.canvasWidth) {
-    project.settings.canvasWidth = DEFAULT_CANVAS_WIDTH;
-  }
-  if (project.settings && !project.settings.canvasHeight) {
-    project.settings.canvasHeight = DEFAULT_CANVAS_HEIGHT;
-  }
-  return project;
+  return JSON.parse(data) as Project;
 }
 
 export async function listProjects(): Promise<Project[]> {

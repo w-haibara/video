@@ -1953,7 +1953,7 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - [x] `ProjectSettings` に `canvasWidth: number` と `canvasHeight: number` を追加
 - [x] `constants.ts` に `DEFAULT_CANVAS_WIDTH = 1920` と `DEFAULT_CANVAS_HEIGHT = 1080` を追加
 - [x] `project-service.ts` の新規プロジェクト作成時に `canvasWidth` / `canvasHeight` のデフォルト値を設定
-- [x] 既存プロジェクトの後方互換性: データ読み込み時に `canvasWidth` / `canvasHeight` が未設定の場合、デフォルト値にフォールバック
+- ~~既存プロジェクトの後方互換性~~ → 既存プロジェクトを削除して対応
 
 **確認方法:** TypeScript コンパイルが通ること、既存テストが Pass すること
 
