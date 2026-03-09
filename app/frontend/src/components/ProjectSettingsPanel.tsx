@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import type { Project, ProjectSettings } from "@video/shared";
 import { theme } from "../theme";
 
 type Props = {
   project: Project;
   onUpdateSettings: (settings: ProjectSettings) => void;
+  projectId: string;
 };
 
-export function ProjectSettingsPanel({ project, onUpdateSettings }: Props) {
+export function ProjectSettingsPanel({ project, onUpdateSettings, projectId }: Props) {
   const currentSec = project.settings.durationMs / 1000;
   const [durationVal, setDurationVal] = useState(String(currentSec));
 
@@ -59,6 +61,23 @@ export function ProjectSettingsPanel({ project, onUpdateSettings }: Props) {
         <div style={{ color: theme.textDisabled, fontSize: "10px", marginTop: "4px" }}>
           Min: 1s / Max: 3600s (1 hour)
         </div>
+      </div>
+      <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: "16px", paddingTop: "12px" }}>
+        <Link
+          to={`/projects/${projectId}/jobs`}
+          style={{
+            display: "block",
+            padding: "8px",
+            background: theme.bgDark,
+            color: theme.text,
+            borderRadius: "3px",
+            fontSize: "13px",
+            textDecoration: "none",
+            textAlign: "center",
+          }}
+        >
+          View Jobs
+        </Link>
       </div>
     </div>
   );

@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useParams } from "react-router-dom";
 import type { Project, ProjectSettings } from "@video/shared";
 import { useProject, useUpdateProject } from "../api/projects";
+import { useExport } from "../api/exports";
+import { useJob } from "../api/jobs";
 import { EditorLayout } from "../components/EditorLayout";
 import { EditorMainPanel } from "../components/EditorMainPanel";
 import { AssetPanel } from "../components/AssetPanel";
@@ -9,7 +11,7 @@ import { Timeline } from "../components/Timeline";
 import { InspectorPanel } from "../components/InspectorPanel";
 import { PreviewPlayer } from "../components/PreviewPlayer";
 import { SaveIndicator } from "../components/SaveIndicator";
-import { ExportDialog } from "../components/ExportDialog";
+import { JobProgress } from "../components/JobProgress";
 import { ProjectSettingsPanel } from "../components/ProjectSettingsPanel";
 import { useProjectEditor } from "../hooks/useProjectEditor";
 import { clampClipsToDuration } from "../lib/sequence-ops";
@@ -57,7 +59,38 @@ function EditorPageLoaded({
   isPlaying: boolean;
   onPlayPause: () => void;
 }) {
-  const [showExport, setShowExport] = useState(false);
+  const [exportFilename, setExportFilename] = useState(`export-${Date.now()}.mp4`);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const exportedFilenameRef = useRef<string | null>(null);
+  const downloadedRef = useRef(false);
+  const exportMutation = useExport(project.id);
+  const { data: exportJob } = useJob(activeJobId);
+
+  const isExporting =
+    activeJobId && exportJob && exportJob.status !== "completed" && exportJob.status !== "failed";
+
+  const handleExport = async () => {
+    exportedFilenameRef.current = exportFilename;
+    downloadedRef.current = false;
+    const result = await exportMutation.mutateAsync(exportFilename);
+    setActiveJobId(result.jobId);
+  };
+
+  useEffect(() => {
+    if (
+      exportJob?.status === "completed" &&
+      exportedFilenameRef.current &&
+      !downloadedRef.current
+    ) {
+      downloadedRef.current = true;
+      const a = document.createElement("a");
+      a.href = `/media/projects/${project.id}/exports/${exportedFilenameRef.current}`;
+      a.download = exportedFilenameRef.current;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  }, [exportJob?.status, project.id]);
 
   const { sequence, pushState, undo, redo, canUndo, canRedo } = useUndoRedo(
     project.sequence,
@@ -183,56 +216,68 @@ function EditorPageLoaded({
               </div>
             }
             exportContent={
-              <div>
-                <div style={{ display: "flex", gap: "4px", marginBottom: "8px" }}>
-                  <button
-                    onClick={() => setShowExport(true)}
-                    style={{
-                      flex: 1,
-                      padding: "8px",
-                      background: theme.button,
-                      color: theme.buttonText,
-                      border: "none",
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                      fontSize: "13px",
-                    }}
-                  >
-                    Start Export
-                  </button>
-                </div>
-                <Link
-                  to={`/projects/${project.id}/jobs`}
+              <div style={{ padding: "8px", fontSize: "12px", color: theme.text }}>
+                <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
+                  Filename
+                </label>
+                <input
+                  type="text"
+                  value={exportFilename}
+                  onChange={(e) => setExportFilename(e.target.value)}
                   style={{
-                    display: "block",
-                    padding: "8px",
-                    background: theme.bgDark,
+                    width: "100%",
+                    padding: "6px 8px",
+                    background: theme.bgPanel,
                     color: theme.text,
-                    border: "none",
-                    borderRadius: "3px",
-                    cursor: "pointer",
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: "4px",
                     fontSize: "13px",
-                    textDecoration: "none",
-                    textAlign: "center",
+                    marginBottom: "12px",
+                    boxSizing: "border-box",
+                  }}
+                />
+                <button
+                  onClick={handleExport}
+                  disabled={!!isExporting || exportMutation.isPending}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    background: isExporting ? theme.bgDark : theme.button,
+                    color: isExporting ? theme.textMuted : theme.buttonText,
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: isExporting ? "default" : "pointer",
+                    fontSize: "13px",
+                    marginBottom: "12px",
                   }}
                 >
-                  View Jobs
-                </Link>
+                  {isExporting ? "Exporting..." : "Start Export"}
+                </button>
+                {activeJobId && exportJob && (
+                  <div>
+                    <JobProgress job={exportJob} />
+                    {exportJob.status === "completed" && (
+                      <div style={{ color: theme.success, marginTop: "4px", fontSize: "12px" }}>
+                        Export completed! Downloading...
+                      </div>
+                    )}
+                    {exportJob.status === "failed" && (
+                      <div style={{ color: theme.error, marginTop: "4px", fontSize: "12px" }}>
+                        Export failed: {exportJob.error}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             }
             settingsContent={
               <ProjectSettingsPanel
                 project={currentProject}
                 onUpdateSettings={handleUpdateSettings}
+                projectId={project.id}
               />
             }
           />
-          {showExport && (
-            <ExportDialog
-              projectId={project.id}
-              onClose={() => setShowExport(false)}
-            />
-          )}
         </>
       }
       bottom={
