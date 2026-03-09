@@ -236,7 +236,17 @@ describe("buildExportArgs", () => {
     expect(filter).toContain("[bgm]");
   });
 
-  test("uses custom export preset", () => {
+  test("uses canvas dimensions when no export preset", () => {
+    const project = makeProject({
+      settings: { durationMs: 10000, canvasWidth: 1080, canvasHeight: 1080 },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    expect(filter).toContain("crop=1080:1080:");
+  });
+
+  test("uses custom export preset over canvas dimensions", () => {
     const project = makeProject({
       exportPreset: {
         width: 1280,
@@ -249,7 +259,7 @@ describe("buildExportArgs", () => {
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
-    expect(filter).toContain("scale=1280:720");
+    expect(filter).toContain("crop=1280:720:");
     expect(args).toContain("24");
   });
 
