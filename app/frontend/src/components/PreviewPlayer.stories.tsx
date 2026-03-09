@@ -42,3 +42,12 @@ export const WithTextOverlay: Story = {
     selectedClipId: null,
   },
 };
+
+export const WithSelectedClip: Story = {
+  args: {
+    project: projectWithClips,
+    currentTimeMs: 3000,
+    isPlaying: false,
+    selectedClipId: "clip-v1",
+  },
+};
