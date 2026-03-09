@@ -84,7 +84,7 @@
 | 78 | Settings タブにキャンバスサイズ設定 UI を追加 | [x] Done | 46, 77 |
 | 79 | プレビュープレーヤーのキャンバスサイズ対応 | [x] Done | 12, 77 |
 | 80 | エクスポートのキャンバスサイズ対応 | [x] Done | 15, 77 |
-| 81 | キャンバスサイズ機能のテスト・Story 更新 | [ ] Todo | 77, 78, 79, 80 |
+| 81 | キャンバスサイズ機能のテスト・Story 更新 | [x] Done | 77, 78, 79, 80 |
 
 ## Phase 1 Tasks
 
@@ -2034,10 +2034,10 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - `app/backend/src/services/__tests__/` (export-service テスト)
 
 **変更内容:**
-- [ ] `fixtures.ts` のモックプロジェクトデータに `canvasWidth` / `canvasHeight` を追加
-- [ ] ProjectSettingsPanel Story にキャンバスサイズプリセット選択のインタラクションテスト追加
-- [ ] PreviewPlayer Story にキャンバスサイズバリエーション追加（16:9、9:16、1:1）
-- [ ] EditorPage / EditorLayout Story のモックデータ更新
-- [ ] export-service テストにキャンバスサイズ考慮のケース追加（大きい素材、小さい素材）
+- [x] `fixtures.ts` のモックプロジェクトデータに `canvasWidth` / `canvasHeight` を追加
+- [x] ProjectSettingsPanel Story にキャンバスサイズプリセット選択のインタラクションテスト追加
+- [x] PreviewPlayer Story にキャンバスサイズバリエーション追加（16:9、9:16、1:1）
+- [x] EditorPage / EditorLayout Story のモックデータ更新
+- [x] export-service テストにキャンバスサイズ考慮のケース追加（大きい素材、小さい素材）
 
 **確認方法:** `bun run test` と `bun run storybook` で全テスト・Story が正常動作すること
