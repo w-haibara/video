@@ -6,3 +6,5 @@ workspace/
 .playwright-cli/
 screenshots/
 storybook-static/
+coverage/
+debug-storybook.log
