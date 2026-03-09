@@ -5,3 +5,4 @@ workspace/
 .playwright-mcp/
 .playwright-cli/
 screenshots/
+storybook-static/
