@@ -96,6 +96,7 @@ export function ProjectSettingsPanel({ project, onUpdateSettings, projectId }: P
         <label style={labelStyle}>Duration (sec)</label>
         <input
           type="number"
+          aria-label="Duration"
           value={durationVal}
           onChange={(e) => setDurationVal(e.target.value)}
           onBlur={handleDurationCommit}
