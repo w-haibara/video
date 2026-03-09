@@ -75,7 +75,7 @@
 | 69 | テーマシステム拡張: スペーシング・フォントサイズ・角丸の定数化 | [x] Done | 60 |
 | 70 | ハードコード色のテーマ変数置換 | [x] Done | 69 |
 | 71 | ボタンスタイルの統一 | [x] Done | 69 |
-| 72 | 入力フィールド・見出し・ラベルスタイルの統一 | [ ] Todo | 69 |
+| 72 | 入力フィールド・見出し・ラベルスタイルの統一 | [x] Done | 69 |
 | 73 | Storybook 導入 + 全コンポーネントの Story 定義 | [ ] Todo | - |
 | 74 | Vitest ブラウザテスト導入 + 全 Story のテスト整備 | [ ] Todo | 73 |
 
@@ -1771,27 +1771,27 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - 共通の入力スタイル・見出しスタイルを `theme.ts` に定義し、全コンポーネントで適用する
 
 **A. theme.ts に共通スタイルを追加** (`app/frontend/src/theme.ts`)
-- [ ] `inputStyle` オブジェクトを追加:
+- [x] `inputStyle` オブジェクトを追加:
   - `{ background: theme.bgPanel, color: theme.text, border: "1px solid " + theme.border, borderRadius: radius.sm, padding: "4px 6px", fontSize: fontSize.md, boxSizing: "border-box" }`
-- [ ] `sectionHeadingStyle` を追加:
+- [x] `sectionHeadingStyle` を追加:
   - `{ fontSize: fontSize.heading3, fontWeight: 600, margin: "0 0 8px" }`
 
 **B. InspectorPanel の inputStyle を theme から参照** (`app/frontend/src/components/InspectorPanel.tsx`)
-- [ ] L126-135: ローカル `inputStyle` を `theme.inputStyle` に置換
+- [x] L126-135: ローカル `inputStyle` を削除し、theme からの `inputStyle` を import
 
 **C. CreateProjectDialog の入力フィールド統一** (`app/frontend/src/components/CreateProjectDialog.tsx`)
-- [ ] L55: `padding: "10px 12px"` → theme の `inputStyle` に合わせる（ダイアログ用に padding のみオーバーライド）
+- [x] L55: `padding: "10px 12px"` → theme の `inputStyle` に合わせる（ダイアログ用に padding のみオーバーライド）
 
 **D. EditorPage の Export ファイル名入力統一** (`app/frontend/src/pages/EditorPage.tsx`)
-- [ ] L229: `padding: "6px 8px"` → theme の `inputStyle` に合わせる
+- [x] L229: `padding: "6px 8px"` → theme の `inputStyle` に合わせる
 
 **E. ProjectSettingsPanel の入力フィールド統一** (`app/frontend/src/components/ProjectSettingsPanel.tsx`)
-- [ ] L38: `padding: "4px 6px"` → theme の `inputStyle` を使用
+- [x] L38: ローカル `inputStyle` を削除し、theme からの `inputStyle` を import
 
 **F. 見出しタグの統一**
-- [ ] `InspectorPanel.tsx` L55: `<h4>` → `<h3>` に変更し `sectionHeadingStyle` を適用
-- [ ] `AssetPanel.tsx` L59: `<h3>` の margin を `sectionHeadingStyle` に合わせる
-- [ ] `ProjectSettingsPanel.tsx` L45: `<h4>` → `<h3>` に変更、margin を `"0 0 8px"` に統一
+- [x] `InspectorPanel.tsx` L55: `<h4>` → `<h3>` に変更し `sectionHeadingStyle` を適用
+- [x] `AssetPanel.tsx` L59: `<h3>` の margin を `sectionHeadingStyle` に合わせる
+- [x] `ProjectSettingsPanel.tsx` L45: `<h4>` → `<h3>` に変更、`sectionHeadingStyle` を適用
 
 ### 73: Storybook 導入 + 全コンポーネントの Story 定義
 
