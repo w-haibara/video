@@ -7,7 +7,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test:browser": "vitest"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",
@@ -19,14 +20,19 @@
   "devDependencies": {
     "@storybook/addon-essentials": "8",
     "@storybook/blocks": "8",
+    "@storybook/experimental-addon-test": "^8.6.14",
     "@storybook/react": "8",
     "@storybook/react-vite": "8",
     "@storybook/test": "^8.6.15",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4",
+    "@vitest/browser": "^4.0.18",
+    "@vitest/browser-playwright": "^4.0.18",
+    "playwright": "^1.58.2",
     "storybook": "8",
     "typescript": "^5",
-    "vite": "^6"
+    "vite": "^6",
+    "vitest": "^4.0.18"
   }
 }
