@@ -119,12 +119,18 @@ export function buildExportArgs(
       }
     }
 
+    // Build user crop filter segment (applied before canvas pad/crop)
+    const userCrop = clip.crop
+      ? `,crop=${clip.crop.width}:${clip.crop.height}:${clip.crop.x}:${clip.crop.y}`
+      : "";
+
     if (asset.kind === "video") {
       inputArgs.push("-i", assetPath);
       const trimStart = clip.inMs / 1000;
       const duration = effectiveDurationMs / 1000;
       let chain =
-        `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS,` +
+        `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS` +
+        `${userCrop},` +
         `pad=w='max(iw,${preset.width})':h='max(ih,${preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black,` +
         `crop=${preset.width}:${preset.height}:(iw-${preset.width})/2:(ih-${preset.height})/2`;
       chain += buildTransformFilter(clip, preset);
@@ -132,7 +138,9 @@ export function buildExportArgs(
     } else if (asset.kind === "image") {
       inputArgs.push("-loop", "1", "-t", String(effectiveDurationMs / 1000), "-i", assetPath);
       let chain =
-        `[${i}:v]pad=w='max(iw,${preset.width})':h='max(ih,${preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black,` +
+        `[${i}:v]` +
+        `${clip.crop ? `crop=${clip.crop.width}:${clip.crop.height}:${clip.crop.x}:${clip.crop.y},` : ""}` +
+        `pad=w='max(iw,${preset.width})':h='max(ih,${preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black,` +
         `crop=${preset.width}:${preset.height}:(iw-${preset.width})/2:(ih-${preset.height})/2,setsar=1`;
       chain += buildTransformFilter(clip, preset);
       filterParts.push(`${chain}[v${i}]`);

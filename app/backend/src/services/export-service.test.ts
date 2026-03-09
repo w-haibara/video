@@ -480,6 +480,113 @@ describe("buildExportArgs", () => {
     expect(filter).toContain("atrim=start=1:duration=3,asetpts=PTS-STARTPTS");
   });
 
+  test("applies crop filter for video clip with crop settings", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              {
+                id: "c1",
+                assetId: "v1",
+                startMs: 0,
+                durationMs: 5000,
+                inMs: 0,
+                outMs: 5000,
+                crop: { x: 100, y: 50, width: 800, height: 600 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // User crop should appear after setpts and before pad
+    expect(filter).toContain("crop=800:600:100:50");
+    expect(filter).toContain("setpts=PTS-STARTPTS,crop=800:600:100:50,pad=");
+  });
+
+  test("does not add extra crop for clip without crop settings", () => {
+    const project = makeProject();
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Should only have the canvas crop, not a user crop
+    const cropMatches = filter.match(/crop=/g);
+    expect(cropMatches?.length).toBe(1); // only canvas center-crop
+  });
+
+  test("applies crop filter for image clip with crop settings", () => {
+    const project = makeProject({
+      assets: [
+        { id: "i1", kind: "image", originalPath: "assets/photo.jpg" },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              {
+                id: "c1",
+                assetId: "i1",
+                startMs: 0,
+                durationMs: 3000,
+                inMs: 0,
+                outMs: 3000,
+                crop: { x: 10, y: 20, width: 640, height: 480 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // User crop should appear before pad for images
+    expect(filter).toContain("crop=640:480:10:20,pad=");
+  });
+
+  test("applies crop and transform together in correct order", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              {
+                id: "c1",
+                assetId: "v1",
+                startMs: 0,
+                durationMs: 5000,
+                inMs: 0,
+                outMs: 5000,
+                crop: { x: 100, y: 100, width: 500, height: 400 },
+                transform: { x: 10, y: 20, scale: 1.5 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Crop should come before canvas pad/crop, transform should come after
+    const userCropIdx = filter.indexOf("crop=500:400:100:100");
+    const padIdx = filter.indexOf("pad=w='max(iw,");
+    const scaleIdx = filter.indexOf("scale=iw*1.5");
+    expect(userCropIdx).toBeGreaterThan(-1);
+    expect(padIdx).toBeGreaterThan(userCropIdx);
+    expect(scaleIdx).toBeGreaterThan(padIdx);
+  });
+
   test("excludes text overlays beyond project duration", () => {
     const project = makeProject({
       sequence: {
