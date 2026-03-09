@@ -6,6 +6,7 @@ const preview: Preview = {
   decorators: [
     (Story) => {
       document.body.style.background = theme.bg;
+      document.body.style.overflow = "auto";
       return Story();
     },
   ],
