@@ -77,7 +77,7 @@
 | 71 | ボタンスタイルの統一 | [x] Done | 69 |
 | 72 | 入力フィールド・見出し・ラベルスタイルの統一 | [x] Done | 69 |
 | 73 | Storybook 導入 + 全コンポーネントの Story 定義 | [x] Done | - |
-| 74 | Vitest ブラウザテスト導入 + 全 Story のテスト整備 | [ ] Todo | 73 |
+| 74 | Vitest ブラウザテスト導入 + 全 Story のテスト整備 | [x] Done | 73 |
 
 ## Phase 1 Tasks
 
@@ -1860,37 +1860,37 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - `@storybook/experimental-addon-test` を活用し、Story ベースのコンポーネントテストを実現する
 
 **A. Vitest + Storybook テストのインストールと設定** (`app/frontend/`)
-- [ ] `bun add -D vitest @vitest/browser playwright @storybook/experimental-addon-test @storybook/test` を実行
-- [ ] `app/frontend/vitest.config.ts` を作成:
+- [x] `bun add -D vitest @vitest/browser playwright @storybook/experimental-addon-test @storybook/test` を実行
+- [x] `app/frontend/vitest.config.ts` を作成:
   - `plugins: [storybookTest()]` を設定
   - `browser: { enabled: true, provider: "playwright", instances: [{ browser: "chromium" }] }` を設定
   - `setupFiles: [".storybook/vitest.setup.ts"]` を設定
-- [ ] `app/frontend/.storybook/vitest.setup.ts` を作成:
+- [x] `app/frontend/.storybook/vitest.setup.ts` を作成:
   - `@storybook/experimental-addon-test/vitest-plugin` からの `setProjectAnnotations` を呼び出し
-- [ ] `.storybook/main.ts` の `addons` に `"@storybook/experimental-addon-test"` を追加
-- [ ] `package.json` に `"test:browser": "vitest --project=storybook"` スクリプトを追加
+- [x] `.storybook/main.ts` の `addons` に `"@storybook/experimental-addon-test"` を追加
+- [x] `package.json` に `"test:browser": "vitest --project=storybook"` スクリプトを追加
 
 **B. ページコンポーネントのテスト** (`app/frontend/src/pages/`)
-- [ ] `HomePage.test.tsx` — プロジェクト一覧の描画、新規作成ボタンクリック
-- [ ] `EditorPage.test.tsx` — タブ切り替え、クリップ選択でインスペクタ表示
-- [ ] `JobLogPage.test.tsx` — ジョブ一覧の描画
+- [x] `HomePage.test.tsx` — プロジェクト一覧の描画、新規作成ボタンクリック
+- [x] `EditorPage.test.tsx` — タブ切り替え、クリップ選択でインスペクタ表示
+- [x] `JobLogPage.test.tsx` — ジョブ一覧の描画
 
 **C. エディタ系コンポーネントのテスト** (`app/frontend/src/components/`)
-- [ ] `InspectorPanel.test.tsx` — 各クリップタイプの表示、トリム値入力、回転ボタン
-- [ ] `AssetPanel.test.tsx` — アセット表示、Import ボタン
-- [ ] `AssetThumbnail.test.tsx` — 各状態の描画、+ ボタンクリック
-- [ ] `ProjectSettingsPanel.test.tsx` — Duration 入力、View Jobs リンク
-- [ ] `SaveIndicator.test.tsx` — Undo/Redo ボタンの活性・非活性
+- [x] `InspectorPanel.test.tsx` — 各クリップタイプの表示、トリム値入力、回転ボタン
+- [x] `AssetPanel.test.tsx` — アセット表示、Import ボタン
+- [x] `AssetThumbnail.test.tsx` — 各状態の描画、+ ボタンクリック
+- [x] `ProjectSettingsPanel.test.tsx` — Duration 入力、View Jobs リンク
+- [x] `SaveIndicator.test.tsx` — Undo/Redo ボタンの活性・非活性
 
 **D. タイムライン系コンポーネントのテスト** (`app/frontend/src/components/`)
-- [ ] `Timeline.test.tsx` — ズームイン・アウト、タイムライン描画
-- [ ] `TimelineClip.test.tsx` — クリップ表示、選択、右クリックメニュー
-- [ ] `TimelineRuler.test.tsx` — ルーラー目盛りの描画
-- [ ] `Playhead.test.tsx` — プレイヘッド位置の描画
+- [x] `Timeline.test.tsx` — ズームイン・アウト、タイムライン描画
+- [x] `TimelineClip.test.tsx` — クリップ表示、選択、右クリックメニュー
+- [x] `TimelineRuler.test.tsx` — ルーラー目盛りの描画
+- [x] `Playhead.test.tsx` — プレイヘッド位置の描画
 
 **E. その他コンポーネントのテスト** (`app/frontend/src/components/`)
-- [ ] `PreviewPlayer.test.tsx` — 再生ボタン、時間表示
-- [ ] `ContextMenu.test.tsx` — メニュー表示・項目クリック
-- [ ] `CreateProjectDialog.test.tsx` — ダイアログ表示、入力、送信
-- [ ] `ProjectCard.test.tsx` — カード表示、リンク先
-- [ ] `JobProgress.test.tsx` — 各状態の描画（プログレスバー表示）
+- [x] `PreviewPlayer.test.tsx` — 再生ボタン、時間表示
+- [x] `ContextMenu.test.tsx` — メニュー表示・項目クリック
+- [x] `CreateProjectDialog.test.tsx` — ダイアログ表示、入力、送信
+- [x] `ProjectCard.test.tsx` — カード表示、リンク先
+- [x] `JobProgress.test.tsx` — 各状態の描画（プログレスバー表示）
