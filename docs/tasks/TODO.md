@@ -81,7 +81,7 @@
 | 75 | テーマフォントサイズの一段階拡大 | [x] Done | 69 |
 | 76 | InspectorPanel セクションラベルの視認性改善 | [x] Done | 60 |
 | 77 | 共有型に canvasWidth / canvasHeight を追加 | [x] Done | 02, 45 |
-| 78 | Settings タブにキャンバスサイズ設定 UI を追加 | [ ] Todo | 46, 77 |
+| 78 | Settings タブにキャンバスサイズ設定 UI を追加 | [x] Done | 46, 77 |
 | 79 | プレビュープレーヤーのキャンバスサイズ対応 | [ ] Todo | 12, 77 |
 | 80 | エクスポートのキャンバスサイズ対応 | [ ] Todo | 15, 77 |
 | 81 | キャンバスサイズ機能のテスト・Story 更新 | [ ] Todo | 77, 78, 79, 80 |
@@ -1966,12 +1966,12 @@ macOS Terminal テーマ `everforest-light.terminal` で定義されるカラー
 - `app/frontend/src/components/ProjectSettingsPanel.stories.tsx`
 
 **変更内容:**
-- [ ] ProjectSettingsPanel に「Canvas Size」セクションを追加
-- [ ] 幅 (Width) と高さ (Height) の数値入力フィールド（最小: 320、最大: 3840）
-- [ ] よく使うプリセットの選択ボタン: 1920×1080 (16:9)、1280×720 (16:9)、1080×1920 (9:16 縦動画)、1080×1080 (1:1 正方形)
-- [ ] 入力値のバリデーション（偶数制約: FFmpeg の要件により幅・高さは偶数が必要）
-- [ ] onUpdateSettings コールバック経由で canvasWidth / canvasHeight を親に通知
-- [ ] Storybook の Story を更新
+- [x] ProjectSettingsPanel に「Canvas Size」セクションを追加
+- [x] 幅 (Width) と高さ (Height) の数値入力フィールド（最小: 320、最大: 3840）
+- [x] よく使うプリセットの選択ボタン: 1920×1080 (16:9)、1280×720 (16:9)、1080×1920 (9:16 縦動画)、1080×1080 (1:1 正方形)
+- [x] 入力値のバリデーション（偶数制約: FFmpeg の要件により幅・高さは偶数が必要）
+- [x] onUpdateSettings コールバック経由で canvasWidth / canvasHeight を親に通知
+- [x] Storybook の Story を更新
 
 **確認方法:** Storybook ProjectSettingsPanel でキャンバスサイズ入力・プリセット選択が機能すること
 
