@@ -99,7 +99,7 @@
 | 93 | TrackKind / AssetKind レジストリの導入 | [x] Done | 02 |
 | 94 | Inspector パネルのエディタプラグインレジストリ化 | [x] Done | 93 |
 | 95 | タイムラインクリップの外観レジストリ化 | [x] Done | 93 |
-| 96 | プレビュープレーヤーの描画 Strategy 化 | [ ] Pending | 93 |
+| 96 | プレビュープレーヤーの描画 Strategy 化 | [x] Done | 93 |
 | 97 | sequence-ops のトラックルーティング Strategy 化 | [ ] Pending | 93 |
 | 98 | アセット種別検出のプラグイン化 | [ ] Pending | 93 |
 | 99 | エクスポートのトラック/アセットハンドラ Strategy 化 | [ ] Pending | 93 |
@@ -2698,7 +2698,7 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. プレビューレンダラインターフェースの定義** (`preview-renderer-registry.ts`)
 
-- [ ] `PreviewLayerRenderer` 型を定義:
+- [x] `PreviewLayerRenderer` 型を定義:
   ```typescript
   type PreviewRenderContext = {
     project: Project;
@@ -2716,33 +2716,33 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
     Component: React.ComponentType<{ content: unknown; ctx: PreviewRenderContext }>;
   };
   ```
-- [ ] `PreviewRendererRegistry` クラスを実装:
+- [x] `PreviewRendererRegistry` クラスを実装:
   - `register(renderer: PreviewLayerRenderer): void`
   - `all(): PreviewLayerRenderer[]`（zOrder 順でソート）
 
 **B. 既存レンダラの分離**
 
-- [ ] video/image のメディアレンダラを `VideoClipRenderer` / `ImageClipRenderer` として抽出
-- [ ] テキストオーバーレイを `TextOverlayRenderer` として抽出
-- [ ] 各レンダラを `PreviewLayerRenderer` インターフェースに準拠させて登録
+- [x] video/image のメディアレンダラを `VideoClipRenderer` / `ImageClipRenderer` として抽出
+- [x] テキストオーバーレイを `TextOverlayRenderer` として抽出
+- [x] 各レンダラを `PreviewLayerRenderer` インターフェースに準拠させて登録
 
 **C. PreviewPlayer のリファクタリング**
 
-- [ ] `findActiveClip` / `findActiveTextClips` を各レンダラの `findActiveContent` に移動
-- [ ] レンダリング部分をレジストリからの動的レイヤー合成に変更
-- [ ] 再生ループ内の `asset.kind` 分岐を Strategy の `tick` メソッドに委譲
+- [x] `findActiveClip` / `findActiveTextClips` を各レンダラの `findActiveContent` に移動
+- [x] レンダリング部分をレジストリからの動的レイヤー合成に変更
+- [x] 再生ループ内の `asset.kind` 分岐を Strategy の `tick` メソッドに委譲
 
 **D. 再生ティック Strategy**
 
-- [ ] `PlaybackTickStrategy` インターフェースを定義:
+- [x] `PlaybackTickStrategy` インターフェースを定義:
   ```typescript
   type PlaybackTickStrategy = {
     assetKind: string;
     tick: (clip: ActiveClip, deltaMs: number, videoRef: HTMLVideoElement | null) => number; // 新しいタイムライン位置を返す
   };
   ```
-- [ ] video / image 用の tick strategy をそれぞれ実装し、レジストリに登録
-- [ ] 再生ループ内の if/else を strategy の dispatch に置換
+- [x] video / image 用の tick strategy をそれぞれ実装し、レジストリに登録
+- [x] 再生ループ内の if/else を strategy の dispatch に置換
 
 **確認方法:**
 - プレビュー再生（video, image, text）が完全に同一動作であること
