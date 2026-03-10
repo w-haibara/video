@@ -65,6 +65,37 @@ describe("addClipFromAsset", () => {
     addClipFromAsset(original, videoAsset);
     expect(original.tracks.length).toBe(0);
   });
+
+  test("adds different asset kinds to the same last track", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    seq = addClipFromAsset(seq, audioAsset);
+    expect(seq.tracks.length).toBe(1);
+    expect(seq.tracks[0].clips.length).toBe(2);
+    expect(seq.tracks[0].clips[0].clipKind).toBe("video");
+    expect(seq.tracks[0].clips[1].clipKind).toBe("audio");
+  });
+
+  test("adds to specified targetTrackId", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const firstTrackId = seq.tracks[0].id;
+    // Create a second track
+    const secondTrack: Track = { id: "track-2", clips: [] };
+    seq = { ...seq, tracks: [...seq.tracks, secondTrack] };
+    seq = addClipFromAsset(seq, audioAsset, undefined, firstTrackId);
+    expect(seq.tracks[0].clips.length).toBe(2);
+    expect(seq.tracks[1].clips.length).toBe(0);
+  });
+
+  test("sets clipKind to asset.kind", () => {
+    const videoSeq = addClipFromAsset(emptySeq, videoAsset);
+    expect(videoSeq.tracks[0].clips[0].clipKind).toBe("video");
+
+    const imageSeq = addClipFromAsset(emptySeq, imageAsset);
+    expect(imageSeq.tracks[0].clips[0].clipKind).toBe("image");
+
+    const audioSeq = addClipFromAsset(emptySeq, audioAsset);
+    expect(audioSeq.tracks[0].clips[0].clipKind).toBe("audio");
+  });
 });
 
 describe("removeClip", () => {
@@ -77,11 +108,16 @@ describe("removeClip", () => {
 
   test("removes empty tracks", () => {
     let seq = addClipFromAsset(emptySeq, videoAsset);
-    seq = addClipFromAsset(seq, audioAsset);
-    const audioClipId = seq.tracks.find((t: Track) => inferTrackKind(t) === "audio")!.clips[0].id;
+    const firstTrackId = seq.tracks[0].id;
+    // Add audio to a separate explicit track
+    const audioTrack: Track = { id: "audio-track", clips: [] };
+    seq = { ...seq, tracks: [...seq.tracks, audioTrack] };
+    seq = addClipFromAsset(seq, audioAsset, undefined, "audio-track");
+    expect(seq.tracks.length).toBe(2);
+    const audioClipId = seq.tracks.find((t: Track) => t.id === "audio-track")!.clips[0].id;
     seq = removeClip(seq, audioClipId);
     expect(seq.tracks.length).toBe(1);
-    expect(inferTrackKind(seq.tracks[0])).toBe("video");
+    expect(seq.tracks[0].id).toBe(firstTrackId);
   });
 
   test("no-op for non-existent clip", () => {
@@ -214,16 +250,26 @@ describe("addTextClip", () => {
     expect(clip.text?.fontSize).toBe(48);
   });
 
-  test("adds to existing title track", () => {
+  test("creates new track for each call without targetTrackId", () => {
     let seq = addTextClip(emptySeq, 0, 2000, { value: "First" });
     seq = addTextClip(seq, 3000, 1000, { value: "Second" });
+    expect(seq.tracks.length).toBe(2);
+    expect(seq.tracks[0].clips.length).toBe(1);
+    expect(seq.tracks[1].clips.length).toBe(1);
+  });
+
+  test("adds to existing track when targetTrackId is specified", () => {
+    let seq = addTextClip(emptySeq, 0, 2000, { value: "First" });
+    const trackId = seq.tracks[0].id;
+    seq = addTextClip(seq, 3000, 1000, { value: "Second" }, undefined, trackId);
     expect(seq.tracks.length).toBe(1);
     expect(seq.tracks[0].clips.length).toBe(2);
   });
 
-  test("sorts clips by startMs", () => {
+  test("sorts clips by startMs within same track", () => {
     let seq = addTextClip(emptySeq, 5000, 1000, { value: "B" });
-    seq = addTextClip(seq, 1000, 1000, { value: "A" });
+    const trackId = seq.tracks[0].id;
+    seq = addTextClip(seq, 1000, 1000, { value: "A" }, undefined, trackId);
     expect(seq.tracks[0].clips[0].text?.value).toBe("A");
     expect(seq.tracks[0].clips[1].text?.value).toBe("B");
   });
