@@ -1,6 +1,6 @@
 import { expect, fn } from "storybook/test";
 import preview from "../../.storybook/preview";
-import { mockProject, projectWithClips } from "../stories/fixtures";
+import { mockAsset, mockClip, mockProject, projectWithClips } from "../stories/fixtures";
 import { Timeline } from "./Timeline";
 
 const meta = preview.meta({

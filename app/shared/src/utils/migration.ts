@@ -1,4 +1,5 @@
-import type { Project, Asset } from "../types/project";
+import type { Project } from "../types/project";
+import type { Asset } from "../types/asset";
 
 /**
  * Migrate a project from the old format (Track.kind, no Clip.clipKind)
