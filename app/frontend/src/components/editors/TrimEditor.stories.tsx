@@ -1,4 +1,4 @@
-import { fn } from "storybook/test";
+import { expect, fn } from "storybook/test";
 import preview from "../../../.storybook/preview";
 import { mockAsset, mockClip } from "../../stories/fixtures";
 import { TrimEditor } from "./TrimEditor";

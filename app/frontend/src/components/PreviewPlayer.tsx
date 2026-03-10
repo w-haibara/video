@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useLayoutEffect, useState } from "react";
 import type { Project, Clip, Asset } from "@video/shared";
 import { theme, buttonStyle } from "../theme";
 import { previewRendererRegistry } from "../lib/preview-renderer-registry";
@@ -91,9 +91,12 @@ export function PreviewPlayer({
 
   // Track rendered canvas size so text overlay pixel values can be scaled
   const [canvasScale, setCanvasScale] = useState(1);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = canvasRef.current;
     if (!el) return;
+    // Synchronous initial measurement so first paint has correct scale
+    const initW = el.getBoundingClientRect().width;
+    if (initW > 0) setCanvasScale(initW / canvasW);
     const observer = new ResizeObserver((entries) => {
       const w = entries[0].contentRect.width;
       if (w > 0) setCanvasScale(w / canvasW);
