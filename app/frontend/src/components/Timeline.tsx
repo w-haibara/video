@@ -173,23 +173,6 @@ export function Timeline({
         <span style={{ color: theme.textMuted, fontSize: "11px", marginLeft: "8px" }}>
           {formatTime(currentTimeMs)}
         </span>
-        {onAddTrack && (
-          <button
-            onClick={onAddTrack}
-            style={{
-              background: "none",
-              border: `1px solid ${theme.border}`,
-              color: theme.text,
-              padding: "2px 8px",
-              cursor: "pointer",
-              borderRadius: "3px",
-              fontSize: "12px",
-              marginLeft: "auto",
-            }}
-          >
-            + Add Layer
-          </button>
-        )}
       </div>
 
       {/* Scrollable area */}
@@ -256,6 +239,47 @@ export function Timeline({
                   onDragTrackChange={setDragTargetTrackId}
                 />
               ))
+            )}
+
+            {/* Add Track button row */}
+            {onAddTrack && (
+              <div
+                style={{
+                  display: "flex",
+                  height: "40px",
+                  borderBottom: `1px solid ${theme.border}`,
+                }}
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddTrack();
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  style={{
+                    width: "32px",
+                    height: "40px",
+                    background: "none",
+                    border: "none",
+                    borderRight: `1px solid ${theme.border}`,
+                    color: theme.textMuted,
+                    fontSize: "11px",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = theme.bgHover;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "none";
+                  }}
+                >
+                  +
+                </button>
+              </div>
             )}
 
             {/* Duration end marker */}
