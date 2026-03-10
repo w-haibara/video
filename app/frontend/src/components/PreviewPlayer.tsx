@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
 import { theme, buttonStyle } from "../theme";
 
@@ -94,6 +94,7 @@ export function PreviewPlayer({
   onSelectClip,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number>(0);
   const lastClipIdRef = useRef<string | null>(null);
   const lastMediaUrlRef = useRef<string>("");
@@ -274,6 +275,20 @@ export function PreviewPlayer({
   const canvasW = project.settings.canvasWidth;
   const canvasH = project.settings.canvasHeight;
 
+  // Track rendered canvas size so text overlay pixel values can be scaled
+  // to match the actual canvas resolution (e.g. fontSize 48 in 1920-space).
+  const [canvasScale, setCanvasScale] = useState(1);
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const w = entries[0].contentRect.width;
+      if (w > 0) setCanvasScale(w / canvasW);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [canvasW]);
+
   // Asset dimensions & transform
   const assetW = activeClip?.asset.width ?? canvasW;
   const assetH = activeClip?.asset.height ?? canvasH;
@@ -334,6 +349,7 @@ export function PreviewPlayer({
         ) : (
           /* Canvas container — fixed aspect ratio, black background */
           <div
+            ref={canvasRef}
             data-testid="preview-canvas"
             style={{
               aspectRatio: `${canvasW} / ${canvasH}`,
@@ -373,7 +389,10 @@ export function PreviewPlayer({
               )}
             </div>
 
-            {/* Text overlay layer — within canvas bounds */}
+            {/* Text overlay layer — within canvas bounds.
+                Pixel values are scaled by canvasScale so that e.g. fontSize 48
+                means 48px in the actual canvas resolution (1920×1080), not 48
+                CSS pixels in the (potentially much smaller) rendered element. */}
             {activeTextClips.length > 0 && (
               <div style={{
                 position: "absolute",
@@ -383,19 +402,19 @@ export function PreviewPlayer({
                 alignItems: "center",
                 justifyContent: "flex-end",
                 pointerEvents: "none",
-                padding: "40px",
+                padding: `${40 * canvasScale}px`,
               }}>
                 {activeTextClips.map(({ clip, text }) => (
                   <div
                     key={clip.id}
                     style={{
-                      fontSize: `${text.fontSize ?? 48}px`,
+                      fontSize: `${(text.fontSize ?? 48) * canvasScale}px`,
                       color: text.color ?? "#ffffff",
                       backgroundColor: text.backgroundColor ?? "rgba(0,0,0,0.5)",
                       textAlign: (text.align as React.CSSProperties["textAlign"]) ?? "center",
                       fontFamily: text.fontFamily ?? "sans-serif",
-                      padding: "8px",
-                      borderRadius: "4px",
+                      padding: `${8 * canvasScale}px`,
+                      borderRadius: `${4 * canvasScale}px`,
                       marginBottom: "0px",
                       maxWidth: "90%",
                       wordBreak: "break-word",

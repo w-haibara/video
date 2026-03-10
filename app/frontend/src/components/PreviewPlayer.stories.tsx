@@ -277,13 +277,24 @@ WithTextOverlayDefaultBg.test("text has default semi-transparent background", as
   expect(textEl.style.backgroundColor).toBe("rgba(0, 0, 0, 0.5)");
 });
 
-WithTextOverlayDefaultBg.test("text has 8px padding", async ({ canvas }) => {
-  const textEl = await canvas.findByText("Default BG Text");
-  expect(textEl.style.padding).toBe("8px");
-});
+WithTextOverlayDefaultBg.test("text pixel values are scaled to canvas resolution", async ({ canvas }) => {
+  const canvasEl = await canvas.findByTestId("preview-canvas");
+  const renderedW = canvasEl.getBoundingClientRect().width;
+  const canvasW = 1920; // from mockProject default
+  const scale = renderedW / canvasW;
 
-WithTextOverlayDefaultBg.test("text container has 40px padding", async ({ canvas }) => {
   const textEl = await canvas.findByText("Default BG Text");
   const container = textEl.parentElement as HTMLElement;
-  expect(container.style.padding).toBe("40px");
+
+  // Container padding should be 40 * scale
+  const containerPadding = parseFloat(getComputedStyle(container).paddingBottom);
+  expect(containerPadding).toBeCloseTo(40 * scale, 0);
+
+  // Font size should be 48 * scale
+  const fontSize = parseFloat(getComputedStyle(textEl).fontSize);
+  expect(fontSize).toBeCloseTo(48 * scale, 0);
+
+  // Text padding should be 8 * scale
+  const textPadding = parseFloat(getComputedStyle(textEl).paddingTop);
+  expect(textPadding).toBeCloseTo(8 * scale, 0);
 });
