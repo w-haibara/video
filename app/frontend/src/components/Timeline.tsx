@@ -176,7 +176,7 @@ export function Timeline({
         ref={scrollRef}
         style={{ flex: 1, overflowX: "auto", overflowY: "auto" }}
       >
-        <div style={{ position: "relative", minWidth: `${totalWidth + 32}px` }}>
+        <div style={{ position: "relative", minWidth: `${totalWidth + 32}px`, display: "flex", flexDirection: "column" as const, minHeight: "100%" }}>
           {/* Ruler */}
           <div
             ref={rulerRef}
@@ -187,7 +187,10 @@ export function Timeline({
           </div>
 
           {/* Seek bar + Tracks wrapper (shared position parent for Playhead) */}
-          <div style={{ position: "relative" }}>
+          <div
+            onMouseDown={handleRulerMouseDown}
+            style={{ position: "relative", flex: 1, cursor: "col-resize" }}
+          >
             {/* Seek bar row */}
             <div
               onMouseDown={handleRulerMouseDown}
