@@ -98,7 +98,7 @@
 | 92 | プレビュー拡大表示のテスト・Story 追加 | [x] Done | 90, 91 |
 | 93 | TrackKind / AssetKind レジストリの導入 | [x] Done | 02 |
 | 94 | Inspector パネルのエディタプラグインレジストリ化 | [x] Done | 93 |
-| 95 | タイムラインクリップの外観レジストリ化 | [ ] Pending | 93 |
+| 95 | タイムラインクリップの外観レジストリ化 | [x] Done | 93 |
 | 96 | プレビュープレーヤーの描画 Strategy 化 | [ ] Pending | 93 |
 | 97 | sequence-ops のトラックルーティング Strategy 化 | [ ] Pending | 93 |
 | 98 | アセット種別検出のプラグイン化 | [ ] Pending | 93 |
@@ -2661,18 +2661,18 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. TimelineClip のリファクタリング**
 
-- [ ] 42〜53 行目の色決定ロジックを `TrackKindRegistry` からの取得に置換:
+- [x] 42〜53 行目の色決定ロジックを `TrackKindRegistry` からの取得に置換:
   ```typescript
   const descriptor = trackKindRegistry.get(trackKind);
   const bgColor = isSelected ? descriptor?.clipColor : descriptor?.clipSelectedColor;
   const borderColor = isSelected ? theme.text : descriptor?.clipSelectedColor;
   ```
-- [ ] `TimelineClip` の props に `trackKind: string` を追加（現在は `asset?.kind` と `clip.text` から推測しているため）
-- [ ] `TimelineTrack` から `trackKind` を `TimelineClip` に渡すように修正
+- [x] `TimelineClip` の props に `trackKind: string` を追加（現在は `asset?.kind` と `clip.text` から推測しているため）
+- [x] `TimelineTrack` から `trackKind` を `TimelineClip` に渡すように修正
 
 **B. TimelineTrack のリファクタリング**
 
-- [ ] 19〜23 行目の `TRACK_LABEL` 定数を削除し、`TrackKindDescriptor.label` を使用:
+- [x] 19〜23 行目の `TRACK_LABEL` 定数を削除し、`TrackKindDescriptor.label` を使用:
   ```typescript
   const descriptor = trackKindRegistry.get(track.kind);
   const label = descriptor?.label ?? track.kind[0].toUpperCase();
