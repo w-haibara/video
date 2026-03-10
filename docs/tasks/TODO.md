@@ -2976,36 +2976,36 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. レジストリのユニットテスト**
 
-- [ ] `track-kind-registry.test.ts`:
+- [x] `track-kind-registry.test.ts`:
   - デフォルト 3 種別が登録されていること
   - `register` で新しい種別が追加できること
   - `get` で未登録の種別は `undefined` を返すこと
-- [ ] `asset-kind-registry.test.ts`:
+- [x] `asset-kind-registry.test.ts`:
   - `detectByExtension` が正しい種別を返すこと
   - 未知の拡張子は `undefined` を返すこと
-- [ ] `inspector-editor-registry.test.ts`:
+- [x] `inspector-editor-registry.test.ts`:
   - `getEditorsFor` が `canHandle` でフィルタされること
   - `order` 順でソートされること
-- [ ] `preview-renderer-registry.test.ts`:
+- [x] `preview-renderer-registry.test.ts`:
   - `all()` が `zOrder` 順で返すこと
-- [ ] `asset-detector-registry.test.ts`:
+- [x] `asset-detector-registry.test.ts`:
   - `priority` 順に評価されること
   - 全ディテクタが null を返した場合のフォールバック
-- [ ] `export-handler-registry.test.ts`:
+- [x] `export-handler-registry.test.ts`:
   - 各ハンドラが正しい FFmpeg フィルタを生成すること
   - 複数ハンドラの合成が正しく動作すること
 
 **B. 分離されたエディタの Story**
 
-- [ ] `TrimEditor.stories.tsx`: video / audio / title クリップそれぞれの Story
-- [ ] `TextEditor.stories.tsx`: テキスト編集の Story
-- [ ] `TransformEditor.stories.tsx`: Transform + Crop 編集の Story
-- [ ] `AudioVolumeEditor.stories.tsx`: 音量スライダーの Story
+- [x] `TrimEditor.stories.tsx`: video / audio / title クリップそれぞれの Story
+- [x] `TextEditor.stories.tsx`: テキスト編集の Story
+- [x] `TransformEditor.stories.tsx`: Transform + Crop 編集の Story
+- [x] `AudioVolumeEditor.stories.tsx`: 音量スライダーの Story
 
 **C. 既存テストの更新**
 
-- [ ] import パスの変更に伴う既存テストファイルの修正
-- [ ] `buildExportArgs` テストが新しい内部構造でも同一の結果を返すことを確認
-- [ ] `sequence-ops` テストが同一の結果を返すことを確認
+- [x] import パスの変更に伴う既存テストファイルの修正
+- [x] `buildExportArgs` テストが新しい内部構造でも同一の結果を返すことを確認
+- [x] `sequence-ops` テストが同一の結果を返すことを確認
 
 **確認方法:** `bun run test` と `cd app/frontend && bun run storybook` で全テスト・Story が正常動作すること
