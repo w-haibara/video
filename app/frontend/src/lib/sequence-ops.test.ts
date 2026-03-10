@@ -521,8 +521,10 @@ describe("moveClip cross-track", () => {
     expect(t2.clips.length).toBe(1);
     expect(t2.clips[0].id).toBe(clipId);
     expect(t2.clips[0].startMs).toBe(1000);
-    // Source track should be removed (empty)
-    expect(seq.tracks.find((t: Track) => t.id === sourceTrackId)).toBeUndefined();
+    // Source track should be preserved (empty but not deleted)
+    const srcTrack = seq.tracks.find((t: Track) => t.id === sourceTrackId)!;
+    expect(srcTrack).toBeDefined();
+    expect(srcTrack.clips.length).toBe(0);
   });
 
   test("prevents overlap on target track", () => {
@@ -579,6 +581,59 @@ describe("moveClip cross-track", () => {
     seq = moveClip(seq, clipId, 8000, 10000, "track-2");
     const t2 = seq.tracks.find((t: Track) => t.id === "track-2")!;
     expect(t2.clips[0].startMs).toBe(5000); // clamped: 10000 - 5000
+  });
+
+  test("can move clips to and from an empty source track", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const sourceTrackId = seq.tracks[0].id;
+    const clipId = seq.tracks[0].clips[0].id;
+    const track2: Track = { id: "track-2", clips: [] };
+    seq = { ...seq, tracks: [...seq.tracks, track2] };
+    // Move clip to track-2 — source track becomes empty but preserved
+    seq = moveClip(seq, clipId, 0, undefined, "track-2");
+    expect(seq.tracks.find((t: Track) => t.id === sourceTrackId)!.clips.length).toBe(0);
+    // Move clip back to the empty source track
+    seq = moveClip(seq, clipId, 500, undefined, sourceTrackId);
+    const srcTrack = seq.tracks.find((t: Track) => t.id === sourceTrackId)!;
+    expect(srcTrack.clips.length).toBe(1);
+    expect(srcTrack.clips[0].startMs).toBe(500);
+  });
+});
+
+describe("findNonOverlappingPosition cross-track", () => {
+  test("snaps after last clip when target has no gaps", () => {
+    // Target track has clips: 0-3000, 3000-5000 — no gaps
+    const targetClips: Clip[] = [
+      { id: "t1", clipKind: "video", assetId: "a1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
+      { id: "t2", clipKind: "video", assetId: "a2", startMs: 3000, durationMs: 2000, inMs: 0, outMs: 2000 },
+    ];
+    // Moving clip (not in targetClips) with duration 4000, requested at position 1000
+    const pos = findNonOverlappingPosition(targetClips, "cross-clip", 1000, 4000);
+    // Should place after last clip: 5000
+    expect(pos).toBe(5000);
+  });
+
+  test("places clip in gap between target track clips", () => {
+    // Target track: clip at 0-2000, gap 2000-5000, clip at 5000-8000
+    const targetClips: Clip[] = [
+      { id: "t1", clipKind: "video", assetId: "a1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 },
+      { id: "t2", clipKind: "video", assetId: "a2", startMs: 5000, durationMs: 3000, inMs: 0, outMs: 3000 },
+    ];
+    // Moving clip with duration 2000, requested at position 1000 (overlapping t1)
+    const pos = findNonOverlappingPosition(targetClips, "cross-clip", 1000, 2000);
+    // Should snap after t1: 2000 (fits in the 2000-5000 gap)
+    expect(pos).toBe(2000);
+  });
+
+  test("returns non-overlapping position when movingClipId is not in clips", () => {
+    // Target track: clip at 0-5000
+    const targetClips: Clip[] = [
+      { id: "t1", clipKind: "video", assetId: "a1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+    ];
+    // movingClipId doesn't exist in targetClips
+    const pos = findNonOverlappingPosition(targetClips, "nonexistent", 2000, 3000);
+    // Should snap after t1: 5000
+    expect(pos).toBe(5000);
   });
 });
 

@@ -80,12 +80,11 @@ export function findNonOverlappingPosition(
   if (others.length === 0) return newStartMs;
 
   let pos = newStartMs;
-  const endMs = pos + durationMs;
 
   for (const other of others) {
     const otherEnd = other.startMs + other.durationMs;
     // Check overlap: [pos, pos+durationMs) intersects [other.startMs, otherEnd)
-    if (pos < otherEnd && endMs > other.startMs) {
+    if (pos < otherEnd && pos + durationMs > other.startMs) {
       // Snap to whichever side is closer
       const snapAfter = otherEnd;
       const snapBefore = other.startMs - durationMs;
@@ -101,9 +100,17 @@ export function findNonOverlappingPosition(
   for (const other of others) {
     const otherEnd = other.startMs + other.durationMs;
     if (pos < otherEnd && pos + durationMs > other.startMs) {
-      // Still overlapping after snap — cancel the move
-      const original = clips.find((c) => c.id === movingClipId);
-      return original ? original.startMs : newStartMs;
+      // Still overlapping after snap — find a gap or place after last clip
+      for (let i = 0; i < others.length; i++) {
+        const gapStart = i === 0 ? 0 : others[i - 1].startMs + others[i - 1].durationMs;
+        const gapEnd = others[i].startMs;
+        if (gapEnd - gapStart >= durationMs) {
+          return gapStart;
+        }
+      }
+      // No gap found — place after the last clip
+      const last = others[others.length - 1];
+      return last.startMs + last.durationMs;
     }
   }
 
@@ -163,7 +170,6 @@ export function moveClip(
         }
         return { ...track, clips: [...track.clips] };
       })
-      .filter((track: Track) => track.clips.length > 0);
     return { ...sequence, tracks };
   }
 
