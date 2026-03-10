@@ -103,7 +103,7 @@
 | 97 | sequence-ops のトラックルーティング Strategy 化 | [x] Done | 93 |
 | 98 | アセット種別検出のプラグイン化 | [x] Done | 93 |
 | 99 | エクスポートのトラック/アセットハンドラ Strategy 化 | [x] Done | 93 |
-| 100 | プラグインシステムの基盤設計 | [ ] Pending | 93, 94, 95, 96, 97, 98, 99 |
+| 100 | プラグインシステムの基盤設計 | [x] Done | 93, 94, 95, 96, 97, 98, 99 |
 | 101 | リファクタリング全体のテスト・Story 更新 | [ ] Pending | 94, 95, 96, 97, 98, 99 |
 
 ## Phase 1 Tasks
@@ -2917,7 +2917,7 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. Plugin インターフェースの定義** (`plugin.ts`)
 
-- [ ] `Plugin` 型を定義:
+- [x] `Plugin` 型を定義:
   ```typescript
   type PluginManifest = {
     id: string;
@@ -2942,17 +2942,17 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **B. プラグインローダの実装**
 
-- [ ] フロントエンド用 `loadPlugins(plugins: FrontendPlugin[]): void`
+- [x] フロントエンド用 `loadPlugins(plugins: FrontendPlugin[]): void`
   - 各プラグインの `register*` メソッドを順番に呼び出し、各レジストリに登録
-- [ ] バックエンド用 `loadPlugins(plugins: BackendPlugin[]): void`
+- [x] バックエンド用 `loadPlugins(plugins: BackendPlugin[]): void`
   - 同様にバックエンドの各レジストリにプラグインを登録
 
 **C. ビルトインプラグインとしてデフォルト種別を登録**
 
-- [ ] 現在の video/audio/title/image の登録コードを `builtin-plugin.ts` にまとめる
+- [x] 現在の video/audio/title/image の登録コードを `builtin-plugin.ts` にまとめる
   - フロントエンド: TrackKind 登録、Inspector エディタ登録、プレビューレンダラ登録
   - バックエンド: AssetKind 登録、ディテクタ登録、パイプラインステップ登録、エクスポートハンドラ登録
-- [ ] アプリ起動時に `loadPlugins([builtinPlugin])` を呼び出し
+- [x] アプリ起動時に `loadPlugins([builtinPlugin])` を呼び出し
 
 **確認方法:**
 - アプリの動作が完全に同一であること
