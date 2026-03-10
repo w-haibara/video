@@ -63,6 +63,50 @@ WithClips.test("renders timeline with clips", async ({ canvas }) => {
   await expect(matches.length).toBeGreaterThan(0);
 });
 
+export const SingleTrackWithEmptySpace = meta.story({
+  args: {
+    project: mockProject({
+      name: "Single Track",
+      sequence: {
+        tracks: [
+          {
+            id: "track-v",
+            kind: "video",
+            clips: [
+              {
+                id: "clip-1",
+                assetId: "asset-1",
+                startMs: 0,
+                durationMs: 5000,
+                inMs: 0,
+                outMs: 5000,
+              },
+            ],
+          },
+        ],
+      },
+    }),
+    currentTimeMs: 2000,
+    selectedClipId: null,
+  },
+  decorators: [
+    (Story: React.ComponentType) => (
+      <div style={{ height: "300px" }}>
+        <Story />
+      </div>
+    ),
+  ],
+});
+
 WithSelectedClip.test("renders with selected clip", async ({ canvasElement }) => {
   await expect(canvasElement.textContent?.length).toBeGreaterThan(0);
 });
+
+SingleTrackWithEmptySpace.test(
+  "renders with empty space below track",
+  async ({ canvas }) => {
+    await canvas.findByRole("button", { name: "+" });
+    const matches = canvas.getAllByText(/0:02/);
+    await expect(matches.length).toBeGreaterThan(0);
+  },
+);
