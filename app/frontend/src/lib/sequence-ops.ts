@@ -1,5 +1,6 @@
 import type { Asset, Clip, ClipText, Sequence, Track } from "@video/shared";
 import { generateId, DEFAULT_IMAGE_DURATION_MS } from "@video/shared";
+import { assetKindRegistry } from "./asset-kind-registry";
 
 export function addClipFromAsset(
   sequence: Sequence,
@@ -7,7 +8,8 @@ export function addClipFromAsset(
   maxDurationMs?: number,
 ): Sequence {
   const tracks = sequence.tracks.map((t: Track) => ({ ...t, clips: [...t.clips] }));
-  const trackKind = asset.kind === "audio" ? "audio" : "video";
+  const descriptor = assetKindRegistry.get(asset.kind);
+  const trackKind = descriptor?.defaultTrackKind ?? "video";
   let track = tracks.find((t: Track) => t.kind === trackKind);
   if (!track) {
     track = { id: generateId(), kind: trackKind, clips: [] };
@@ -24,10 +26,9 @@ export function addClipFromAsset(
     return sequence;
   }
 
-  const isImage = asset.kind === "image";
-  let durationMs = isImage
-    ? DEFAULT_IMAGE_DURATION_MS
-    : (asset.durationMs ?? DEFAULT_IMAGE_DURATION_MS);
+  let durationMs = descriptor?.hasDuration
+    ? (asset.durationMs ?? descriptor.defaultDurationMs ?? DEFAULT_IMAGE_DURATION_MS)
+    : (descriptor?.defaultDurationMs ?? DEFAULT_IMAGE_DURATION_MS);
 
   // Clamp duration to fit within the limit
   if (maxDurationMs != null && lastEnd + durationMs > maxDurationMs) {
@@ -147,6 +148,7 @@ export function addTextClip(
   durationMs: number,
   text: ClipText,
   maxDurationMs?: number,
+  trackKind: string = "title",
 ): Sequence {
   // Reject if start is beyond the limit
   if (maxDurationMs != null && startMs >= maxDurationMs) {
@@ -160,9 +162,9 @@ export function addTextClip(
   }
 
   const tracks = sequence.tracks.map((t: Track) => ({ ...t, clips: [...t.clips] }));
-  let track = tracks.find((t: Track) => t.kind === "title");
+  let track = tracks.find((t: Track) => t.kind === trackKind);
   if (!track) {
-    track = { id: generateId(), kind: "title", clips: [] };
+    track = { id: generateId(), kind: trackKind, clips: [] };
     tracks.push(track);
   }
 
