@@ -120,7 +120,7 @@
 | 114 | エクスポートのトラック間レイヤー合成対応 | [x] Done | 108, 109 |
 | 115 | レイヤーモデル移行のテスト・Story 追加 | [x] Done | 110, 111, 112, 113, 114 |
 | 116 | sequence-ops のトラック操作拡張 — moveClipToTrack・removeTrack | [x] Done | 111 |
-| 117 | クリップのトラック間ドラッグ移動 UI | [ ] Todo | 116 |
+| 117 | クリップのトラック間ドラッグ移動 UI | [x] Done | 116 |
 | 118 | Add Layer ボタンの移動 — ツールバーからトラックヘッダー「+」行へ | [ ] Todo | 09 |
 | 119 | トラックヘッダー右クリックメニュー + 確認ダイアログ付きトラック削除 | [ ] Todo | 116, 118 |
 | 120 | トラック操作改善のテスト・Story 更新 | [ ] Todo | 116, 117, 118, 119 |
@@ -3616,24 +3616,24 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. Timeline の Props 拡張**
 
-- [ ] `onMoveClip` の型を `(clipId: string, newStartMs: number, targetTrackId?: string) => void` に拡張する
-- [ ] Timeline 内でトラック間移動時に `targetTrackId` を渡してコールバックを呼び出す
+- [x] `onMoveClip` の型を `(clipId: string, newStartMs: number, targetTrackId?: string) => void` に拡張する
+- [x] Timeline 内でトラック間移動時に `targetTrackId` を渡してコールバックを呼び出す
 
 **B. TimelineClip のドラッグ拡張**
 
-- [ ] `onMove` の型に `targetTrackId` を追加する: `(clipId: string, newStartMs: number, targetTrackId?: string) => void`
-- [ ] ドラッグ中にマウスの Y 座標変位を追跡し、トラック高さ（40px）を超えた場合にトラック間移動と判定する
-- [ ] ドラッグ中の移動先トラックインデックスを算出し、`onMove` に `targetTrackId` として渡す
+- [x] `onMove` の型に `targetTrackId` を追加する: `(clipId: string, newStartMs: number, targetTrackId?: string) => void`
+- [x] ドラッグ中にマウスの Y 座標変位を追跡し、トラック高さ（40px）を超えた場合にトラック間移動と判定する
+- [x] ドラッグ中の移動先トラックインデックスを算出し、`onMove` に `targetTrackId` として渡す
 
 **C. ドラッグ中のビジュアルフィードバック**
 
-- [ ] ドラッグ中の移動先トラックをハイライト表示する（背景色を `theme.bgHover` に変更）
-- [ ] クリップが元トラックから離れたことを半透明表示で示す
+- [x] ドラッグ中の移動先トラックをハイライト表示する（背景色を `theme.bgHover` に変更）
+- [x] クリップが元トラックから離れたことを半透明表示で示す
 
 **D. EditorPage・useProjectEditor の接続**
 
-- [ ] `useProjectEditor.moveClip` に `targetTrackId` 引数を追加する
-- [ ] `EditorPage` のハンドラを更新して `targetTrackId` を `moveClip` に渡す
+- [x] `useProjectEditor.moveClip` に `targetTrackId` 引数を追加する
+- [x] `EditorPage` のハンドラを更新して `targetTrackId` を `moveClip` に渡す
 
 **確認方法:** クリップを上下にドラッグして別トラックに移動できること。移動先トラックで重なり防止が機能すること。元トラックが空になった場合に自動削除されること。
 
