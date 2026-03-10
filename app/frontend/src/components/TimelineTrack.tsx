@@ -1,6 +1,7 @@
 import type { Track, Asset, Clip } from "@video/shared";
 import { TimelineClip } from "./TimelineClip";
 import { theme } from "../theme";
+import { trackKindRegistry } from "../lib/track-kind-registry";
 
 type Props = {
   track: Track;
@@ -14,12 +15,6 @@ type Props = {
   onMoveClip: (clipId: string, newStartMs: number) => void;
   onTrimClip: (clipId: string, side: "left" | "right", deltaMs: number) => void;
   onContextMenu?: (clipId: string, position: { x: number; y: number }) => void;
-};
-
-const TRACK_LABEL: Record<string, string> = {
-  video: "V",
-  audio: "A",
-  title: "T",
 };
 
 export function TimelineTrack({
@@ -36,6 +31,7 @@ export function TimelineTrack({
   onContextMenu,
 }: Props) {
   const assetMap = new Map(assets.map((a) => [a.id, a]));
+  const descriptor = trackKindRegistry.get(track.kind);
 
   return (
     <div style={{ display: "flex", height: "40px" }}>
@@ -54,7 +50,7 @@ export function TimelineTrack({
           userSelect: "none",
         }}
       >
-        {TRACK_LABEL[track.kind] ?? track.kind[0].toUpperCase()}
+        {descriptor?.label ?? track.kind[0].toUpperCase()}
       </div>
       <div
         style={{
@@ -70,6 +66,7 @@ export function TimelineTrack({
             key={clip.id}
             clip={clip}
             asset={assetMap.get(clip.assetId)}
+            trackKind={track.kind}
             msToPx={msToPx}
             pxToMs={pxToMs}
             maxDurationMs={maxDurationMs}

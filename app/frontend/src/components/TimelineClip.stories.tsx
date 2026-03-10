@@ -28,6 +28,7 @@ export const VideoClip = meta.story({
   args: {
     clip: mockClip(),
     asset: mockAsset(),
+    trackKind: "video",
     isSelected: false,
   },
 });
@@ -49,6 +50,7 @@ export const AudioClip = meta.story({
       height: undefined,
       durationMs: 15000,
     }),
+    trackKind: "audio",
     isSelected: false,
   },
 });
@@ -63,6 +65,7 @@ export const TextClip = meta.story({
       text: { value: "Hello World", fontSize: 48 },
     }),
     asset: undefined,
+    trackKind: "title",
     isSelected: false,
   },
 });
@@ -71,6 +74,7 @@ export const Selected = meta.story({
   args: {
     clip: mockClip(),
     asset: mockAsset(),
+    trackKind: "video",
     isSelected: true,
   },
 });

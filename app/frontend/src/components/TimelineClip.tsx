@@ -1,10 +1,12 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import type { Clip, Asset } from "@video/shared";
 import { theme } from "../theme";
+import { trackKindRegistry } from "../lib/track-kind-registry";
 
 type Props = {
   clip: Clip;
   asset: Asset | undefined;
+  trackKind: string;
   msToPx: (ms: number) => number;
   pxToMs: (px: number) => number;
   maxDurationMs: number;
@@ -20,6 +22,7 @@ const TRIM_HANDLE_WIDTH = 6;
 export function TimelineClip({
   clip,
   asset,
+  trackKind,
   msToPx,
   pxToMs,
   maxDurationMs,
@@ -32,25 +35,15 @@ export function TimelineClip({
   const width = msToPx(clip.durationMs);
   const left = msToPx(clip.startMs);
   const isTextClip = !!clip.text;
-  const isAudioClip = asset?.kind === "audio";
   const label = isTextClip
     ? (clip.text?.value || "Text")
     : asset
       ? asset.originalPath.split("/").pop() ?? asset.kind
       : "clip";
 
-  let bgColor: string;
-  let borderColor: string;
-  if (isTextClip) {
-    bgColor = isSelected ? theme.clipText : theme.clipTextSelect;
-    borderColor = isSelected ? theme.text : theme.clipTextSelect;
-  } else if (isAudioClip) {
-    bgColor = isSelected ? theme.clipAudio : theme.clipAudioSelect;
-    borderColor = isSelected ? theme.text : theme.clipAudioSelect;
-  } else {
-    bgColor = isSelected ? theme.clipVideo : theme.clipVideoSelect;
-    borderColor = isSelected ? theme.text : theme.clipVideoSelect;
-  }
+  const descriptor = trackKindRegistry.get(trackKind);
+  const bgColor = isSelected ? (descriptor?.clipColor ?? theme.clipVideo) : (descriptor?.clipSelectedColor ?? theme.clipVideoSelect);
+  const borderColor = isSelected ? theme.text : (descriptor?.clipSelectedColor ?? theme.clipVideoSelect);
   const dragRef = useRef<{ startX: number; startMs: number } | null>(null);
   const trimRef = useRef<{ startX: number; side: "left" | "right" } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
