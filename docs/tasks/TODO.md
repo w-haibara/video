@@ -96,7 +96,7 @@
 | 90 | プレビューのウィンドウ内フルスクリーン表示 | [x] Done | 12, 39 |
 | 91 | プレビューの別ウィンドウ表示 | [x] Done | 90 |
 | 92 | プレビュー拡大表示のテスト・Story 追加 | [x] Done | 90, 91 |
-| 93 | TrackKind / AssetKind レジストリの導入 | [ ] Pending | 02 |
+| 93 | TrackKind / AssetKind レジストリの導入 | [x] Done | 02 |
 | 94 | Inspector パネルのエディタプラグインレジストリ化 | [ ] Pending | 93 |
 | 95 | タイムラインクリップの外観レジストリ化 | [ ] Pending | 93 |
 | 96 | プレビュープレーヤーの描画 Strategy 化 | [ ] Pending | 93 |
