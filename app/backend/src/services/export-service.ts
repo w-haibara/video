@@ -33,11 +33,7 @@ export function buildTransformFilter(
 
   if (rotation !== 0) {
     const rad = (rotation * Math.PI) / 180;
-    parts.push(
-      `rotate=${rad}:ow=rotw(${rad}):oh=roth(${rad}):c=black`,
-      `pad=w='max(iw,${preset.width})':h='max(ih,${preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black`,
-      `crop=${preset.width}:${preset.height}:(iw-${preset.width})/2:(ih-${preset.height})/2`,
-    );
+    parts.push(`rotate=${rad}:ow=iw:oh=ih:c=black`);
   }
 
   if (scale !== 1) {
