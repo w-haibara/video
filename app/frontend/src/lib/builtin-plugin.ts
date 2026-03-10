@@ -4,6 +4,7 @@ import type { TrackKindRegistry } from "./track-kind-registry";
 import type { AssetKindRegistry } from "./asset-kind-registry";
 import type { InspectorEditorRegistry } from "./inspector-editor-registry";
 import type { PreviewRendererRegistry } from "./preview-renderer-registry";
+import type { CompositeStrategyRegistry } from "./composite-strategy-registry";
 import { theme } from "../theme";
 import { TrimEditor } from "../components/editors/TrimEditor";
 import { TextEditor } from "../components/editors/TextEditor";
@@ -13,6 +14,7 @@ import { videoClipRenderer } from "../components/renderers/VideoClipRenderer";
 import { imageClipRenderer } from "../components/renderers/ImageClipRenderer";
 import { textOverlayRenderer } from "../components/renderers/TextOverlayRenderer";
 import type { ActiveClip, TickContext } from "./preview-renderer-registry";
+import { coverPreviewStrategy } from "./composite-strategies/cover-strategy";
 
 export const builtinPlugin: FrontendPlugin = {
   id: "builtin",
@@ -145,5 +147,9 @@ export const builtinPlugin: FrontendPlugin = {
         return Math.min(tickCtx.currentTimeMs + deltaMs, clipEndMs);
       },
     });
+  },
+
+  registerCompositeStrategies(registry: CompositeStrategyRegistry) {
+    registry.register(coverPreviewStrategy);
   },
 };
