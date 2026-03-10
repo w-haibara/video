@@ -17,6 +17,8 @@ const meta = preview.meta({
     onMoveClip: fn(),
     onTrimClip: fn(),
     onContextMenu: fn(),
+    allTrackIds: ["track-v", "track-a"],
+    onDragTrackChange: fn(),
   },
 });
 

@@ -21,6 +21,9 @@ const meta = preview.meta({
     onMove: fn(),
     onTrim: fn(),
     onContextMenu: fn(),
+    trackId: "track-1",
+    allTrackIds: ["track-1", "track-2"],
+    onDragTrackChange: fn(),
   },
 });
 

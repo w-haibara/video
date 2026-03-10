@@ -24,8 +24,8 @@ export function useProjectEditor(
   );
 
   const moveClip = useCallback(
-    (clipId: string, newStartMs: number) => {
-      pushState(SeqOps.moveClip(sequence, clipId, newStartMs, maxDurationMs));
+    (clipId: string, newStartMs: number, targetTrackId?: string) => {
+      pushState(SeqOps.moveClip(sequence, clipId, newStartMs, maxDurationMs, targetTrackId));
     },
     [sequence, pushState, maxDurationMs],
   );

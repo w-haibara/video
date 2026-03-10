@@ -12,9 +12,12 @@ type Props = {
   maxDurationMs: number;
   selectedClipId: string | null;
   onSelectClip: (clipId: string) => void;
-  onMoveClip: (clipId: string, newStartMs: number) => void;
+  onMoveClip: (clipId: string, newStartMs: number, targetTrackId?: string) => void;
   onTrimClip: (clipId: string, side: "left" | "right", deltaMs: number) => void;
   onContextMenu?: (clipId: string, position: { x: number; y: number }) => void;
+  allTrackIds: string[];
+  isDropTarget?: boolean;
+  onDragTrackChange?: (targetTrackId: string | null) => void;
 };
 
 export function TimelineTrack({
@@ -30,6 +33,9 @@ export function TimelineTrack({
   onMoveClip,
   onTrimClip,
   onContextMenu,
+  allTrackIds,
+  isDropTarget,
+  onDragTrackChange,
 }: Props) {
   const assetMap = new Map(assets.map((a) => [a.id, a]));
 
@@ -57,8 +63,9 @@ export function TimelineTrack({
           position: "relative",
           flex: 1,
           minWidth: `${totalWidth}px`,
-          background: theme.timelineTrackBg,
+          background: isDropTarget ? theme.bgHover : theme.timelineTrackBg,
           borderBottom: `1px solid ${theme.borderLight}`,
+          transition: "background 0.1s",
         }}
       >
         {track.clips.map((clip: Clip) => (
@@ -74,6 +81,9 @@ export function TimelineTrack({
             onMove={onMoveClip}
             onTrim={onTrimClip}
             onContextMenu={onContextMenu}
+            trackId={track.id}
+            allTrackIds={allTrackIds}
+            onDragTrackChange={onDragTrackChange}
           />
         ))}
       </div>

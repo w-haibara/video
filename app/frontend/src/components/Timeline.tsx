@@ -14,7 +14,7 @@ type Props = {
   selectedClipId: string | null;
   onSelectClip: (clipId: string | null) => void;
   onDeleteClip?: (clipId: string) => void;
-  onMoveClip?: (clipId: string, newStartMs: number) => void;
+  onMoveClip?: (clipId: string, newStartMs: number, targetTrackId?: string) => void;
   onTrimClip?: (clipId: string, side: "left" | "right", deltaMs: number) => void;
   onAddTrack?: () => void;
 };
@@ -42,6 +42,8 @@ export function Timeline({
     x: number;
     y: number;
   } | null>(null);
+  const [dragTargetTrackId, setDragTargetTrackId] = useState<string | null>(null);
+  const allTrackIds = project.sequence.tracks.map((t: Track) => t.id);
 
   const handleClipContextMenu = useCallback(
     (clipId: string, position: { x: number; y: number }) => {
@@ -90,8 +92,8 @@ export function Timeline({
   );
 
   const handleMove = useCallback(
-    (clipId: string, newStartMs: number) => {
-      onMoveClip?.(clipId, newStartMs);
+    (clipId: string, newStartMs: number, targetTrackId?: string) => {
+      onMoveClip?.(clipId, newStartMs, targetTrackId);
     },
     [onMoveClip],
   );
@@ -249,6 +251,9 @@ export function Timeline({
                   onMoveClip={handleMove}
                   onTrimClip={handleTrim}
                   onContextMenu={handleClipContextMenu}
+                  allTrackIds={allTrackIds}
+                  isDropTarget={dragTargetTrackId === track.id}
+                  onDragTrackChange={setDragTargetTrackId}
                 />
               ))
             )}

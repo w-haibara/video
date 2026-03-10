@@ -11,12 +11,16 @@ type Props = {
   maxDurationMs: number;
   isSelected: boolean;
   onSelect: (clipId: string) => void;
-  onMove: (clipId: string, newStartMs: number) => void;
+  onMove: (clipId: string, newStartMs: number, targetTrackId?: string) => void;
   onTrim: (clipId: string, side: "left" | "right", deltaMs: number) => void;
   onContextMenu?: (clipId: string, position: { x: number; y: number }) => void;
+  trackId: string;
+  allTrackIds: string[];
+  onDragTrackChange?: (targetTrackId: string | null) => void;
 };
 
 const TRIM_HANDLE_WIDTH = 6;
+const TRACK_HEIGHT = 40;
 
 const CLIP_KIND_ICONS: Record<string, string> = {
   video: "\u{1F3AC}",
@@ -36,6 +40,9 @@ export function TimelineClip({
   onMove,
   onTrim,
   onContextMenu,
+  trackId,
+  allTrackIds,
+  onDragTrackChange,
 }: Props) {
   const width = msToPx(clip.durationMs);
   const left = msToPx(clip.startMs);
@@ -49,9 +56,10 @@ export function TimelineClip({
   const descriptor = clipKindRegistry.get(clip.clipKind);
   const bgColor = isSelected ? (descriptor?.clipSelectedColor ?? theme.clipVideoSelect) : (descriptor?.clipColor ?? theme.clipVideo);
   const borderColor = isSelected ? theme.text : (descriptor?.clipColor ?? theme.clipVideo);
-  const dragRef = useRef<{ startX: number; startMs: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startMs: number; startY: number; sourceTrackIndex: number } | null>(null);
   const trimRef = useRef<{ startX: number; side: "left" | "right" } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isDraggingToOtherTrack, setIsDraggingToOtherTrack] = useState(false);
   const [trimTooltip, setTrimTooltip] = useState<{ side: "left" | "right"; label: string } | null>(null);
 
   const handleMouseDown = useCallback(
@@ -59,22 +67,51 @@ export function TimelineClip({
       e.stopPropagation();
       e.preventDefault();
       onSelect(clip.id);
-      dragRef.current = { startX: e.clientX, startMs: clip.startMs };
+      const sourceTrackIndex = allTrackIds.indexOf(trackId);
+      dragRef.current = { startX: e.clientX, startMs: clip.startMs, startY: e.clientY, sourceTrackIndex };
       setIsDragging(true);
+      setIsDraggingToOtherTrack(false);
       document.body.style.cursor = "grabbing";
+
+      const getTargetTrackId = (clientY: number) => {
+        if (!dragRef.current) return trackId;
+        const dy = clientY - dragRef.current.startY;
+        const trackOffset = Math.round(dy / TRACK_HEIGHT);
+        const targetIndex = Math.max(0, Math.min(allTrackIds.length - 1, dragRef.current.sourceTrackIndex + trackOffset));
+        return allTrackIds[targetIndex];
+      };
+
+      const clampStartMs = (dx: number) => {
+        const deltaMs = pxToMs(dx);
+        return Math.min(
+          dragRef.current!.startMs + deltaMs,
+          Math.max(0, maxDurationMs - clip.durationMs),
+        );
+      };
 
       const handleMouseMove = (ev: MouseEvent) => {
         if (!dragRef.current) return;
         const dx = ev.clientX - dragRef.current.startX;
-        const deltaMs = pxToMs(dx);
-        const newStartMs = Math.min(
-          dragRef.current.startMs + deltaMs,
-          Math.max(0, maxDurationMs - clip.durationMs),
-        );
+        const newStartMs = clampStartMs(dx);
         onMove(clip.id, newStartMs);
+
+        const target = getTargetTrackId(ev.clientY);
+        const isOther = target !== trackId;
+        setIsDraggingToOtherTrack(isOther);
+        onDragTrackChange?.(isOther ? target : null);
       };
 
-      const handleMouseUp = () => {
+      const handleMouseUp = (ev: MouseEvent) => {
+        if (dragRef.current) {
+          const target = getTargetTrackId(ev.clientY);
+          if (target !== trackId) {
+            const dx = ev.clientX - dragRef.current.startX;
+            const newStartMs = clampStartMs(dx);
+            onMove(clip.id, newStartMs, target);
+          }
+        }
+        onDragTrackChange?.(null);
+        setIsDraggingToOtherTrack(false);
         dragRef.current = null;
         setIsDragging(false);
         document.body.style.cursor = "";
@@ -85,7 +122,7 @@ export function TimelineClip({
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [clip.id, clip.startMs, pxToMs, onSelect, onMove],
+    [clip.id, clip.startMs, clip.durationMs, pxToMs, onSelect, onMove, maxDurationMs, trackId, allTrackIds, onDragTrackChange],
   );
 
   const formatTrimLabel = useCallback(
@@ -155,6 +192,7 @@ export function TimelineClip({
         border: `${isSelected ? 2 : 1}px solid ${borderColor}`,
         overflow: "hidden",
         cursor: isDragging ? "grabbing" : "grab",
+        opacity: isDraggingToOtherTrack ? 0.5 : 1,
         display: "flex",
         alignItems: "center",
         padding: `0 ${TRIM_HANDLE_WIDTH + 2}px`,
