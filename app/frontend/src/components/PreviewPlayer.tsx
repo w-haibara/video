@@ -383,7 +383,7 @@ export function PreviewPlayer({
                 alignItems: "center",
                 justifyContent: "flex-end",
                 pointerEvents: "none",
-                padding: "16px",
+                padding: "40px",
               }}>
                 {activeTextClips.map(({ clip, text }) => (
                   <div
@@ -391,12 +391,12 @@ export function PreviewPlayer({
                     style={{
                       fontSize: `${text.fontSize ?? 48}px`,
                       color: text.color ?? "#ffffff",
-                      backgroundColor: text.backgroundColor ?? "transparent",
+                      backgroundColor: text.backgroundColor ?? "rgba(0,0,0,0.5)",
                       textAlign: (text.align as React.CSSProperties["textAlign"]) ?? "center",
                       fontFamily: text.fontFamily ?? "sans-serif",
-                      padding: "4px 12px",
+                      padding: "8px",
                       borderRadius: "4px",
-                      marginBottom: "8px",
+                      marginBottom: "0px",
                       maxWidth: "90%",
                       wordBreak: "break-word",
                       whiteSpace: "pre-wrap",
