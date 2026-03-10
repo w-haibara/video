@@ -105,6 +105,9 @@
 | 99 | エクスポートのトラック/アセットハンドラ Strategy 化 | [x] Done | 93 |
 | 100 | プラグインシステムの基盤設計 | [x] Done | 93, 94, 95, 96, 97, 98, 99 |
 | 101 | リファクタリング全体のテスト・Story 更新 | [x] Done | 94, 95, 96, 97, 98, 99 |
+| 102 | エクスポートへの clip.transform.rotation 反映 | [ ] Todo | 15, 19, 99 |
+| 103 | Rotation UI の改善: 自由入力 + 回転ボタン | [ ] Todo | 19, 102 |
+| 104 | Rotation 改善のテスト・Story 更新 | [ ] Todo | 102, 103 |
 
 ## Phase 1 Tasks
 
@@ -3007,5 +3010,124 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 - [x] import パスの変更に伴う既存テストファイルの修正
 - [x] `buildExportArgs` テストが新しい内部構造でも同一の結果を返すことを確認
 - [x] `sequence-ops` テストが同一の結果を返すことを確認
+
+**確認方法:** `bun run test` と `cd app/frontend && bun run storybook` で全テスト・Story が正常動作すること
+
+### 102: エクスポートへの clip.transform.rotation 反映
+
+**背景:** プレビューでは CSS `rotate()` により回転が正しく表示されるが、エクスポート時に `buildTransformFilter()` が `clip.transform.rotation` を無視しており、出力動画に回転が反映されない。FFmpeg の `rotate` フィルタを生成する必要がある。
+
+**対象ファイル:**
+- `app/backend/src/services/export-service.ts`（`buildTransformFilter` の修正）
+
+**変更内容:**
+
+**A. `buildTransformFilter` に回転フィルタを追加**
+
+- [ ] `clip.transform.rotation` を取得し、0 以外の場合に FFmpeg フィルタを生成する
+- [ ] FFmpeg の `rotate` フィルタを使用してラジアン単位で角度を指定する:
+  ```
+  rotate=<angle_in_radians>:ow=rotw(<angle_in_radians>):oh=roth(<angle_in_radians>):c=black
+  ```
+  - `rotate` フィルタは入力をラジアン単位で受け取るため `rotation * PI / 180` に変換する
+  - `ow=rotw(a):oh=roth(a)` で回転後のバウンディングボックスにフィット
+  - `c=black` で回転で生じた余白を黒埋め
+- [ ] 回転後にキャンバスサイズへのリサイズ（pad + crop）を適用する:
+  ```
+  pad=w='max(iw,<width>)':h='max(ih,<height>)':x=(ow-iw)/2:y=(oh-ih)/2:color=black,
+  crop=<width>:<height>:(iw-<width>)/2:(ih-<height>)/2
+  ```
+- [ ] 回転は scale/translate より先に適用する（既存の scale → translate の順序の前に rotate を挿入）
+- [ ] `rotation === 0` の場合はフィルタを追加しない（既存動作を維持）
+
+**B. 早期リターン条件の更新**
+
+- [ ] 現在の早期リターン条件 `tx === 0 && ty === 0 && scale === 1` に `rotation === 0` を追加する:
+  ```typescript
+  const rotation = clip.transform?.rotation ?? 0;
+  if (tx === 0 && ty === 0 && scale === 1 && rotation === 0) return "";
+  ```
+
+**確認方法:**
+- Rotation を指定したクリップをエクスポートし、出力動画に回転が正しく反映されること
+- 90°/180°/270° および任意角度（例: 45°, -30°）で正しく動作すること
+- Rotation 未指定のクリップのエクスポートに影響がないこと
+
+### 103: Rotation UI の改善: 自由入力 + 回転ボタン
+
+**背景:** 現在の Rotation UI は 0°/90°/180°/270° の 4 つのボタンのみ。ユーザーが -360〜360 の任意の整数を入力できるようにし、±90° 回転ボタンとリセットボタンを追加して操作性を向上させる。
+
+**対象ファイル:**
+- `app/frontend/src/components/editors/TransformEditor.tsx`（UI 修正）
+
+**変更内容:**
+
+**A. 数値入力フィールドの追加**
+
+- [ ] `ROTATIONS` 定数の 4 ボタンを削除し、代わりに `type="number"` の入力フィールドを追加する:
+  ```tsx
+  <input
+    type="number"
+    value={currentRotation}
+    onChange={(e) => {
+      const v = Math.max(-360, Math.min(360, Math.round(Number(e.target.value))));
+      updateTransform({ rotation: v });
+    }}
+    min={-360}
+    max={360}
+    step={1}
+    style={inputStyle}
+  />
+  ```
+- [ ] 入力値を -360〜360 の整数にクランプする
+
+**B. 回転ボタンの追加**
+
+- [ ] 入力フィールドの横に 3 つのボタンを並べる:
+  - **左回転 (↶)**: 現在の値から -90° する（-360 未満にならないようクランプ）
+  - **右回転 (↷)**: 現在の値から +90° する（360 超にならないようクランプ）
+  - **リセット (↺ / 0°)**: 回転を 0° にリセット
+- [ ] ボタンのレイアウト: 入力フィールドと同じ行に配置し、コンパクトにする:
+  ```
+  [↶] [↷] [ 数値入力 ] [リセット]
+  ```
+
+**C. プレビューとの整合性**
+
+- [ ] `computeMediaContainerStyle()` は既に任意の角度に対応しているため、変更不要であることを確認する
+
+**確認方法:**
+- -360〜360 の任意の整数値を入力でき、プレビューに即座に反映されること
+- 左回転・右回転ボタンで 90° 単位の回転が正しく動作すること
+- リセットボタンで 0° に戻ること
+- 範囲外の値（-361, 361 等）が自動的にクランプされること
+
+### 104: Rotation 改善のテスト・Story 更新
+
+**背景:** タスク 102・103 の変更に対するテストと Storybook Story の追加・更新。
+
+**対象ファイル:**
+- `app/backend/src/services/export-service.test.ts`（テスト追加）
+- `app/frontend/src/components/editors/TransformEditor.stories.tsx`（Story 更新）
+
+**変更内容:**
+
+**A. エクスポートの回転テスト追加** (`export-service.test.ts`)
+
+- [ ] `buildTransformFilter` の回転テストを追加:
+  - `rotation: 90` → `rotate=PI/2:ow=rotw(PI/2):oh=roth(PI/2):c=black` が含まれること
+  - `rotation: 180` → `rotate=PI:ow=rotw(PI):oh=roth(PI):c=black` が含まれること
+  - `rotation: 45` → `rotate=0.7854...:ow=rotw(...):oh=roth(...):c=black` が含まれること
+  - `rotation: -90` → 負の角度が正しく処理されること
+  - `rotation: 0` / `rotation: undefined` → 回転フィルタが生成されないこと
+- [ ] `buildExportArgs` に回転付きクリップを含むプロジェクトのテストを追加:
+  - 出力される filter_complex 文字列に rotate フィルタが含まれること
+
+**B. TransformEditor の Story 更新** (`TransformEditor.stories.tsx`)
+
+- [ ] 数値入力フィールドで任意角度を入力する Story を追加
+- [ ] 左回転・右回転ボタンの操作を示す Story を追加
+- [ ] リセットボタンの動作を示す Story を追加
+- [ ] 既存の 90°/180° の Story が新 UI でも動作することを確認・更新
 
 **確認方法:** `bun run test` と `cd app/frontend && bun run storybook` で全テスト・Story が正常動作すること

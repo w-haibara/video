@@ -25,10 +25,20 @@ export function buildTransformFilter(
   const tx = clip.transform?.x ?? 0;
   const ty = clip.transform?.y ?? 0;
   const scale = clip.transform?.scale ?? 1;
+  const rotation = clip.transform?.rotation ?? 0;
 
-  if (tx === 0 && ty === 0 && scale === 1) return "";
+  if (tx === 0 && ty === 0 && scale === 1 && rotation === 0) return "";
 
   const parts: string[] = [];
+
+  if (rotation !== 0) {
+    const rad = (rotation * Math.PI) / 180;
+    parts.push(
+      `rotate=${rad}:ow=rotw(${rad}):oh=roth(${rad}):c=black`,
+      `pad=w='max(iw,${preset.width})':h='max(ih,${preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black`,
+      `crop=${preset.width}:${preset.height}:(iw-${preset.width})/2:(ih-${preset.height})/2`,
+    );
+  }
 
   if (scale !== 1) {
     // Scale relative to center, then pad+crop to exact output size.
