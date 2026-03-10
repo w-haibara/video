@@ -120,8 +120,9 @@ export function PreviewPlayer({
 
   const hasMediaContent = layers.some((l) => l.renderer.zOrder === 0 && l.content !== null);
 
-  // Get active video clip for video element management
-  const videoContent = layers.find((l) => l.renderer.id === "video-clip")?.content as ActiveClip | null;
+  // Get active video clips for video element management (topmost drives playback)
+  const videoClips = layers.find((l) => l.renderer.id === "video-clip")?.content as ActiveClip[] | null;
+  const videoContent = videoClips ? videoClips[videoClips.length - 1] : null; // topmost
   const hasVideoContent = videoContent !== null;
   const mediaUrl = videoContent ? getMediaUrl(videoContent.asset, project.id) : "";
 
@@ -221,7 +222,11 @@ export function PreviewPlayer({
       let activeMedia: ActiveClip | null = null;
       for (const r of mediaRenderers) {
         const c = r.findActiveContent(tickRenderCtx);
-        if (c) { activeMedia = c as ActiveClip; break; }
+        if (c) {
+          const clips = c as ActiveClip[];
+          activeMedia = clips[clips.length - 1]; // topmost clip
+          break;
+        }
       }
 
       if (activeMedia) {

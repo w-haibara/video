@@ -1,11 +1,11 @@
 import type { CSSProperties, RefObject } from "react";
 import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
-import { inferTrackKind } from "@video/shared";
 
 export type ActiveClip = {
   clip: Clip;
   asset: Asset;
   clipTimeMs: number;
+  trackIndex: number;
 };
 
 export type ActiveTextClip = {
@@ -66,27 +66,53 @@ export class PreviewRendererRegistry {
 
 export const previewRendererRegistry = new PreviewRendererRegistry();
 
-/** Find active clip in tracks of a given kind, optionally filtered by asset kind. */
+/** Find the first active clip matching the given clipKind, optionally filtered by asset kind. */
 export function findActiveClipInTracks(
   project: Project,
   timeMs: number,
-  trackKind: string,
+  clipKind: string,
   assetKind?: string,
 ): ActiveClip | null {
-  for (const track of project.sequence.tracks) {
-    if (inferTrackKind(track) !== trackKind) continue;
+  for (let i = 0; i < project.sequence.tracks.length; i++) {
+    const track = project.sequence.tracks[i];
     for (const clip of track.clips) {
+      if (clip.clipKind !== clipKind) continue;
       if (timeMs >= clip.startMs && timeMs < clip.startMs + clip.durationMs) {
         const asset = project.assets.find((a: Asset) => a.id === clip.assetId);
         if (!asset) continue;
         if (assetKind && asset.kind !== assetKind) continue;
         const offset = timeMs - clip.startMs;
         const clipTimeMs = clip.inMs + offset;
-        return { clip, asset, clipTimeMs };
+        return { clip, asset, clipTimeMs, trackIndex: i };
       }
     }
   }
   return null;
+}
+
+/** Find all active clips matching the given clipKind / assetKind, ordered by track index (bottom to top). */
+export function findAllActiveClips(
+  project: Project,
+  timeMs: number,
+  clipKind?: string,
+  assetKind?: string,
+): ActiveClip[] {
+  const result: ActiveClip[] = [];
+  for (let i = 0; i < project.sequence.tracks.length; i++) {
+    const track = project.sequence.tracks[i];
+    for (const clip of track.clips) {
+      if (clipKind && clip.clipKind !== clipKind) continue;
+      if (timeMs >= clip.startMs && timeMs < clip.startMs + clip.durationMs) {
+        const asset = project.assets.find((a: Asset) => a.id === clip.assetId);
+        if (!asset) continue;
+        if (assetKind && asset.kind !== assetKind) continue;
+        const offset = timeMs - clip.startMs;
+        const clipTimeMs = clip.inMs + offset;
+        result.push({ clip, asset, clipTimeMs, trackIndex: i });
+      }
+    }
+  }
+  return result;
 }
 
 /** Compute inner media element styles (handles crop offset). */

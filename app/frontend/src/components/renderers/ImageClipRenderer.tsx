@@ -1,31 +1,48 @@
 import type { ActiveClip, PreviewRenderContext, PreviewLayerRenderer } from "../../lib/preview-renderer-registry";
-import { findActiveClipInTracks, computeMediaContainerStyle, mediaStyle } from "../../lib/preview-renderer-registry";
-
-function findActiveImageClip(ctx: PreviewRenderContext): ActiveClip | null {
-  return findActiveClipInTracks(ctx.project, ctx.currentTimeMs, "video", "image");
-}
+import { findAllActiveClips, computeMediaContainerStyle, mediaStyle } from "../../lib/preview-renderer-registry";
+import { compositeStrategyRegistry } from "../../lib/composite-strategy-registry";
 
 function ImageClipComponent({ content, ctx }: { content: unknown; ctx: PreviewRenderContext }) {
-  const activeClip = content as ActiveClip;
-  const assetW = activeClip.asset.width ?? ctx.canvasW;
-  const assetH = activeClip.asset.height ?? ctx.canvasH;
-  const crop = activeClip.clip.crop;
-
-  const thumb = activeClip.asset.thumbnailPath;
-  const imageUrl = thumb
-    ? `/media/projects/${ctx.project.id}/thumbnails/${thumb.split("/").pop()}`
-    : "";
+  const activeClips = content as ActiveClip[];
 
   return (
-    <div style={computeMediaContainerStyle(activeClip, ctx.canvasW, ctx.canvasH)}>
-      <img src={imageUrl} alt="" style={mediaStyle(crop, assetW, assetH)} />
-    </div>
+    <>
+      {activeClips.map((activeClip) => {
+        const assetW = activeClip.asset.width ?? ctx.canvasW;
+        const assetH = activeClip.asset.height ?? ctx.canvasH;
+        const blendMode = activeClip.clip.blendMode ?? "cover";
+        const strategy = compositeStrategyRegistry.get(blendMode);
+
+        const thumb = activeClip.asset.thumbnailPath;
+        const imageUrl = thumb
+          ? `/media/projects/${ctx.project.id}/thumbnails/${thumb.split("/").pop()}`
+          : "";
+
+        const containerStyle = {
+          ...computeMediaContainerStyle(activeClip, ctx.canvasW, ctx.canvasH),
+          zIndex: activeClip.trackIndex,
+          ...(strategy?.containerStyle({ canvasW: ctx.canvasW, canvasH: ctx.canvasH }) ?? {}),
+          position: "absolute" as const,
+        };
+
+        return (
+          <div key={activeClip.clip.id} style={containerStyle}>
+            <img src={imageUrl} alt="" style={mediaStyle(activeClip.clip.crop, assetW, assetH)} />
+          </div>
+        );
+      })}
+    </>
   );
+}
+
+function findActiveImageClips(ctx: PreviewRenderContext): ActiveClip[] | null {
+  const clips = findAllActiveClips(ctx.project, ctx.currentTimeMs, "image", "image");
+  return clips.length > 0 ? clips : null;
 }
 
 export const imageClipRenderer: PreviewLayerRenderer = {
   id: "image-clip",
   zOrder: 0,
-  findActiveContent: findActiveImageClip,
+  findActiveContent: findActiveImageClips,
   Component: ImageClipComponent,
 };
