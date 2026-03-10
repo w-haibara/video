@@ -7,13 +7,8 @@ import { getProject, saveProject } from "./project-service";
 import { enqueue } from "./job-queue";
 import path from "node:path";
 import { mkdir, rm } from "node:fs/promises";
-
-function detectKind(filename: string): Asset["kind"] {
-  const ext = path.extname(filename).toLowerCase();
-  if ([".mp4", ".mov", ".avi", ".mkv", ".webm"].includes(ext)) return "video";
-  if ([".mp3", ".wav", ".aac", ".m4a", ".ogg"].includes(ext)) return "audio";
-  return "image";
-}
+import { assetDetectorRegistry } from "../lib/asset-detector-registry";
+import "../lib/asset-detectors/index";
 
 export function createImportTask(
   projectId: string,
@@ -57,7 +52,11 @@ export async function importAsset(
 
   const asset: Asset = {
     id: generateId(),
-    kind: detectKind(filename),
+    kind: assetDetectorRegistry.detect({
+      filename: safeName,
+      extension: path.extname(safeName).toLowerCase(),
+      filePath: destPath,
+    }) as Asset["kind"],
     originalPath: `assets/${safeName}`,
   };
 
