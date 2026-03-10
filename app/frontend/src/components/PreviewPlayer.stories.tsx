@@ -189,6 +189,57 @@ export const WithTextOverlayDefaultBg = meta.story({
   },
 });
 
+// Fullscreen mode
+export const Fullscreen = meta.story({
+  args: {
+    project: projectWithClips,
+    currentTimeMs: 0,
+    isPlaying: false,
+    selectedClipId: null,
+    isFullscreen: true,
+    onToggleFullscreen: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ width: "100vw", height: "100vh" }}>
+        <Story />
+      </div>
+    ),
+  ],
+});
+
+// Fullscreen with text overlay
+export const FullscreenWithTextOverlay = meta.story({
+  args: {
+    project: projectWithTextOverlay,
+    currentTimeMs: 2500,
+    isPlaying: false,
+    selectedClipId: null,
+    isFullscreen: true,
+    onToggleFullscreen: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ width: "100vw", height: "100vh" }}>
+        <Story />
+      </div>
+    ),
+  ],
+});
+
+// Popout placeholder (main window state while popout is active)
+export const PopoutPlaceholder = meta.story({
+  args: {
+    project: projectWithClips,
+    currentTimeMs: 0,
+    isPlaying: false,
+    selectedClipId: null,
+    isPopout: true,
+    onTogglePopout: fn(),
+    onToggleFullscreen: fn(),
+  },
+});
+
 // Vertical canvas (9:16)
 export const VerticalCanvas = meta.story({
   args: {
@@ -297,4 +348,40 @@ WithTextOverlayDefaultBg.test("text pixel values are scaled to canvas resolution
   // Text padding should be 8 * scale
   const textPadding = parseFloat(getComputedStyle(textEl).paddingTop);
   expect(textPadding).toBeCloseTo(8 * scale, 0);
+});
+
+// ── Fullscreen tests ──
+
+Stopped.test("renders fullscreen toggle button", async ({ canvas }) => {
+  // Stopped story does not pass onToggleFullscreen, so button should not exist
+  const buttons = canvas.queryAllByTitle("Fullscreen");
+  expect(buttons.length).toBe(0);
+});
+
+Fullscreen.test("fullscreen button shows exit title", async ({ canvas }) => {
+  await canvas.findByTitle("Exit fullscreen");
+});
+
+Fullscreen.test("fullscreen container has position:fixed", async ({ canvas }) => {
+  // The outermost div rendered by PreviewPlayer should have position:fixed
+  const canvasEl = await canvas.findByTestId("preview-canvas");
+  // Walk up to find the fixed container
+  const outer = canvasEl.closest("[style]")?.parentElement as HTMLElement;
+  expect(outer).toBeTruthy();
+  expect(outer.style.position).toBe("fixed");
+});
+
+FullscreenWithTextOverlay.test("text overlay visible in fullscreen", async ({ canvas }) => {
+  await canvas.findByText("Sample Title");
+});
+
+// ── Popout tests ──
+
+PopoutPlaceholder.test("popout button shows close icon", async ({ canvas }) => {
+  await canvas.findByTitle("Close popout");
+});
+
+PopoutPlaceholder.test("fullscreen button is disabled during popout", async ({ canvas }) => {
+  const fsBtn = await canvas.findByTitle("Fullscreen");
+  expect(fsBtn).toHaveProperty("disabled", true);
 });
