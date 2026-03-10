@@ -110,6 +110,15 @@
 | 104 | Rotation 改善のテスト・Story 更新 | [x] Done | 102, 103 |
 | 105 | シークバーの画面下端延長 + トラック下部空白クリックシーク | [x] Done | 09, 26 |
 | 106 | タスク 105 のテスト・Story 更新 | [x] Done | 105 |
+| 107 | 共有型の拡張 — Clip.clipKind・Clip.blendMode 追加 + Track.kind 廃止 | [x] Done | 02, 93 |
+| 108 | CompositeStrategy インターフェース設計 + CoverStrategy 実装 | [ ] TODO | 107 |
+| 109 | ClipKind レジストリの導入と TrackKind レジストリの廃止 | [ ] TODO | 107, 93 |
+| 110 | タイムライン UI の混在クリップ対応 | [ ] TODO | 109 |
+| 111 | sequence-ops の混在トラック対応 | [ ] TODO | 109 |
+| 112 | Inspector の clipKind ベース判定 + BlendModeEditor 追加 | [ ] TODO | 108, 109 |
+| 113 | プレビューレンダラーのトラック間レイヤー合成対応 | [ ] TODO | 108, 109 |
+| 114 | エクスポートのトラック間レイヤー合成対応 | [ ] TODO | 108, 109 |
+| 115 | レイヤーモデル移行のテスト・Story 追加 | [ ] TODO | 110, 111, 112, 113, 114 |
 
 ## Phase 1 Tasks
 
@@ -3176,3 +3185,390 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 - [x] トラック下部の空白領域が表示される Story を追加（少数トラックで高さに余裕がある状態）
 
 **確認方法:** `cd app/frontend && bun run storybook` で全 Story が正常表示されること
+
+### 107: 共有型の拡張 — Clip.clipKind・Clip.blendMode 追加 + Track.kind 廃止
+
+**背景:** 現在のアーキテクチャでは `Track.kind`（"video" / "audio" / "title"）によりクリップの種類が決定されている。トラックをレイヤー管理の単位にするため、クリップ自身が種別（`clipKind`）を持つよう型を変更する。また、動画クリップのトラック間重なり合成方法を指定する `blendMode` フィールドを追加する。
+
+**対象ファイル:**
+- `app/shared/src/types/project.ts`（型定義変更）
+- `app/shared/src/index.ts`（re-export 追加）
+
+**変更内容:**
+
+**A. Clip 型に clipKind フィールドを追加**
+
+- [x] `Clip` 型に `clipKind: string` フィールドを追加する
+- [x] `BuiltinClipKind` 型を定義する: `"video" | "audio" | "title" | "image"`
+
+**B. Clip 型に blendMode フィールドを追加**
+
+- [x] `Clip` 型に `blendMode?: string` フィールドを追加する（省略時は `"cover"` として扱う）
+- [x] `BuiltinBlendMode` 型を定義する: `"cover"`（将来の拡張用に string ベース）
+
+**C. Track 型から kind を削除**
+
+- [x] `Track` 型から `kind: string` フィールドを削除する
+- [x] `BuiltinTrackKind` 型を削除する
+
+**D. マイグレーションユーティリティの追加**
+
+- [x] `utils/migration.ts` に `migrateProject(project: unknown): Project` 関数を追加する
+- [x] 旧形式（Track.kind あり・Clip.clipKind なし）のプロジェクトを新形式に変換する
+  - Track.kind が "video" のクリップ → asset.kind に応じて clipKind を "video" / "image" に設定
+  - Track.kind が "audio" のクリップ → clipKind を "audio" に設定
+  - Track.kind が "title" のクリップ → clipKind を "title" に設定
+- [x] `project-service.ts` の読み込み時にマイグレーションを適用する
+
+**確認方法:** `bun run test` で既存テストが通ること。型変更に伴うコンパイルエラーを全て解消すること。
+
+### 108: CompositeStrategy インターフェース設計 + CoverStrategy 実装
+
+**背景:** 動画クリップがトラック間で重なる場合の合成方法を GoF Strategy パターンで設計する。Open/Closed 原則に従い、新しい合成方法を既存コードの修正なしに追加できるレジストリ方式とする。`blendMode` フィールドは「そのクリップが上に重なるとき」の合成方法を指定する。
+
+**対象ファイル:**
+- `app/shared/src/types/composite.ts`（新規: Strategy インターフェース定義）
+- `app/frontend/src/lib/composite-strategy-registry.ts`（新規: フロントエンド用レジストリ）
+- `app/frontend/src/lib/composite-strategies/cover-strategy.ts`（新規: Cover Strategy のプレビュー実装）
+- `app/backend/src/lib/composite-strategy-registry.ts`（新規: バックエンド用レジストリ）
+- `app/backend/src/lib/composite-strategies/cover-strategy.ts`（新規: Cover Strategy のエクスポート実装）
+- `app/frontend/src/lib/builtin-plugin.ts`（Strategy 登録追加）
+- `app/backend/src/lib/builtin-plugin.ts`（Strategy 登録追加）
+
+**変更内容:**
+
+**A. 共有型定義: CompositeStrategy インターフェース**
+
+- [ ] `app/shared/src/types/composite.ts` に以下を定義する:
+  - `CompositeStrategyDescriptor`: `{ id: string; label: string }` — Strategy のメタデータ
+- [ ] `app/shared/src/index.ts` で re-export する
+
+**B. フロントエンド: PreviewCompositeStrategy + レジストリ**
+
+- [ ] `PreviewCompositeStrategy` インターフェースを定義する:
+  - `id: string` — blendMode と一致する識別子
+  - `label: string` — UI 表示用ラベル
+  - `containerStyle(ctx: { canvasW: number; canvasH: number }): CSSProperties` — 上レイヤーのコンテナに適用する CSS（opacity, mix-blend-mode 等）
+- [ ] `CompositeStrategyRegistry` クラスを作成する:
+  - `register(strategy: PreviewCompositeStrategy): void`
+  - `get(id: string): PreviewCompositeStrategy | undefined`
+  - `all(): PreviewCompositeStrategy[]`
+- [ ] シングルトンインスタンス `compositeStrategyRegistry` をエクスポートする
+
+**C. フロントエンド: CoverPreviewStrategy の実装**
+
+- [ ] `cover-strategy.ts` に `CoverPreviewStrategy` を実装する:
+  - `id: "cover"`, `label: "Cover (覆い隠す)"`
+  - `containerStyle()`: `{ position: "relative" }` を返す（上レイヤーが下を完全に覆う = 特殊なスタイル不要）
+
+**D. バックエンド: ExportCompositeStrategy + レジストリ**
+
+- [ ] `ExportCompositeStrategy` インターフェースを定義する:
+  - `id: string` — blendMode と一致する識別子
+  - `buildOverlayFilter(bottomLabel: string, topLabel: string, enable: string): string` — FFmpeg overlay フィルタ式を生成
+- [ ] `CompositeStrategyRegistry` クラスを作成する（フロントエンドと同様の構造）
+- [ ] シングルトンインスタンス `exportCompositeStrategyRegistry` をエクスポートする
+
+**E. バックエンド: CoverExportStrategy の実装**
+
+- [ ] `cover-strategy.ts` に `CoverExportStrategy` を実装する:
+  - `id: "cover"`
+  - `buildOverlayFilter(bottom, top, enable)`: `${bottom}${top}overlay=0:0:enable='${enable}'` を返す（上で下を完全に覆う）
+
+**F. builtin-plugin への登録**
+
+- [ ] フロントエンド `builtin-plugin.ts` に `registerCompositeStrategies(registry)` を追加し、CoverPreviewStrategy を登録する
+- [ ] バックエンド `builtin-plugin.ts` に `registerCompositeStrategies(registry)` を追加し、CoverExportStrategy を登録する
+
+**確認方法:** レジストリに Strategy が登録され、`get("cover")` で取得できること。`bun run test` で既存テストが通ること。
+
+### 109: ClipKind レジストリの導入と TrackKind レジストリの廃止
+
+**背景:** トラックがレイヤー管理の単位となり `Track.kind` が廃止されるため、既存の `TrackKindDescriptor` / `TrackKindRegistry` を `ClipKindDescriptor` / `ClipKindRegistry` に置き換える。各コンポーネントがクリップの種別を `clip.clipKind` から判定するようにする。
+
+**対象ファイル:**
+- `app/frontend/src/lib/clip-kind-registry.ts`（新規: TrackKindRegistry の後継）
+- `app/frontend/src/lib/track-kind-registry.ts`（削除）
+- `app/frontend/src/lib/builtin-plugin.ts`（登録先変更）
+- `app/frontend/src/lib/plugin-loader.ts`（プラグインインターフェース変更）
+- `app/frontend/src/components/TimelineClip.tsx`（track.kind → clip.clipKind 参照変更）
+- `app/frontend/src/components/TimelineTrack.tsx`（トラックラベル表示変更）
+- `app/frontend/src/components/InspectorPanel.tsx`（trackKind 参照変更）
+
+**変更内容:**
+
+**A. ClipKindDescriptor / ClipKindRegistry の作成**
+
+- [ ] `clip-kind-registry.ts` に以下を定義する:
+  - `ClipKindDescriptor`: `{ kind: string; label: string; clipColor: string; clipSelectedColor: string; hasSourceTrim: boolean; hasAsset: boolean }`（TrackKindDescriptor と同構造だがクリップ単位）
+  - `ClipKindRegistry` クラス: `register()`, `get(kind)`, `all()`
+  - シングルトン `clipKindRegistry` をエクスポート
+
+**B. builtin-plugin の登録変更**
+
+- [ ] `registerTrackKinds(registry)` を `registerClipKinds(registry)` に変更する
+- [ ] 登録内容は同一（"video", "audio", "title"）だがクリップ種別としての登録に変更
+
+**C. plugin-loader の変更**
+
+- [ ] `FrontendPlugin` インターフェースの `registerTrackKinds` を `registerClipKinds` に変更する
+- [ ] プラグイン読み込み処理で `clipKindRegistry` を渡すように変更する
+
+**D. 全コンポーネントの参照変更**
+
+- [ ] `TimelineClip.tsx`: `trackKindRegistry.get(track.kind)` → `clipKindRegistry.get(clip.clipKind)` に変更し、クリップ種別に応じた色を取得する
+- [ ] `TimelineTrack.tsx`: トラックラベルを `track.kind` ベースの "V" / "A" / "T" からレイヤー番号（トラックインデックス + 1）に変更する
+- [ ] `InspectorPanel.tsx`: `InspectorEditorContext.trackKind` → `InspectorEditorContext.clipKind`（= `clip.clipKind`）に変更する
+
+**E. TrackKindRegistry の削除**
+
+- [ ] `track-kind-registry.ts` を削除する
+- [ ] 全 import パスを更新する
+
+**確認方法:** `bun run test` でコンパイルが通り、既存テストが通ること。タイムラインのクリップ色とトラックラベルが正しく表示されること。
+
+### 110: タイムライン UI の混在クリップ対応
+
+**背景:** 1 トラックに複数種類のクリップ（動画・画像・テキスト・音声）を配置できるようにする。クリップの見た目はクリップ種別に応じて個別に描画される。トラック追加 UI とクリップ追加 UI を更新する。
+
+**対象ファイル:**
+- `app/frontend/src/components/Timeline.tsx`（トラック追加 UI 変更）
+- `app/frontend/src/components/TimelineTrack.tsx`（混在表示対応）
+- `app/frontend/src/components/TimelineClip.tsx`（クリップ種別に応じた表示）
+- `app/frontend/src/components/EditorPage.tsx`（クリップ追加ロジック変更）
+
+**変更内容:**
+
+**A. トラック追加 UI の変更**
+
+- [ ] 現在のトラック種別ごとの追加ボタン（"Add Video Track" 等）を、単一の "Add Layer" ボタンに変更する
+- [ ] 新規トラック作成時に `kind` を指定しない（レイヤーとして作成）
+
+**B. クリップ追加ロジックの変更**
+
+- [ ] アセットパネルからクリップを追加するとき、選択中のトラック（レイヤー）に追加する
+- [ ] トラックが未選択の場合は最も上のトラックに追加するか、新規トラックを作成する
+- [ ] テキストクリップ追加も同様に選択中トラックに追加する
+
+**C. TimelineClip の種別別表示**
+
+- [ ] クリップの背景色を `clip.clipKind` に基づいて `clipKindRegistry` から取得する
+- [ ] クリップのアイコン（🎬 / 🖼 / 🔤 / 🎵 等）を `clipKind` に応じて表示する
+
+**D. TimelineTrack の混在表示**
+
+- [ ] 1 トラック内に異なる `clipKind` のクリップが混在しても正しく描画されることを確認する
+- [ ] 各クリップが独立した色・アイコンで表示されることを確認する
+
+**確認方法:** 1 つのトラックに動画クリップとテキストクリップを並べて配置できること。クリップ種別に応じた色分けが表示されること。
+
+### 111: sequence-ops の混在トラック対応
+
+**背景:** `sequence-ops.ts` の各操作関数は現在 `Track.kind` に基づいてクリップのルーティングを行っている。トラックがレイヤー単位になるため、クリップ追加先の決定方法を変更する。
+
+**対象ファイル:**
+- `app/frontend/src/lib/sequence-ops.ts`（追加・削除・移動ロジック変更）
+
+**変更内容:**
+
+**A. addClipFromAsset の変更**
+
+- [ ] 引数にオプショナルな `targetTrackId?: string` を追加する
+- [ ] `targetTrackId` が指定されていればそのトラックに追加する
+- [ ] 指定がなければ、最後のトラック（最上位レイヤー）の末尾に追加する
+- [ ] トラックが 1 つもなければ新規トラックを作成する（`kind` フィールドなし）
+- [ ] 作成するクリップに `clipKind` を設定する（`assetKindRegistry` の `kind` をそのまま使用。ただし `defaultTrackKind` が "video" のアセット種別は asset.kind を使う）
+
+**B. addTextClip の変更**
+
+- [ ] 引数の `trackKind` を `targetTrackId?: string` に変更する
+- [ ] 指定トラックに追加する。指定がなければ新規トラックを作成する
+- [ ] 作成するクリップに `clipKind: "title"` を設定する
+
+**C. removeClip の変更**
+
+- [ ] クリップ削除後に空になったトラックを削除するロジックは維持する
+
+**D. moveClip の変更**
+
+- [ ] 同一トラック内の重なり防止ロジックは維持する
+- [ ] 将来的なトラック間移動（ドラッグでレイヤー変更）に備え、`targetTrackId` 引数をオプショナルで追加する（今回は未実装）
+
+**確認方法:** `bun run test` で既存テストが通ること。異なる種類のクリップを同一トラックに追加できること。
+
+### 112: Inspector の clipKind ベース判定 + BlendModeEditor 追加
+
+**背景:** Inspector エディタの表示条件（`canHandle`）は現在 `ctx.trackKind` で判定している。これを `ctx.clipKind`（= `clip.clipKind`）ベースに変更する。また、動画クリップの合成方法を設定する `BlendModeEditor` を追加する。
+
+**対象ファイル:**
+- `app/frontend/src/lib/inspector-editor-registry.ts`（コンテキスト型変更）
+- `app/frontend/src/lib/builtin-plugin.ts`（canHandle 条件更新）
+- `app/frontend/src/components/editors/BlendModeEditor.tsx`（新規）
+- `app/frontend/src/components/InspectorPanel.tsx`（clipKind 渡し変更）
+
+**変更内容:**
+
+**A. InspectorEditorContext の変更**
+
+- [ ] `trackKind: string` を `clipKind: string` に変更する
+
+**B. 各エディタの canHandle 条件更新**
+
+- [ ] `TrimEditor`: `() => true` のまま維持（全クリップ共通）
+- [ ] `TextEditor`: `ctx.trackKind === "title"` → `ctx.clipKind === "title"` に変更
+- [ ] `TransformEditor`: `ctx.trackKind === "video"` → `ctx.clipKind === "video" || ctx.clipKind === "image"` に変更
+- [ ] `AudioVolumeEditor`: `ctx.trackKind === "audio"` → `ctx.clipKind === "audio"` に変更
+
+**C. BlendModeEditor の新規作成**
+
+- [ ] `BlendModeEditor.tsx` コンポーネントを作成する
+- [ ] `canHandle`: `ctx.clipKind === "video" || ctx.clipKind === "image"`（映像系クリップのみ）
+- [ ] `compositeStrategyRegistry.all()` からドロップダウンの選択肢を生成する
+- [ ] 現在の `clip.blendMode ?? "cover"` を表示し、変更時に `onUpdate({ blendMode: value })` を呼ぶ
+- [ ] `order: 25`（TransformEditor の後）
+
+**D. builtin-plugin への登録**
+
+- [ ] `registerInspectorEditors` に BlendModeEditor を追加する
+
+**E. InspectorPanel の変更**
+
+- [ ] `InspectorEditorContext` に渡す値を `trackKind` から `clipKind: clip.clipKind` に変更する
+
+**確認方法:** 動画クリップ選択時に BlendModeEditor が表示され、"Cover (覆い隠す)" が選択されていること。テキストクリップ選択時には BlendModeEditor が表示されないこと。
+
+### 113: プレビューレンダラーのトラック間レイヤー合成対応
+
+**背景:** プレビューレンダラーは現在、トラック種別ごとに 1 つのアクティブクリップを検索して描画している。レイヤーモデルでは、全トラックを下（インデックス 0）から上へ走査し、同一時間帯のアクティブな映像クリップをすべて合成して描画する必要がある。合成方法は各クリップの `blendMode` に基づく `CompositeStrategy` で決定する。
+
+**対象ファイル:**
+- `app/frontend/src/lib/preview-renderer-registry.ts`（findActiveClipInTracks の変更）
+- `app/frontend/src/components/PreviewPlayer.tsx`（レイヤー合成描画の変更）
+- `app/frontend/src/components/renderers/VideoClipRenderer.tsx`（複数クリップ対応）
+- `app/frontend/src/components/renderers/ImageClipRenderer.tsx`（複数クリップ対応）
+- `app/frontend/src/components/renderers/TextOverlayRenderer.tsx`（clipKind ベース検索対応）
+- `app/frontend/src/lib/builtin-plugin.ts`（レンダラー登録変更）
+
+**変更内容:**
+
+**A. findActiveClipInTracks の変更**
+
+- [ ] 現在の `trackKind` フィルタを `clipKind` フィルタに変更する
+- [ ] 複数のアクティブクリップを返す `findAllActiveClips(project, timeMs, clipKind?, assetKind?): ActiveClip[]` を追加する
+- [ ] 結果はトラック順序（インデックス昇順 = 下から上）で返す
+
+**B. PreviewPlayer のレイヤー合成描画**
+
+- [ ] 映像レンダラー（Video / Image）を各トラックの全アクティブクリップに対して描画するように変更する
+- [ ] 描画順: トラックインデックス 0（最下層）から順に描画し、DOM の z-index でレイヤーを実現する
+- [ ] 各クリップの `blendMode` に応じて `compositeStrategyRegistry.get(blendMode)` から CSS スタイルを取得し適用する
+- [ ] テキストオーバーレイは最上位に描画する（従来通り）
+
+**C. VideoClipRenderer / ImageClipRenderer の変更**
+
+- [ ] 単一クリップではなく、アクティブクリップの配列を受け取るように変更する
+- [ ] 各クリップを独立した `<div>` / `<video>` / `<img>` として描画する
+
+**D. TextOverlayRenderer の変更**
+
+- [ ] `track.kind === "title"` ではなく `clip.clipKind === "title"` でテキストクリップを検索するように変更する
+
+**E. 再生制御の変更**
+
+- [ ] 複数の動画クリップが同時にアクティブな場合、最上位の動画クリップの `<video>` 要素を基準に再生進行を制御する
+- [ ] `videoRef` の管理を複数動画対応に拡張する（最上位の動画に追従）
+
+**確認方法:** 2 つのトラックに動画クリップを配置し、重なり部分で上トラックの映像が下トラックを覆い隠すこと。重なりのない部分では各トラックの映像が独立して表示されること。
+
+### 114: エクスポートのトラック間レイヤー合成対応
+
+**背景:** エクスポート処理は現在、単一の video トラックの全クリップを concat で結合している。レイヤーモデルでは、各トラックの映像クリップを個別に処理した後、トラック順（下→上）で FFmpeg の `overlay` フィルタを使って合成する。合成方法はクリップの `blendMode` に基づく `ExportCompositeStrategy` で決定する。
+
+**対象ファイル:**
+- `app/backend/src/services/export-service.ts`（buildExportArgs の大幅変更）
+- `app/backend/src/lib/export-handler-registry.ts`（必要に応じてインターフェース変更）
+- `app/backend/src/lib/export-handlers/video-clip-handler.ts`（レイヤー対応）
+- `app/backend/src/lib/export-handlers/image-clip-handler.ts`（レイヤー対応）
+- `app/backend/src/lib/export-handlers/text-overlay-handler.ts`（clipKind ベース検索対応）
+- `app/backend/src/lib/export-handlers/audio-mix-handler.ts`（clipKind ベース検索対応）
+
+**変更内容:**
+
+**A. buildExportArgs のレイヤー合成対応**
+
+- [ ] 現在の「video トラック → concat」方式から「全トラック → レイヤー合成」方式に変更する
+- [ ] 処理フロー:
+  1. 全トラックを下（インデックス 0）から上へ走査する
+  2. 各トラックの映像クリップ（clipKind が "video" / "image"）を時間順にソートする
+  3. 各トラックの映像を時間位置に合わせた個別ストリームとして入力する
+  4. トラック 0 のストリームをベースとし、トラック 1 以降のストリームを `overlay` フィルタで順に合成する
+  5. 各 overlay のパラメータはクリップの `blendMode` に応じた `ExportCompositeStrategy` から生成する
+
+**B. 各クリップの時間位置合わせ**
+
+- [ ] 各映像クリップは `clip.startMs` / `clip.durationMs` に基づいて、タイムライン上の正しい位置で表示されるよう `overlay` フィルタの `enable` 条件を設定する
+- [ ] 時間的に隙間がある場合は、下のレイヤーの映像がそのまま表示される
+
+**C. テキストオーバーレイの変更**
+
+- [ ] `track.kind === "title"` ではなく `clip.clipKind === "title"` でテキストクリップを全トラックから収集するように変更する
+
+**D. オーディオミックスの変更**
+
+- [ ] `track.kind === "audio"` ではなく `clip.clipKind === "audio"` でオーディオクリップを全トラックから収集するように変更する
+- [ ] 映像クリップの音声トラックも全トラック分をミックスする
+
+**確認方法:** 2 つのトラックに動画クリップを配置してエクスポートし、重なり部分で上トラックの映像が表示されること。音声が全トラック分ミックスされること。
+
+### 115: レイヤーモデル移行のテスト・Story 追加
+
+**背景:** タスク 107〜114 の全変更に対するテストと Storybook Story の追加・更新。
+
+**対象ファイル:**
+- `app/shared/src/__tests__/`（マイグレーション・型テスト追加）
+- `app/frontend/src/components/*.stories.tsx`（Story 更新）
+- `app/frontend/src/lib/__tests__/`（sequence-ops テスト更新）
+- `app/backend/src/__tests__/`（export テスト更新）
+
+**変更内容:**
+
+**A. 共有型・マイグレーションのテスト**
+
+- [ ] `migrateProject` が旧形式 → 新形式に正しく変換することのテスト
+- [ ] `Clip.clipKind` / `Clip.blendMode` のデフォルト値テスト
+
+**B. CompositeStrategy のテスト**
+
+- [ ] `CoverPreviewStrategy` の `containerStyle()` テスト
+- [ ] `CoverExportStrategy` の `buildOverlayFilter()` テスト
+- [ ] レジストリの登録・取得テスト
+
+**C. タイムライン Story の更新**
+
+- [ ] 1 トラックに複数種類のクリップが混在する Story の追加
+- [ ] 複数トラック（レイヤー）の Story の追加
+- [ ] トラックラベルがレイヤー番号で表示される確認
+
+**D. Inspector Story の更新**
+
+- [ ] BlendModeEditor の Story 追加
+- [ ] clipKind ベースの各エディタ表示条件テスト
+
+**E. sequence-ops テストの更新**
+
+- [ ] `addClipFromAsset` の `targetTrackId` 指定テスト
+- [ ] 混在トラックへのクリップ追加テスト
+- [ ] `addTextClip` の `targetTrackId` 指定テスト
+
+**F. プレビューレンダラーのテスト**
+
+- [ ] 複数トラックの映像クリップ重なりプレビュー Story の追加
+- [ ] CoverStrategy 適用時のレイヤー表示テスト
+
+**G. エクスポートのテスト**
+
+- [ ] `buildExportArgs` の複数トラックレイヤー合成テスト
+- [ ] 重なりあり・なし両方のケースのテスト
+- [ ] テキスト・オーディオの clipKind ベース収集テスト
+
+**確認方法:** `bun run test` で全テストが通ること。`cd app/frontend && bun run storybook` で全 Story が正常表示されること。
