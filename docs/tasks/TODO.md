@@ -116,7 +116,7 @@
 | 110 | タイムライン UI の混在クリップ対応 | [x] Done | 109 |
 | 111 | sequence-ops の混在トラック対応 | [x] Done | 109 |
 | 112 | Inspector の clipKind ベース判定 + BlendModeEditor 追加 | [x] Done | 108, 109 |
-| 113 | プレビューレンダラーのトラック間レイヤー合成対応 | [ ] TODO | 108, 109 |
+| 113 | プレビューレンダラーのトラック間レイヤー合成対応 | [x] Done | 108, 109 |
 | 114 | エクスポートのトラック間レイヤー合成対応 | [ ] TODO | 108, 109 |
 | 115 | レイヤーモデル移行のテスト・Story 追加 | [ ] TODO | 110, 111, 112, 113, 114 |
 
@@ -3453,30 +3453,30 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. findActiveClipInTracks の変更**
 
-- [ ] 現在の `trackKind` フィルタを `clipKind` フィルタに変更する
-- [ ] 複数のアクティブクリップを返す `findAllActiveClips(project, timeMs, clipKind?, assetKind?): ActiveClip[]` を追加する
-- [ ] 結果はトラック順序（インデックス昇順 = 下から上）で返す
+- [x] 現在の `trackKind` フィルタを `clipKind` フィルタに変更する
+- [x] 複数のアクティブクリップを返す `findAllActiveClips(project, timeMs, clipKind?, assetKind?): ActiveClip[]` を追加する
+- [x] 結果はトラック順序（インデックス昇順 = 下から上）で返す
 
 **B. PreviewPlayer のレイヤー合成描画**
 
-- [ ] 映像レンダラー（Video / Image）を各トラックの全アクティブクリップに対して描画するように変更する
-- [ ] 描画順: トラックインデックス 0（最下層）から順に描画し、DOM の z-index でレイヤーを実現する
-- [ ] 各クリップの `blendMode` に応じて `compositeStrategyRegistry.get(blendMode)` から CSS スタイルを取得し適用する
-- [ ] テキストオーバーレイは最上位に描画する（従来通り）
+- [x] 映像レンダラー（Video / Image）を各トラックの全アクティブクリップに対して描画するように変更する
+- [x] 描画順: トラックインデックス 0（最下層）から順に描画し、DOM の z-index でレイヤーを実現する
+- [x] 各クリップの `blendMode` に応じて `compositeStrategyRegistry.get(blendMode)` から CSS スタイルを取得し適用する
+- [x] テキストオーバーレイは最上位に描画する（従来通り）
 
 **C. VideoClipRenderer / ImageClipRenderer の変更**
 
-- [ ] 単一クリップではなく、アクティブクリップの配列を受け取るように変更する
-- [ ] 各クリップを独立した `<div>` / `<video>` / `<img>` として描画する
+- [x] 単一クリップではなく、アクティブクリップの配列を受け取るように変更する
+- [x] 各クリップを独立した `<div>` / `<video>` / `<img>` として描画する
 
 **D. TextOverlayRenderer の変更**
 
-- [ ] `track.kind === "title"` ではなく `clip.clipKind === "title"` でテキストクリップを検索するように変更する
+- [x] `track.kind === "title"` ではなく `clip.clipKind === "title"` でテキストクリップを検索するように変更する
 
 **E. 再生制御の変更**
 
-- [ ] 複数の動画クリップが同時にアクティブな場合、最上位の動画クリップの `<video>` 要素を基準に再生進行を制御する
-- [ ] `videoRef` の管理を複数動画対応に拡張する（最上位の動画に追従）
+- [x] 複数の動画クリップが同時にアクティブな場合、最上位の動画クリップの `<video>` 要素を基準に再生進行を制御する
+- [x] `videoRef` の管理を複数動画対応に拡張する（最上位の動画に追従）
 
 **確認方法:** 2 つのトラックに動画クリップを配置し、重なり部分で上トラックの映像が下トラックを覆い隠すこと。重なりのない部分では各トラックの映像が独立して表示されること。
 
