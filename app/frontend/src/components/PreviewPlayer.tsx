@@ -10,6 +10,8 @@ type Props = {
   onPlayPause: () => void;
   selectedClipId?: string | null;
   onSelectClip: (id: string | null) => void;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 };
 
 type ActiveClip = {
@@ -92,6 +94,8 @@ export function PreviewPlayer({
   onPlayPause,
   selectedClipId,
   onSelectClip,
+  isFullscreen,
+  onToggleFullscreen,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -313,6 +317,19 @@ export function PreviewPlayer({
   // Build CSS transform for rotation only (position handled via top/left)
   const rotationCss = rotation ? `rotate(${rotation}deg)` : undefined;
 
+  // Escape key exits fullscreen
+  useEffect(() => {
+    if (!isFullscreen || !onToggleFullscreen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onToggleFullscreen();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isFullscreen, onToggleFullscreen]);
+
   const isImage = activeClip?.asset.kind === "image";
   const thumbnailUrl = activeClip
     ? (() => {
@@ -330,6 +347,11 @@ export function PreviewPlayer({
         width: "100%",
         height: "100%",
         background: theme.bgDark,
+        ...(isFullscreen ? {
+          position: "fixed" as const,
+          inset: 0,
+          zIndex: 1000,
+        } : {}),
       }}
     >
       {/* Preview area — centers the canvas */}
@@ -481,6 +503,15 @@ export function PreviewPlayer({
         <span style={{ color: theme.textMuted, fontSize: "12px" }}>
           {formatTime(currentTimeMs)}
         </span>
+        {onToggleFullscreen && (
+          <button
+            onClick={onToggleFullscreen}
+            style={{ ...buttonStyle.secondary, padding: "4px 16px", fontSize: "13px", minWidth: "36px", marginLeft: "auto" }}
+            title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? "⛶" : "⛶"}
+          </button>
+        )}
       </div>
     </div>
   );

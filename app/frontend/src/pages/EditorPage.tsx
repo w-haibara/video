@@ -59,6 +59,9 @@ function EditorPageLoaded({
   isPlaying: boolean;
   onPlayPause: () => void;
 }) {
+  const [isPreviewFullscreen, setIsPreviewFullscreen] = useState(false);
+  const togglePreviewFullscreen = useCallback(() => setIsPreviewFullscreen((v) => !v), []);
+
   const [exportFilename, setExportFilename] = useState(`export-${Date.now()}.mp4`);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const exportedFilenameRef = useRef<string | null>(null);
@@ -169,6 +172,8 @@ function EditorPageLoaded({
           onPlayPause={onPlayPause}
           selectedClipId={selectedClipId}
           onSelectClip={handleSelectClip}
+          isFullscreen={isPreviewFullscreen}
+          onToggleFullscreen={togglePreviewFullscreen}
         />
       }
       mainPanel={

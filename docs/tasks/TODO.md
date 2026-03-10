@@ -93,6 +93,9 @@
 | 87 | プレビューの Crop 表示位置をエクスポートと一致させる | [x] Done | 12, 19, 82 |
 | 88 | プレビューのテキストオーバーレイ位置をエクスポートと一致させる | [x] Done | 12, 25 |
 | 89 | プレビュー・エクスポート一致性のテスト追加 | [x] Done | 87, 88 |
+| 90 | プレビューのウィンドウ内フルスクリーン表示 | [ ] Pending | 12, 39 |
+| 91 | プレビューの別ウィンドウ表示 | [ ] Pending | 90 |
+| 92 | プレビュー拡大表示のテスト・Story 追加 | [ ] Pending | 90, 91 |
 
 ## Phase 1 Tasks
 
@@ -2354,5 +2357,139 @@ CSS clipPath はフルサイズのアセット上にマスクをかけるだけ�
 
 - [ ] Crop 設定済みクリップの Story を追加（crop 前後の表示比較用）
 - [ ] テキストオーバーレイの Story が更新後のスタイルで表示されることを確認
+
+**確認方法:** `bun run test` と `bun run storybook` で全テスト・Story が正常動作すること
+
+### 90: プレビューのウィンドウ内フルスクリーン表示
+
+**背景:** 現在のプレビューはエディタ画面左カラム（グリッド `1fr 2fr` の左側）に固定表示されており、映像を大きく確認したい場合に不便。プレビューをウィンドウ全体に拡大して表示する機能を追加する。
+
+**対象ファイル:**
+- `app/frontend/src/components/PreviewPlayer.tsx`
+- `app/frontend/src/components/EditorLayout.tsx`
+- `app/frontend/src/pages/EditorPage.tsx`
+
+**変更内容:**
+
+**A. フルスクリーン状態管理の追加** (`EditorPage.tsx`)
+
+- [ ] `isPreviewFullscreen` state を追加（`useState<boolean>(false)`）
+- [ ] `togglePreviewFullscreen` コールバックを定義し、`PreviewPlayer` に props として渡す
+
+**B. PreviewPlayer にフルスクリーントグルボタンを追加** (`PreviewPlayer.tsx`)
+
+- [ ] props に `isFullscreen?: boolean` と `onToggleFullscreen?: () => void` を追加
+- [ ] トランスポートコントロール右端に拡大ボタン（`⛶` or 適切なアイコン）を追加
+  - クリックで `onToggleFullscreen` を呼び出す
+  - フルスクリーン時はアイコンを縮小表示用に切り替え
+- [ ] Esc キーでフルスクリーン解除するキーボードイベントリスナーを追加（`useEffect` で `keydown` を監視）
+
+**C. フルスクリーン時のオーバーレイレイアウト** (`EditorLayout.tsx`)
+
+- [ ] `isPreviewFullscreen` prop を追加
+- [ ] フルスクリーン時、プレビューコンテナを `position: fixed; inset: 0; z-index: 1000` のオーバーレイとして描画
+  - 背景色は `theme.bg`（他パネルを完全に覆う）
+  - プレビューキャンバスは `width: 100vw; height: calc(100vh - トランスポートコントロール高さ)` に拡大
+  - トランスポートコントロールは下部に固定表示
+- [ ] フルスクリーン時もタイムラインの再生状態・シーク操作は引き続き連動すること（状態は EditorPage で一元管理のため特別な対応は不要）
+
+**D. キャンバススケーリングの対応** (`PreviewPlayer.tsx`)
+
+- [ ] 既存の `ResizeObserver` による `canvasScale` 計算がフルスクリーン時のコンテナサイズ変更にも追従することを確認
+  - コンテナが `100vw` に拡大されると `renderedWidth` が変わるため、`canvasScale` が自動的に再計算される
+- [ ] テキストオーバーレイのスケーリングがフルスクリーン時にも正しく動作することを確認
+
+**確認方法:**
+- 拡大ボタンクリックでプレビューがウィンドウ全体に表示されること
+- フルスクリーン中も再生・一時停止・シークが正常動作すること
+- フルスクリーン中もテキストオーバーレイ・Crop 表示が正しくスケーリングされること
+- Esc キーまたは縮小ボタンで元のレイアウトに戻ること
+- ブラウザウィンドウのリサイズに追従すること
+
+### 91: プレビューの別ウィンドウ表示
+
+**背景:** デュアルモニター環境やプレビューを独立して確認したい場合に、プレビューを別ウィンドウ（ポップアウト）で開く機能を追加する。タスク 90 のフルスクリーン機能と並行して利用可能にする。
+
+**対象ファイル:**
+- `app/frontend/src/components/PreviewPlayer.tsx`
+- `app/frontend/src/pages/EditorPage.tsx`
+- `app/frontend/src/components/PreviewPopout.tsx`（新規）
+- `app/frontend/src/hooks/usePreviewPopout.ts`（新規）
+
+**変更内容:**
+
+**A. ポップアウト用カスタムフックの作成** (`usePreviewPopout.ts` 新規)
+
+- [ ] `usePreviewPopout()` フックを作成
+  - `window.open()` で子ウィンドウを作成（初期サイズ: 960×540 + コントロール領域）
+  - 戻り値: `{ popoutWindow, isPopout, openPopout, closePopout }`
+  - 子ウィンドウの `beforeunload` イベントで `isPopout` を `false` にリセット
+  - 親ウィンドウの `beforeunload` / ページ遷移時に子ウィンドウを `close()` する cleanup
+
+**B. ポップアウトコンテナコンポーネント** (`PreviewPopout.tsx` 新規)
+
+- [ ] `createPortal` を使い、子ウィンドウの `document.body` にプレビューを描画する React コンポーネント
+  - 子ウィンドウに親のスタイルシート（テーマ CSS 変数等）をコピーして適用
+  - `PreviewPlayer` をそのまま子ウィンドウ内にレンダリング
+- [ ] 子ウィンドウのタイトルを「Preview — {プロジェクト名}」に設定
+
+**C. PreviewPlayer にポップアウトボタンを追加** (`PreviewPlayer.tsx`)
+
+- [ ] props に `isPopout?: boolean` と `onTogglePopout?: () => void` を追加
+- [ ] トランスポートコントロールにポップアウトボタン（`↗` or 適切なアイコン）を追加
+  - フルスクリーンボタンの隣に配置
+  - ポップアウト中は「↙」アイコンに切り替え（クリックでウィンドウを閉じて元に戻す）
+- [ ] ポップアウト中はメインウィンドウ側のプレビュー領域に「別ウィンドウで表示中」のプレースホルダーを表示
+
+**D. EditorPage での状態統合** (`EditorPage.tsx`)
+
+- [ ] `usePreviewPopout` を呼び出し、`isPopout` / `openPopout` / `closePopout` を管理
+- [ ] ポップアウト中:
+  - メインウィンドウのプレビュー領域にプレースホルダーを表示
+  - 子ウィンドウに `PreviewPopout` をレンダリング（`PreviewPlayer` を内包）
+  - 再生状態・シーク・タイムラインとの連動は React の状態が共有されているため自動的に維持
+- [ ] フルスクリーンとポップアウトの排他制御: ポップアウト中にフルスクリーンは無効化（ボタンを disabled にする）、逆も同様
+
+**確認方法:**
+- ポップアウトボタンクリックで新しいウィンドウにプレビューが表示されること
+- 別ウィンドウ内の再生操作がメインウィンドウのタイムラインと同期すること
+- メインウィンドウでのシーク操作が別ウィンドウのプレビューに反映されること
+- 別ウィンドウを閉じるとメインウィンドウのプレビューが復帰すること
+- メインウィンドウでページ遷移した場合に別ウィンドウが自動的に閉じること
+- テキストオーバーレイ・Crop 表示が別ウィンドウ内でも正しく表示されること
+
+### 92: プレビュー拡大表示のテスト・Story 追加
+
+**背景:** タスク 90（ウィンドウ内フルスクリーン）と タスク 91（別ウィンドウ表示）の変更に対するテストと Story を追加する。
+
+**対象ファイル:**
+- `app/frontend/src/components/PreviewPlayer.stories.tsx`（既存 Story の更新）
+- `app/frontend/src/components/PreviewPlayer.test.tsx`（既存 or 新規）
+- `app/frontend/src/hooks/usePreviewPopout.test.ts`（新規）
+
+**変更内容:**
+
+**A. フルスクリーン関連の Story 追加** (`PreviewPlayer.stories.tsx`)
+
+- [ ] `Fullscreen` Story を追加: `isFullscreen: true` 状態のプレビュー表示
+- [ ] `FullscreenWithTextOverlay` Story を追加: フルスクリーン + テキストオーバーレイ表示
+
+**B. フルスクリーン関連のテスト追加** (`PreviewPlayer.test.tsx`)
+
+- [ ] フルスクリーントグルボタンが表示されること
+- [ ] ボタンクリックで `onToggleFullscreen` が呼ばれること
+- [ ] Esc キーで `onToggleFullscreen` が呼ばれること（フルスクリーン中のみ）
+- [ ] `isFullscreen: true` 時にオーバーレイスタイル（`position: fixed`）が適用されていること
+
+**C. ポップアウトフックのテスト追加** (`usePreviewPopout.test.ts`)
+
+- [ ] `openPopout` で `window.open` が呼ばれること
+- [ ] `closePopout` で子ウィンドウの `close` が呼ばれること
+- [ ] 子ウィンドウ close 時に `isPopout` が `false` になること
+- [ ] cleanup 時に子ウィンドウが close されること
+
+**D. ポップアウト関連の Story 追加** (`PreviewPlayer.stories.tsx`)
+
+- [ ] `PopoutPlaceholder` Story を追加: ポップアウト中のメインウィンドウ側プレースホルダー表示
 
 **確認方法:** `bun run test` と `bun run storybook` で全テスト・Story が正常動作すること
