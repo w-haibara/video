@@ -587,6 +587,130 @@ describe("buildExportArgs", () => {
     expect(scaleIdx).toBeGreaterThan(padIdx);
   });
 
+  test("handles scale > 1 with pad+crop pattern (no pad error)", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              {
+                id: "c1",
+                assetId: "v1",
+                startMs: 0,
+                durationMs: 5000,
+                inMs: 0,
+                outMs: 5000,
+                transform: { x: 0, y: 0, scale: 2 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Transform should use scale then pad(max)+crop pattern
+    expect(filter).toContain("scale=iw*2:ih*2");
+    expect(filter).toContain("pad=w='max(iw,1920)':h='max(ih,1080)'");
+    expect(filter).toContain("crop=1920:1080:");
+  });
+
+  test("handles scale > 1 combined with user crop", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              {
+                id: "c1",
+                assetId: "v1",
+                startMs: 0,
+                durationMs: 5000,
+                inMs: 0,
+                outMs: 5000,
+                crop: { x: 100, y: 50, width: 800, height: 600 },
+                transform: { x: 0, y: 0, scale: 2 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // User crop, canvas pad+crop, then transform scale with pad+crop
+    const userCropIdx = filter.indexOf("crop=800:600:100:50");
+    const scaleIdx = filter.indexOf("scale=iw*2:ih*2");
+    expect(userCropIdx).toBeGreaterThan(-1);
+    expect(scaleIdx).toBeGreaterThan(userCropIdx);
+  });
+
+  test("handles scale < 1 with pad+crop pattern", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              {
+                id: "c1",
+                assetId: "v1",
+                startMs: 0,
+                durationMs: 5000,
+                inMs: 0,
+                outMs: 5000,
+                transform: { x: 0, y: 0, scale: 0.5 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Scale down should also use pad(max)+crop pattern
+    expect(filter).toContain("scale=iw*0.5:ih*0.5");
+    expect(filter).toContain("pad=w='max(iw,1920)':h='max(ih,1080)'");
+  });
+
+  test("adds -ignore_unknown for video inputs", () => {
+    const project = makeProject();
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const ignoreIdx = args.indexOf("-ignore_unknown");
+    const inputIdx = args.indexOf("-i");
+    expect(ignoreIdx).toBeGreaterThan(-1);
+    expect(inputIdx).toBe(ignoreIdx + 1);
+  });
+
+  test("does not add -ignore_unknown for image inputs", () => {
+    const project = makeProject({
+      assets: [
+        { id: "i1", kind: "image", originalPath: "assets/photo.jpg" },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              { id: "c1", assetId: "i1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    expect(args).not.toContain("-ignore_unknown");
+  });
+
   test("excludes text overlays beyond project duration", () => {
     const project = makeProject({
       sequence: {

@@ -30,10 +30,12 @@ function buildTransformFilter(
   const parts: string[] = [];
 
   if (scale !== 1) {
-    // Scale relative to center: scale then re-pad to output size
+    // Scale relative to center, then pad+crop to exact output size.
+    // pad uses max() so it never shrinks below scaled input (fixes scale > 1).
     parts.push(
       `scale=iw*${scale}:ih*${scale}`,
-      `pad=${preset.width}:${preset.height}:(ow-iw)/2:(oh-ih)/2`,
+      `pad=w='max(iw,${preset.width})':h='max(ih,${preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black`,
+      `crop=${preset.width}:${preset.height}:(iw-${preset.width})/2:(ih-${preset.height})/2`,
     );
   }
 
@@ -125,7 +127,7 @@ export function buildExportArgs(
       : "";
 
     if (asset.kind === "video") {
-      inputArgs.push("-i", assetPath);
+      inputArgs.push("-ignore_unknown", "-i", assetPath);
       const trimStart = clip.inMs / 1000;
       const duration = effectiveDurationMs / 1000;
       let chain =
@@ -383,9 +385,13 @@ export async function startExport(
 
     const exitCode = await proc.exited;
     if (exitCode !== 0) {
-      const stderr = proc.stderr
+      const rawStderr = proc.stderr
         ? await new Response(proc.stderr).text()
         : "";
+      const stderr = rawStderr
+        .split("\n")
+        .filter((line) => !line.includes("Skipping NAL unit"))
+        .join("\n");
       throw new Error(`Export failed (exit ${exitCode}): ${stderr}`);
     }
   });
