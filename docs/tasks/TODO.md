@@ -95,7 +95,16 @@
 | 89 | プレビュー・エクスポート一致性のテスト追加 | [x] Done | 87, 88 |
 | 90 | プレビューのウィンドウ内フルスクリーン表示 | [x] Done | 12, 39 |
 | 91 | プレビューの別ウィンドウ表示 | [x] Done | 90 |
-| 92 | プレビュー拡大表示のテスト・Story 追加 | [ ] Pending | 90, 91 |
+| 92 | プレビュー拡大表示のテスト・Story 追加 | [x] Done | 90, 91 |
+| 93 | TrackKind / AssetKind レジストリの導入 | [ ] Pending | 02 |
+| 94 | Inspector パネルのエディタプラグインレジストリ化 | [ ] Pending | 93 |
+| 95 | タイムラインクリップの外観レジストリ化 | [ ] Pending | 93 |
+| 96 | プレビュープレーヤーの描画 Strategy 化 | [ ] Pending | 93 |
+| 97 | sequence-ops のトラックルーティング Strategy 化 | [ ] Pending | 93 |
+| 98 | アセット種別検出のプラグイン化 | [ ] Pending | 93 |
+| 99 | エクスポートのトラック/アセットハンドラ Strategy 化 | [ ] Pending | 93 |
+| 100 | プラグインシステムの基盤設計 | [ ] Pending | 93, 94, 95, 96, 97, 98, 99 |
+| 101 | リファクタリング全体のテスト・Story 更新 | [ ] Pending | 94, 95, 96, 97, 98, 99 |
 
 ## Phase 1 Tasks
 
@@ -2493,3 +2502,510 @@ CSS clipPath はフルサイズのアセット上にマスクをかけるだけ�
 - [ ] `PopoutPlaceholder` Story を追加: ポップアウト中のメインウィンドウ側プレースホルダー表示
 
 **確認方法:** `bun run test` と `bun run storybook` で全テスト・Story が正常動作すること
+
+---
+
+## Refactoring Phase: 拡張可能な設計への移行
+
+### 設計方針
+
+GoF デザインパターン（Registry / Strategy / Factory / Template Method）と Open/Closed 原則に基づき、以下の拡張ポイントを新規コード追加のみで対応可能にする:
+
+1. **新しいトラック種別の追加**（例: subtitle, effect, transition）
+2. **あらゆるファイル形式のインポート**（例: PSD, SVG, GIF, FLAC）
+3. **Inspector での様々なフィルタ制御の追加**（例: 色調補正、ブラー、不透明度）
+4. **将来のプラグイン機構**への段階的な基盤整備
+
+各タスクは既存の動作を一切変更せず、内部構造のみをリファクタリングする。
+
+### 93: TrackKind / AssetKind レジストリの導入
+
+**背景:** 現在 `TrackKind` は `"video" | "audio" | "title"` のリテラル型、`AssetKind` は `"video" | "image" | "audio"` のリテラル型でハードコードされており、新しい種別を追加するたびにコードベース全体の条件分岐を修正する必要がある。種別ごとのメタデータ（ラベル、色、対応エディタ、レンダラ等）を一元管理するレジストリを導入し、後続タスクの基盤とする。
+
+**対象ファイル:**
+- `app/shared/src/types/track-kind.ts`（新規）
+- `app/shared/src/types/asset-kind.ts`（新規）
+- `app/frontend/src/lib/track-kind-registry.ts`（新規）
+- `app/frontend/src/lib/asset-kind-registry.ts`（新規）
+- `app/shared/src/types/project.ts`（型の参照元を更新）
+- `app/shared/src/types/asset.ts`（型の参照元を更新）
+
+**変更内容:**
+
+**A. TrackKind レジストリの定義** (`track-kind-registry.ts`)
+
+- [ ] `TrackKindDescriptor` 型を定義:
+  ```typescript
+  type TrackKindDescriptor = {
+    kind: string;
+    label: string;            // タイムラインラベル（例: "V", "A", "T"）
+    clipColor: string;        // クリップのデフォルト背景色
+    clipSelectedColor: string;
+    hasSourceTrim: boolean;   // ソーストリム編集の有無
+    hasAsset: boolean;        // アセット紐付きか（title は false）
+  };
+  ```
+- [ ] `TrackKindRegistry` クラスを実装:
+  - `register(descriptor: TrackKindDescriptor): void`
+  - `get(kind: string): TrackKindDescriptor | undefined`
+  - `all(): TrackKindDescriptor[]`
+- [ ] デフォルトの 3 種別（video, audio, title）を登録
+- [ ] シングルトンエクスポート: `export const trackKindRegistry = new TrackKindRegistry()`
+
+**B. AssetKind レジストリの定義** (`asset-kind-registry.ts`)
+
+- [ ] `AssetKindDescriptor` 型を定義:
+  ```typescript
+  type AssetKindDescriptor = {
+    kind: string;
+    label: string;
+    extensions: string[];       // 対応拡張子（例: [".mp4", ".mov"]）
+    mimePatterns: string[];     // MIME パターン（例: ["video/*"]）
+    defaultTrackKind: string;   // この種別がドロップされるデフォルトトラック
+    hasDuration: boolean;       // 時間長があるか（image は false）
+    defaultDurationMs?: number; // image 等のデフォルト時間長
+  };
+  ```
+- [ ] `AssetKindRegistry` クラスを実装:
+  - `register(descriptor: AssetKindDescriptor): void`
+  - `get(kind: string): AssetKindDescriptor | undefined`
+  - `detectByExtension(ext: string): AssetKindDescriptor | undefined`
+  - `all(): AssetKindDescriptor[]`
+- [ ] デフォルトの 3 種別（video, image, audio）を登録
+
+**C. 既存の型定義を拡張可能にする**
+
+- [ ] `Track.kind` の型を `string` に拡張（ランタイムバリデーションはレジストリで行う）
+- [ ] `AssetKind` の型を `string` に拡張
+- [ ] 既存コードとの互換性を維持するために `"video" | "audio" | "title"` のユーティリティ型も残す
+
+**確認方法:**
+- 既存の全テストが変更なく通ること
+- `trackKindRegistry.get("video")` 等でメタデータが取得できること
+- レジストリに新しい種別を `register()` で追加できること
+
+### 94: Inspector パネルのエディタプラグインレジストリ化
+
+**背景:** 現在の `InspectorPanel.tsx` はトラック種別ごとの表示ロジックを if/else チェーンで分岐している（50 行目: `isTextClip = trackKind === "title"`, 87 行目: `trackKind === "video"`, 95 行目: `trackKind === "audio"`）。新しいトラック種別やフィルタ制御を追加するたびにこのコンポーネントを修正する必要があり、Open/Closed 原則に違反している。
+
+**対象ファイル:**
+- `app/frontend/src/lib/inspector-editor-registry.ts`（新規）
+- `app/frontend/src/components/editors/TrimEditor.tsx`（`InspectorPanel.tsx` から分離）
+- `app/frontend/src/components/editors/TextEditor.tsx`（`InspectorPanel.tsx` から分離）
+- `app/frontend/src/components/editors/TransformEditor.tsx`（`InspectorPanel.tsx` から分離）
+- `app/frontend/src/components/editors/AudioVolumeEditor.tsx`（`InspectorPanel.tsx` から分離）
+- `app/frontend/src/components/editors/index.ts`（新規: 全エディタを登録）
+- `app/frontend/src/components/InspectorPanel.tsx`（リファクタリング）
+
+**変更内容:**
+
+**A. エディタプラグインインターフェースの定義** (`inspector-editor-registry.ts`)
+
+- [ ] `InspectorEditorPlugin` 型を定義:
+  ```typescript
+  type InspectorEditorContext = {
+    clip: Clip;
+    asset: Asset | undefined;
+    trackKind: string;
+    onUpdate: (updates: Partial<Clip>) => void;
+  };
+
+  type InspectorEditorPlugin = {
+    id: string;
+    label: string;
+    order: number;            // 表示順序
+    canHandle: (ctx: InspectorEditorContext) => boolean;
+    Component: React.ComponentType<InspectorEditorContext>;
+  };
+  ```
+- [ ] `InspectorEditorRegistry` クラスを実装:
+  - `register(plugin: InspectorEditorPlugin): void`
+  - `getEditorsFor(ctx: InspectorEditorContext): InspectorEditorPlugin[]`（`canHandle` でフィルタし `order` でソート）
+
+**B. 既存エディタの分離・プラグイン化**
+
+- [ ] `TrimEditor` を独立コンポーネントファイルに抽出し、`InspectorEditorPlugin` として登録
+  - `canHandle`: 常に `true`（全クリップに表示）
+- [ ] `TextEditor` を独立コンポーネントファイルに抽出し、プラグインとして登録
+  - `canHandle`: `trackKind === "title"`
+- [ ] `TransformEditor` を独立コンポーネントファイルに抽出し、プラグインとして登録
+  - `canHandle`: `trackKind === "video"`
+- [ ] `AudioVolumeEditor` を独立コンポーネントファイルに抽出し、プラグインとして登録（現在は `InspectorPanel` 内にインラインで記述: 95〜111 行目）
+  - `canHandle`: `trackKind === "audio"`
+
+**C. InspectorPanel のリファクタリング**
+
+- [ ] if/else チェーンを削除し、レジストリから取得したエディタを動的にレンダリング:
+  ```typescript
+  const editors = inspectorEditorRegistry.getEditorsFor(ctx);
+  {editors.map((editor) => (
+    <editor.Component key={editor.id} {...ctx} />
+  ))}
+  ```
+- [ ] メタ情報テーブル（File, Type, Size, Codec）の表示も `TrackKindDescriptor.hasAsset` を参照して分岐
+
+**確認方法:**
+- Inspector の表示・操作が全く同じであること
+- 新しいエディタプラグインを `register()` で追加すると Inspector に表示されること
+- 既存の全テスト・Story が通ること
+
+### 95: タイムラインクリップの外観レジストリ化
+
+**背景:** `TimelineClip.tsx` の 42〜53 行目で `isTextClip` / `isAudioClip` による if/else チェーンでクリップの背景色・ボーダー色を決定しており、`TimelineTrack.tsx` の 19〜23 行目で `TRACK_LABEL` のハードコード Record がある。新しいトラック種別を追加するたびにこれらのファイルを修正する必要がある。
+
+**対象ファイル:**
+- `app/frontend/src/components/TimelineClip.tsx`
+- `app/frontend/src/components/TimelineTrack.tsx`
+
+**変更内容:**
+
+**A. TimelineClip のリファクタリング**
+
+- [ ] 42〜53 行目の色決定ロジックを `TrackKindRegistry` からの取得に置換:
+  ```typescript
+  const descriptor = trackKindRegistry.get(trackKind);
+  const bgColor = isSelected ? descriptor?.clipColor : descriptor?.clipSelectedColor;
+  const borderColor = isSelected ? theme.text : descriptor?.clipSelectedColor;
+  ```
+- [ ] `TimelineClip` の props に `trackKind: string` を追加（現在は `asset?.kind` と `clip.text` から推測しているため）
+- [ ] `TimelineTrack` から `trackKind` を `TimelineClip` に渡すように修正
+
+**B. TimelineTrack のリファクタリング**
+
+- [ ] 19〜23 行目の `TRACK_LABEL` 定数を削除し、`TrackKindDescriptor.label` を使用:
+  ```typescript
+  const descriptor = trackKindRegistry.get(track.kind);
+  const label = descriptor?.label ?? track.kind[0].toUpperCase();
+  ```
+
+**確認方法:**
+- タイムラインの見た目が完全に同一であること
+- 新しいトラック種別をレジストリに追加するとタイムラインに自動で対応すること
+
+### 96: プレビュープレーヤーの描画 Strategy 化
+
+**背景:** `PreviewPlayer.tsx` では `findActiveClip` (30〜44 行目) が `track.kind !== "video"` で video トラックのみをフィルタし、`findActiveTextClips` (46〜57 行目) が `track.kind !== "title"` で title トラックをフィルタしている。また再生ループ内 (224〜254 行目) で `asset.kind === "video"` / `asset.kind === "image"` の分岐がある。新しいトラック/アセット種別追加時にこのファイルを修正する必要がある。
+
+**対象ファイル:**
+- `app/frontend/src/lib/preview-renderer-registry.ts`（新規）
+- `app/frontend/src/components/renderers/VideoClipRenderer.tsx`（新規）
+- `app/frontend/src/components/renderers/ImageClipRenderer.tsx`（新規）
+- `app/frontend/src/components/renderers/TextOverlayRenderer.tsx`（新規）
+- `app/frontend/src/components/renderers/index.ts`（新規: 全レンダラ登録）
+- `app/frontend/src/components/PreviewPlayer.tsx`（リファクタリング）
+
+**変更内容:**
+
+**A. プレビューレンダラインターフェースの定義** (`preview-renderer-registry.ts`)
+
+- [ ] `PreviewLayerRenderer` 型を定義:
+  ```typescript
+  type PreviewRenderContext = {
+    project: Project;
+    currentTimeMs: number;
+    canvasW: number;
+    canvasH: number;
+    canvasScale: number;
+    isPlaying: boolean;
+  };
+
+  type PreviewLayerRenderer = {
+    id: string;
+    zOrder: number;         // 描画レイヤー順（0: 最背面）
+    findActiveContent: (ctx: PreviewRenderContext) => unknown | null;
+    Component: React.ComponentType<{ content: unknown; ctx: PreviewRenderContext }>;
+  };
+  ```
+- [ ] `PreviewRendererRegistry` クラスを実装:
+  - `register(renderer: PreviewLayerRenderer): void`
+  - `all(): PreviewLayerRenderer[]`（zOrder 順でソート）
+
+**B. 既存レンダラの分離**
+
+- [ ] video/image のメディアレンダラを `VideoClipRenderer` / `ImageClipRenderer` として抽出
+- [ ] テキストオーバーレイを `TextOverlayRenderer` として抽出
+- [ ] 各レンダラを `PreviewLayerRenderer` インターフェースに準拠させて登録
+
+**C. PreviewPlayer のリファクタリング**
+
+- [ ] `findActiveClip` / `findActiveTextClips` を各レンダラの `findActiveContent` に移動
+- [ ] レンダリング部分をレジストリからの動的レイヤー合成に変更
+- [ ] 再生ループ内の `asset.kind` 分岐を Strategy の `tick` メソッドに委譲
+
+**D. 再生ティック Strategy**
+
+- [ ] `PlaybackTickStrategy` インターフェースを定義:
+  ```typescript
+  type PlaybackTickStrategy = {
+    assetKind: string;
+    tick: (clip: ActiveClip, deltaMs: number, videoRef: HTMLVideoElement | null) => number; // 新しいタイムライン位置を返す
+  };
+  ```
+- [ ] video / image 用の tick strategy をそれぞれ実装し、レジストリに登録
+- [ ] 再生ループ内の if/else を strategy の dispatch に置換
+
+**確認方法:**
+- プレビュー再生（video, image, text）が完全に同一動作であること
+- 新しいレンダラを `register()` で追加するとプレビューにレイヤーが追加されること
+
+### 97: sequence-ops のトラックルーティング Strategy 化
+
+**背景:** `sequence-ops.ts` の `addClipFromAsset` (10〜14 行目) で `asset.kind === "audio" ? "audio" : "video"` というハードコードでトラックルーティングが行われ、`addTextClip` (163 行目) で `t.kind === "title"` が直書きされている。新しいアセット種別（例: subtitle, effect）を追加すると、このファイルの修正が必要になる。
+
+**対象ファイル:**
+- `app/frontend/src/lib/sequence-ops.ts`
+
+**変更内容:**
+
+**A. トラックルーティングの Strategy 化**
+
+- [ ] `addClipFromAsset` のトラック選択を `AssetKindRegistry.get(asset.kind).defaultTrackKind` で解決:
+  ```typescript
+  const descriptor = assetKindRegistry.get(asset.kind);
+  const trackKind = descriptor?.defaultTrackKind ?? "video";
+  let track = tracks.find((t) => t.kind === trackKind);
+  ```
+- [ ] `addTextClip` のトラック選択を `"title"` 定数ではなく引数で受け取れるようにする（デフォルト値は `"title"`）
+
+**B. クリップデフォルト値の外部化**
+
+- [ ] image アセットのデフォルト duration を `AssetKindDescriptor.defaultDurationMs` から取得:
+  ```typescript
+  const descriptor = assetKindRegistry.get(asset.kind);
+  const durationMs = descriptor?.hasDuration
+    ? (asset.durationMs ?? descriptor.defaultDurationMs ?? DEFAULT_IMAGE_DURATION_MS)
+    : (descriptor?.defaultDurationMs ?? DEFAULT_IMAGE_DURATION_MS);
+  ```
+
+**確認方法:**
+- クリップ追加の動作が完全に同一であること
+- 新しいアセット種別を登録するとその `defaultTrackKind` に自動でルーティングされること
+
+### 98: アセット種別検出のプラグイン化
+
+**背景:** `asset-service.ts` の `detectKind` (11〜16 行目) で拡張子のハードコードリストにより種別判定しており、未知の拡張子はすべて `"image"` にフォールバックする。新しいファイル形式（PSD, SVG, GIF アニメ, FLAC 等）に対応するにはこの関数を修正する必要がある。
+
+**対象ファイル:**
+- `app/backend/src/lib/asset-detector-registry.ts`（新規）
+- `app/backend/src/lib/asset-detectors/extension-detector.ts`（新規）
+- `app/backend/src/lib/asset-detectors/index.ts`（新規: 全ディテクタ登録）
+- `app/backend/src/services/asset-service.ts`（リファクタリング）
+
+**変更内容:**
+
+**A. アセットディテクタインターフェースの定義** (`asset-detector-registry.ts`)
+
+- [ ] `AssetDetector` インターフェースを定義:
+  ```typescript
+  type AssetDetectionContext = {
+    filename: string;
+    extension: string;   // 小文字化済み（例: ".mp4"）
+    filePath?: string;   // ファイルシステムパス（Magic byte 検出用）
+  };
+
+  type AssetDetector = {
+    name: string;
+    priority: number;     // 高い値ほど先に評価（Magic byte > MIME > 拡張子）
+    detect: (ctx: AssetDetectionContext) => string | null;  // AssetKind を返す or null（判定不能）
+  };
+  ```
+- [ ] `AssetDetectorRegistry` クラスを実装:
+  - `register(detector: AssetDetector): void`
+  - `detect(ctx: AssetDetectionContext): string`（priority 順に評価、全て null なら `"image"` フォールバック）
+
+**B. 既存の拡張子判定をディテクタに移行**
+
+- [ ] `extension-detector.ts`: 現在の `detectKind` のロジックを `AssetDetector` として実装
+  - `AssetKindRegistry` の `extensions` フィールドを参照して判定
+- [ ] `asset-service.ts` の `detectKind` を `assetDetectorRegistry.detect()` 呼び出しに置換
+
+**C. 将来の拡張例（コメントで記載）**
+
+- [ ] `magic-byte-detector.ts` の stub をコメントで記載（将来的にファイルヘッダを読んで判定する想定）
+- [ ] `mime-type-detector.ts` の stub をコメントで記載
+
+**確認方法:**
+- アセットインポートの動作が完全に同一であること
+- 新しいディテクタを `register()` で追加するとインポート時に使用されること
+
+### 99: エクスポートのトラック/アセットハンドラ Strategy 化
+
+**背景:** `export-service.ts` の `buildExportArgs` は 300 行超の巨大関数で、video (129 行目) / image (140 行目) / title (159 行目) / audio (192 行目以降) のトラック/アセット種別ごとのロジックが if/else で密結合している。新しいトラック種別（例: subtitle）やアセット種別の追加、フィルタ制御の追加のたびにこの関数全体を理解・修正する必要がある。
+
+**対象ファイル:**
+- `app/backend/src/lib/export-handler-registry.ts`（新規）
+- `app/backend/src/lib/export-handlers/video-clip-handler.ts`（新規）
+- `app/backend/src/lib/export-handlers/image-clip-handler.ts`（新規）
+- `app/backend/src/lib/export-handlers/text-overlay-handler.ts`（新規）
+- `app/backend/src/lib/export-handlers/audio-mix-handler.ts`（新規）
+- `app/backend/src/lib/export-handlers/index.ts`（新規: 全ハンドラ登録）
+- `app/backend/src/services/export-service.ts`（リファクタリング）
+
+**変更内容:**
+
+**A. エクスポートハンドラインターフェースの定義** (`export-handler-registry.ts`)
+
+- [ ] `ExportClipHandler` 型を定義（ビジュアルクリップ用）:
+  ```typescript
+  type ExportBuildContext = {
+    project: Project;
+    preset: ExportPreset;
+    assetsBase: string;
+    inputArgs: string[];
+    filterParts: string[];
+    inputIndex: number;       // 現在の FFmpeg 入力インデックス
+  };
+
+  type ExportClipHandler = {
+    assetKind: string;
+    buildInput: (clip: Clip, asset: Asset, ctx: ExportBuildContext) => void;
+    // inputArgs, filterParts を ctx に push し、inputIndex をインクリメント
+  };
+  ```
+- [ ] `ExportOverlayHandler` 型を定義（テキスト等のオーバーレイ用）:
+  ```typescript
+  type ExportOverlayHandler = {
+    trackKind: string;
+    buildOverlay: (clips: Clip[], ctx: ExportBuildContext, videoOutLabel: string) => string;
+    // filterParts を ctx に push し、新しい videoOut ラベルを返す
+  };
+  ```
+- [ ] `ExportAudioHandler` 型を定義（オーディオミキシング用）:
+  ```typescript
+  type ExportAudioHandler = {
+    trackKind: string;
+    buildAudio: (clips: Clip[], ctx: ExportBuildContext, videoClips: Clip[]) => string;
+    // filterParts を ctx に push し、audioOut ラベルを返す（空文字 = 音声なし）
+  };
+  ```
+- [ ] `ExportHandlerRegistry` を実装:
+  - `registerClipHandler(handler: ExportClipHandler): void`
+  - `registerOverlayHandler(handler: ExportOverlayHandler): void`
+  - `registerAudioHandler(handler: ExportAudioHandler): void`
+
+**B. 既存ロジックのハンドラ分離**
+
+- [ ] `video-clip-handler.ts`: video アセットの FFmpeg 入力・フィルタ構築（現在の 129〜139 行目）を移行
+- [ ] `image-clip-handler.ts`: image アセットの FFmpeg 入力・フィルタ構築（現在の 140〜149 行目）を移行
+- [ ] `text-overlay-handler.ts`: drawtext フィルタ構築（現在の 159〜187 行目）を移行
+- [ ] `audio-mix-handler.ts`: オーディオストリーム結合・BGM ミキシング（現在の 192〜287 行目）を移行
+
+**C. buildExportArgs のリファクタリング**
+
+- [ ] `buildExportArgs` をオーケストレータとしてリファクタリング:
+  1. video トラックのクリップをループし、`clipHandlerRegistry.get(asset.kind).buildInput()` を呼ぶ
+  2. concat フィルタを構築
+  3. overlay ハンドラを順番に適用
+  4. audio ハンドラを適用
+  5. 出力引数を構築
+- [ ] 各ハンドラは独立してテスト可能であること
+
+**確認方法:**
+- `buildExportArgs` のテストが全て変更なく通ること
+- エクスポート結果の映像・音声が完全に同一であること
+
+### 100: プラグインシステムの基盤設計
+
+**背景:** タスク 93〜99 で各レイヤーにレジストリ/Strategy を導入した結果、新しいトラック種別・アセット種別・エディタ・レンダラ・エクスポートハンドラを「register 呼び出しのみ」で追加可能になっている。これらを統合し、将来のプラグイン機構の土台となる `Plugin` インターフェースとプラグインローダを設計する。
+
+**対象ファイル:**
+- `app/shared/src/types/plugin.ts`（新規）
+- `app/frontend/src/lib/plugin-loader.ts`（新規）
+- `app/backend/src/lib/plugin-loader.ts`（新規）
+
+**変更内容:**
+
+**A. Plugin インターフェースの定義** (`plugin.ts`)
+
+- [ ] `Plugin` 型を定義:
+  ```typescript
+  type PluginManifest = {
+    id: string;
+    name: string;
+    version: string;
+    description?: string;
+  };
+
+  type FrontendPlugin = PluginManifest & {
+    registerTrackKinds?: (registry: TrackKindRegistry) => void;
+    registerInspectorEditors?: (registry: InspectorEditorRegistry) => void;
+    registerPreviewRenderers?: (registry: PreviewRendererRegistry) => void;
+  };
+
+  type BackendPlugin = PluginManifest & {
+    registerAssetKinds?: (registry: AssetKindRegistry) => void;
+    registerAssetDetectors?: (registry: AssetDetectorRegistry) => void;
+    registerPipelineSteps?: (registry: PipelineStepRegistry) => void;
+    registerExportHandlers?: (registry: ExportHandlerRegistry) => void;
+  };
+  ```
+
+**B. プラグインローダの実装**
+
+- [ ] フロントエンド用 `loadPlugins(plugins: FrontendPlugin[]): void`
+  - 各プラグインの `register*` メソッドを順番に呼び出し、各レジストリに登録
+- [ ] バックエンド用 `loadPlugins(plugins: BackendPlugin[]): void`
+  - 同様にバックエンドの各レジストリにプラグインを登録
+
+**C. ビルトインプラグインとしてデフォルト種別を登録**
+
+- [ ] 現在の video/audio/title/image の登録コードを `builtin-plugin.ts` にまとめる
+  - フロントエンド: TrackKind 登録、Inspector エディタ登録、プレビューレンダラ登録
+  - バックエンド: AssetKind 登録、ディテクタ登録、パイプラインステップ登録、エクスポートハンドラ登録
+- [ ] アプリ起動時に `loadPlugins([builtinPlugin])` を呼び出し
+
+**確認方法:**
+- アプリの動作が完全に同一であること
+- サードパーティプラグインの追加が `loadPlugins([builtinPlugin, myPlugin])` のみで可能な構造であること
+
+### 101: リファクタリング全体のテスト・Story 更新
+
+**背景:** タスク 93〜99 のリファクタリングに伴い、既存テストの更新と新しいレジストリ・Strategy のユニットテストを追加する。
+
+**対象ファイル:**
+- `app/frontend/src/lib/track-kind-registry.test.ts`（新規）
+- `app/frontend/src/lib/asset-kind-registry.test.ts`（新規）
+- `app/frontend/src/lib/inspector-editor-registry.test.ts`（新規）
+- `app/frontend/src/lib/preview-renderer-registry.test.ts`（新規）
+- `app/backend/src/lib/asset-detector-registry.test.ts`（新規）
+- `app/backend/src/lib/export-handler-registry.test.ts`（新規）
+- `app/frontend/src/components/editors/*.stories.tsx`（新規: 分離された各エディタの Story）
+- 既存テスト・Story の更新（import パス変更等）
+
+**変更内容:**
+
+**A. レジストリのユニットテスト**
+
+- [ ] `track-kind-registry.test.ts`:
+  - デフォルト 3 種別が登録されていること
+  - `register` で新しい種別が追加できること
+  - `get` で未登録の種別は `undefined` を返すこと
+- [ ] `asset-kind-registry.test.ts`:
+  - `detectByExtension` が正しい種別を返すこと
+  - 未知の拡張子は `undefined` を返すこと
+- [ ] `inspector-editor-registry.test.ts`:
+  - `getEditorsFor` が `canHandle` でフィルタされること
+  - `order` 順でソートされること
+- [ ] `preview-renderer-registry.test.ts`:
+  - `all()` が `zOrder` 順で返すこと
+- [ ] `asset-detector-registry.test.ts`:
+  - `priority` 順に評価されること
+  - 全ディテクタが null を返した場合のフォールバック
+- [ ] `export-handler-registry.test.ts`:
+  - 各ハンドラが正しい FFmpeg フィルタを生成すること
+  - 複数ハンドラの合成が正しく動作すること
+
+**B. 分離されたエディタの Story**
+
+- [ ] `TrimEditor.stories.tsx`: video / audio / title クリップそれぞれの Story
+- [ ] `TextEditor.stories.tsx`: テキスト編集の Story
+- [ ] `TransformEditor.stories.tsx`: Transform + Crop 編集の Story
+- [ ] `AudioVolumeEditor.stories.tsx`: 音量スライダーの Story
+
+**C. 既存テストの更新**
+
+- [ ] import パスの変更に伴う既存テストファイルの修正
+- [ ] `buildExportArgs` テストが新しい内部構造でも同一の結果を返すことを確認
+- [ ] `sequence-ops` テストが同一の結果を返すことを確認
+
+**確認方法:** `bun run test` と `cd app/frontend && bun run storybook` で全テスト・Story が正常動作すること
