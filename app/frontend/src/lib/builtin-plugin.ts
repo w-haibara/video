@@ -10,6 +10,7 @@ import { TrimEditor } from "../components/editors/TrimEditor";
 import { TextEditor } from "../components/editors/TextEditor";
 import { TransformEditor } from "../components/editors/TransformEditor";
 import { AudioVolumeEditor } from "../components/editors/AudioVolumeEditor";
+import { BlendModeEditor } from "../components/editors/BlendModeEditor";
 import { videoClipRenderer } from "../components/renderers/VideoClipRenderer";
 import { imageClipRenderer } from "../components/renderers/ImageClipRenderer";
 import { textOverlayRenderer } from "../components/renderers/TextOverlayRenderer";
@@ -104,8 +105,15 @@ export const builtinPlugin: FrontendPlugin = {
       id: "transform",
       label: "Transform",
       order: 20,
-      canHandle: (ctx) => ctx.clipKind === "video",
+      canHandle: (ctx) => ctx.clipKind === "video" || ctx.clipKind === "image",
       Component: TransformEditor,
+    });
+    registry.register({
+      id: "blend-mode",
+      label: "Blend Mode",
+      order: 25,
+      canHandle: (ctx) => ctx.clipKind === "video" || ctx.clipKind === "image",
+      Component: BlendModeEditor,
     });
     registry.register({
       id: "audio-volume",

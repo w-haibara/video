@@ -100,6 +100,7 @@ const imageAsset = mockAsset({
 
 const imageClip = mockClip({
   id: "clip-image",
+  clipKind: "image",
   assetId: "asset-image",
   durationMs: 5000,
   outMs: 5000,
@@ -141,4 +142,12 @@ AudioClip.test("shows volume slider for audio clip", async ({ canvas }) => {
 
 TextClip.test("shows text editor for text clip", async ({ canvas }) => {
   await canvas.findByRole("textbox");
+});
+
+VideoClip.test("shows blend mode editor for video clip", async ({ canvas }) => {
+  await canvas.findByText(/Blend Mode/);
+});
+
+ImageClip.test("shows blend mode editor for image clip", async ({ canvas }) => {
+  await canvas.findByText(/Blend Mode/);
 });
