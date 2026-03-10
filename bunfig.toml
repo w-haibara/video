@@ -1,0 +1,5 @@
+[test]
+preload = [
+  "./app/backend/src/test-setup.ts",
+  "./app/frontend/src/test-setup.ts",
+]

@@ -6,7 +6,6 @@ import { assetsDir, exportDir } from "../utils/paths";
 import * as jobQueue from "./job-queue";
 import * as projectService from "./project-service";
 import { exportHandlerRegistry } from "../lib/export-handler-registry";
-import "../lib/export-handlers/index";
 
 export function sanitizeColor(value: string): string {
   // Allow hex (#rgb, #rrggbb, #rrggbbaa), named colors, and color@opacity

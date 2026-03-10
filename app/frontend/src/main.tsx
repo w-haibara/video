@@ -4,6 +4,10 @@ import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
 import "./index.css";
+import { loadPlugins } from "./lib/plugin-loader";
+import { builtinPlugin } from "./lib/builtin-plugin";
+
+loadPlugins([builtinPlugin]);
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -2,6 +2,7 @@
 export type { Asset, AssetKind, BuiltinAssetKind } from "./types/asset";
 export type { Project, ProjectSettings, Sequence, Track, BuiltinTrackKind, Clip, ClipText, ClipTransform, ClipCrop, ExportPreset } from "./types/project";
 export type { Job, JobStatus } from "./types/job";
+export type { PluginManifest } from "./types/plugin";
 export type {
   CreateProjectRequest,
   CreateProjectResponse,

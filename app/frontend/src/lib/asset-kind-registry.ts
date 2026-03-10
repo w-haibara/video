@@ -1,5 +1,3 @@
-import { DEFAULT_IMAGE_DURATION_MS } from "@video/shared";
-
 export type AssetKindDescriptor = {
   kind: string;
   label: string;
@@ -35,32 +33,3 @@ export class AssetKindRegistry {
 }
 
 export const assetKindRegistry = new AssetKindRegistry();
-
-// Register built-in asset kinds
-assetKindRegistry.register({
-  kind: "video",
-  label: "Video",
-  extensions: [".mp4", ".mov", ".avi", ".mkv", ".webm"],
-  mimePatterns: ["video/*"],
-  defaultTrackKind: "video",
-  hasDuration: true,
-});
-
-assetKindRegistry.register({
-  kind: "image",
-  label: "Image",
-  extensions: [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".heic", ".tiff", ".svg"],
-  mimePatterns: ["image/*"],
-  defaultTrackKind: "video",
-  hasDuration: false,
-  defaultDurationMs: DEFAULT_IMAGE_DURATION_MS,
-});
-
-assetKindRegistry.register({
-  kind: "audio",
-  label: "Audio",
-  extensions: [".mp3", ".wav", ".aac", ".m4a", ".ogg", ".flac"],
-  mimePatterns: ["audio/*"],
-  defaultTrackKind: "audio",
-  hasDuration: true,
-});

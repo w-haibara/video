@@ -3,7 +3,6 @@ import type { Project, Clip, Asset } from "@video/shared";
 import { theme, inputStyle, sectionHeadingStyle } from "../theme";
 import { trackKindRegistry } from "../lib/track-kind-registry";
 import { inspectorEditorRegistry } from "../lib/inspector-editor-registry";
-import "./editors/index";
 
 type Props = {
   project: Project;

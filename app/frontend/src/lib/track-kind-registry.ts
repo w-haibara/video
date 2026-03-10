@@ -1,5 +1,3 @@
-import { theme } from "../theme";
-
 export type TrackKindDescriptor = {
   kind: string;
   label: string;
@@ -26,31 +24,3 @@ export class TrackKindRegistry {
 }
 
 export const trackKindRegistry = new TrackKindRegistry();
-
-// Register built-in track kinds
-trackKindRegistry.register({
-  kind: "video",
-  label: "V",
-  clipColor: theme.clipVideo,
-  clipSelectedColor: theme.clipVideoSelect,
-  hasSourceTrim: true,
-  hasAsset: true,
-});
-
-trackKindRegistry.register({
-  kind: "audio",
-  label: "A",
-  clipColor: theme.clipAudio,
-  clipSelectedColor: theme.clipAudioSelect,
-  hasSourceTrim: true,
-  hasAsset: true,
-});
-
-trackKindRegistry.register({
-  kind: "title",
-  label: "T",
-  clipColor: theme.clipText,
-  clipSelectedColor: theme.clipTextSelect,
-  hasSourceTrim: false,
-  hasAsset: false,
-});

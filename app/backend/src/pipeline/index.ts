@@ -1,7 +1,3 @@
-// Register all steps and pipeline definitions (side effects)
-import "./steps";
-import "./definitions";
-
 // Re-export public API
 export { runPipeline } from "./runner";
 export type { ProgressReporter } from "./runner";

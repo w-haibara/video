@@ -8,7 +8,6 @@ import { enqueue } from "./job-queue";
 import path from "node:path";
 import { mkdir, rm } from "node:fs/promises";
 import { assetDetectorRegistry } from "../lib/asset-detector-registry";
-import "../lib/asset-detectors/index";
 
 export function createImportTask(
   projectId: string,

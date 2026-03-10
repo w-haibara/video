@@ -2,6 +2,10 @@ import { app } from "./app";
 import { ffmpegTool } from "./pipeline/tools/ffmpeg";
 import { mkdir } from "node:fs/promises";
 import { getWorkspaceRoot } from "./utils/paths";
+import { loadPlugins } from "./lib/plugin-loader";
+import { builtinPlugin } from "./lib/builtin-plugin";
+
+loadPlugins([builtinPlugin]);
 
 try {
   await ffmpegTool.checkInstalled();

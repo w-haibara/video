@@ -3,7 +3,6 @@ import type { Project, Clip, Asset } from "@video/shared";
 import { theme, buttonStyle } from "../theme";
 import { previewRendererRegistry } from "../lib/preview-renderer-registry";
 import type { ActiveClip, PreviewRenderContext } from "../lib/preview-renderer-registry";
-import "./renderers/index";
 
 type Props = {
   project: Project;
