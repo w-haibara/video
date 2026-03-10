@@ -105,7 +105,7 @@
 | 99 | エクスポートのトラック/アセットハンドラ Strategy 化 | [x] Done | 93 |
 | 100 | プラグインシステムの基盤設計 | [x] Done | 93, 94, 95, 96, 97, 98, 99 |
 | 101 | リファクタリング全体のテスト・Story 更新 | [x] Done | 94, 95, 96, 97, 98, 99 |
-| 102 | エクスポートへの clip.transform.rotation 反映 | [ ] Todo | 15, 19, 99 |
+| 102 | エクスポートへの clip.transform.rotation 反映 | [x] Done | 15, 19, 99 |
 | 103 | Rotation UI の改善: 自由入力 + 回転ボタン | [ ] Todo | 19, 102 |
 | 104 | Rotation 改善のテスト・Story 更新 | [ ] Todo | 102, 103 |
 
@@ -3024,25 +3024,25 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. `buildTransformFilter` に回転フィルタを追加**
 
-- [ ] `clip.transform.rotation` を取得し、0 以外の場合に FFmpeg フィルタを生成する
-- [ ] FFmpeg の `rotate` フィルタを使用してラジアン単位で角度を指定する:
+- [x] `clip.transform.rotation` を取得し、0 以外の場合に FFmpeg フィルタを生成する
+- [x] FFmpeg の `rotate` フィルタを使用してラジアン単位で角度を指定する:
   ```
   rotate=<angle_in_radians>:ow=rotw(<angle_in_radians>):oh=roth(<angle_in_radians>):c=black
   ```
   - `rotate` フィルタは入力をラジアン単位で受け取るため `rotation * PI / 180` に変換する
   - `ow=rotw(a):oh=roth(a)` で回転後のバウンディングボックスにフィット
   - `c=black` で回転で生じた余白を黒埋め
-- [ ] 回転後にキャンバスサイズへのリサイズ（pad + crop）を適用する:
+- [x] 回転後にキャンバスサイズへのリサイズ（pad + crop）を適用する:
   ```
   pad=w='max(iw,<width>)':h='max(ih,<height>)':x=(ow-iw)/2:y=(oh-ih)/2:color=black,
   crop=<width>:<height>:(iw-<width>)/2:(ih-<height>)/2
   ```
-- [ ] 回転は scale/translate より先に適用する（既存の scale → translate の順序の前に rotate を挿入）
-- [ ] `rotation === 0` の場合はフィルタを追加しない（既存動作を維持）
+- [x] 回転は scale/translate より先に適用する（既存の scale → translate の順序の前に rotate を挿入）
+- [x] `rotation === 0` の場合はフィルタを追加しない（既存動作を維持）
 
 **B. 早期リターン条件の更新**
 
-- [ ] 現在の早期リターン条件 `tx === 0 && ty === 0 && scale === 1` に `rotation === 0` を追加する:
+- [x] 現在の早期リターン条件 `tx === 0 && ty === 0 && scale === 1` に `rotation === 0` を追加する:
   ```typescript
   const rotation = clip.transform?.rotation ?? 0;
   if (tx === 0 && ty === 0 && scale === 1 && rotation === 0) return "";
