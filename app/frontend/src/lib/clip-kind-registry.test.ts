@@ -3,12 +3,13 @@ import { ClipKindRegistry } from "./clip-kind-registry";
 import { clipKindRegistry } from "./clip-kind-registry";
 
 describe("ClipKindRegistry", () => {
-  test("builtin plugin registers 3 default kinds", () => {
+  test("builtin plugin registers 4 default kinds", () => {
     const all = clipKindRegistry.all();
-    expect(all.length).toBe(3);
+    expect(all.length).toBe(4);
     const kinds = all.map((d) => d.kind);
     expect(kinds).toContain("video");
     expect(kinds).toContain("audio");
+    expect(kinds).toContain("image");
     expect(kinds).toContain("title");
   });
 

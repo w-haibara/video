@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import type { Project, ProjectSettings } from "@video/shared";
+import { generateId } from "@video/shared";
 import { useProject, useUpdateProject } from "../api/projects";
 import { useExport } from "../api/exports";
 import { useJob } from "../api/jobs";
@@ -118,6 +119,30 @@ function EditorPageLoaded({
     const clamped = clampClipsToDuration(sequence, settings.durationMs);
     pushState(clamped);
   }, [updateProjectMutation, sequence, pushState]);
+
+  // Derive selected track from selected clip
+  const selectedTrackId = selectedClipId
+    ? sequence.tracks.find((t) => t.clips.some((c) => c.id === selectedClipId))?.id ?? null
+    : null;
+
+  const handleAddTrack = useCallback(() => {
+    const newTrack = { id: generateId(), clips: [] };
+    pushState({ ...sequence, tracks: [...sequence.tracks, newTrack] });
+  }, [sequence, pushState]);
+
+  const handleAddClipFromAsset = useCallback(
+    (asset: Parameters<typeof addClipFromAsset>[0]) => {
+      addClipFromAsset(asset, selectedTrackId ?? undefined);
+    },
+    [addClipFromAsset, selectedTrackId],
+  );
+
+  const handleAddTextClip = useCallback(
+    (startMs: number, durationMs: number, text: Parameters<typeof addTextClip>[2]) => {
+      addTextClip(startMs, durationMs, text, selectedTrackId ?? undefined);
+    },
+    [addTextClip, selectedTrackId],
+  );
 
   const currentProject: Project = { ...project, sequence };
 
@@ -242,12 +267,12 @@ function EditorPageLoaded({
               <div>
                 <AssetPanel
                   project={currentProject}
-                  onAddToTimeline={addClipFromAsset}
+                  onAddToTimeline={handleAddClipFromAsset}
                 />
                 <div style={{ padding: "8px", borderTop: `1px solid ${theme.border}`, marginTop: "8px" }}>
                   <button
                     onClick={() => {
-                      addTextClip(currentTimeMs, 3000, {
+                      handleAddTextClip(currentTimeMs, 3000, {
                         value: "Text",
                         fontSize: 48,
                         color: theme.white,
@@ -326,6 +351,7 @@ function EditorPageLoaded({
           onDeleteClip={handleDeleteClip}
           onMoveClip={moveClip}
           onTrimClip={trimClip}
+          onAddTrack={handleAddTrack}
         />
       }
     />

@@ -18,6 +18,13 @@ type Props = {
 
 const TRIM_HANDLE_WIDTH = 6;
 
+const CLIP_KIND_ICONS: Record<string, string> = {
+  video: "\u{1F3AC}",
+  image: "\u{1F5BC}",
+  title: "\u{1F524}",
+  audio: "\u{1F3B5}",
+};
+
 export function TimelineClip({
   clip,
   asset,
@@ -40,8 +47,8 @@ export function TimelineClip({
       : "clip";
 
   const descriptor = clipKindRegistry.get(clip.clipKind);
-  const bgColor = isSelected ? (descriptor?.clipColor ?? theme.clipVideo) : (descriptor?.clipSelectedColor ?? theme.clipVideoSelect);
-  const borderColor = isSelected ? theme.text : (descriptor?.clipSelectedColor ?? theme.clipVideoSelect);
+  const bgColor = isSelected ? (descriptor?.clipSelectedColor ?? theme.clipVideoSelect) : (descriptor?.clipColor ?? theme.clipVideo);
+  const borderColor = isSelected ? theme.text : (descriptor?.clipColor ?? theme.clipVideo);
   const dragRef = useRef<{ startX: number; startMs: number } | null>(null);
   const trimRef = useRef<{ startX: number; side: "left" | "right" } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -171,7 +178,7 @@ export function TimelineClip({
           pointerEvents: "none",
         }}
       >
-        {label}
+        {CLIP_KIND_ICONS[clip.clipKind] ?? ""}{" "}{label}
       </span>
 
       {/* Right trim handle */}

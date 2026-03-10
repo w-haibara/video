@@ -40,6 +40,14 @@ export const builtinPlugin: FrontendPlugin = {
       hasAsset: true,
     });
     registry.register({
+      kind: "image",
+      label: "I",
+      clipColor: theme.clipImage,
+      clipSelectedColor: theme.clipImageSelect,
+      hasSourceTrim: false,
+      hasAsset: true,
+    });
+    registry.register({
       kind: "title",
       label: "T",
       clipColor: theme.clipText,

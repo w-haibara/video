@@ -16,6 +16,7 @@ type Props = {
   onDeleteClip?: (clipId: string) => void;
   onMoveClip?: (clipId: string, newStartMs: number) => void;
   onTrimClip?: (clipId: string, side: "left" | "right", deltaMs: number) => void;
+  onAddTrack?: () => void;
 };
 
 function getTimelineDuration(project: Project): number {
@@ -31,6 +32,7 @@ export function Timeline({
   onDeleteClip,
   onMoveClip,
   onTrimClip,
+  onAddTrack,
 }: Props) {
   const { msToPx, pxToMs, zoomIn, zoomOut } = useTimelineZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -169,6 +171,23 @@ export function Timeline({
         <span style={{ color: theme.textMuted, fontSize: "11px", marginLeft: "8px" }}>
           {formatTime(currentTimeMs)}
         </span>
+        {onAddTrack && (
+          <button
+            onClick={onAddTrack}
+            style={{
+              background: "none",
+              border: `1px solid ${theme.border}`,
+              color: theme.text,
+              padding: "2px 8px",
+              cursor: "pointer",
+              borderRadius: "3px",
+              fontSize: "12px",
+              marginLeft: "auto",
+            }}
+          >
+            + Add Layer
+          </button>
+        )}
       </div>
 
       {/* Scrollable area */}

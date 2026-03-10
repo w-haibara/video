@@ -31,6 +31,8 @@ export const theme = {
   clipAudioSelect: '#738501',  // audio 選択時
   clipText:        '#DF69BA',  // text クリップ (Magenta)
   clipTextSelect:  '#C050A0',  // text 選択時
+  clipImage:       '#E69875',  // image クリップ (Orange)
+  clipImageSelect: '#C47F60',  // image 選択時
 
   // ── UI 部品 ──
   tabActive:       '#FDF6E3',  // アクティブタブ背景

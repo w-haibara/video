@@ -10,8 +10,8 @@ export function useProjectEditor(
   const maxDurationMs = project.settings.durationMs;
 
   const addClipFromAsset = useCallback(
-    (asset: Asset) => {
-      pushState(SeqOps.addClipFromAsset(sequence, asset, maxDurationMs));
+    (asset: Asset, targetTrackId?: string) => {
+      pushState(SeqOps.addClipFromAsset(sequence, asset, maxDurationMs, targetTrackId));
     },
     [sequence, pushState, maxDurationMs],
   );
@@ -51,8 +51,8 @@ export function useProjectEditor(
   );
 
   const addTextClip = useCallback(
-    (startMs: number, durationMs: number, text: ClipText) => {
-      pushState(SeqOps.addTextClip(sequence, startMs, durationMs, text, maxDurationMs));
+    (startMs: number, durationMs: number, text: ClipText, targetTrackId?: string) => {
+      pushState(SeqOps.addTextClip(sequence, startMs, durationMs, text, maxDurationMs, targetTrackId));
     },
     [sequence, pushState, maxDurationMs],
   );

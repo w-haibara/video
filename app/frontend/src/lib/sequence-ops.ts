@@ -6,11 +6,18 @@ export function addClipFromAsset(
   sequence: Sequence,
   asset: Asset,
   maxDurationMs?: number,
+  targetTrackId?: string,
 ): Sequence {
   const tracks = sequence.tracks.map((t: Track) => ({ ...t, clips: [...t.clips] }));
   const descriptor = assetKindRegistry.get(asset.kind);
   const trackKind = descriptor?.defaultTrackKind ?? "video";
-  let track = tracks.find((t: Track) => inferTrackKind(t) === trackKind);
+  let track: Track | undefined;
+  if (targetTrackId) {
+    track = tracks.find((t: Track) => t.id === targetTrackId);
+  }
+  if (!track) {
+    track = tracks.find((t: Track) => inferTrackKind(t) === trackKind);
+  }
   if (!track) {
     track = { id: generateId(), clips: [] };
     tracks.push(track);
@@ -151,7 +158,7 @@ export function addTextClip(
   durationMs: number,
   text: ClipText,
   maxDurationMs?: number,
-  trackKind: string = "title",
+  targetTrackId?: string,
 ): Sequence {
   // Reject if start is beyond the limit
   if (maxDurationMs != null && startMs >= maxDurationMs) {
@@ -165,7 +172,13 @@ export function addTextClip(
   }
 
   const tracks = sequence.tracks.map((t: Track) => ({ ...t, clips: [...t.clips] }));
-  let track = tracks.find((t: Track) => inferTrackKind(t) === trackKind);
+  let track: Track | undefined;
+  if (targetTrackId) {
+    track = tracks.find((t: Track) => t.id === targetTrackId);
+  }
+  if (!track) {
+    track = tracks.find((t: Track) => inferTrackKind(t) === "title");
+  }
   if (!track) {
     track = { id: generateId(), clips: [] };
     tracks.push(track);
@@ -173,7 +186,7 @@ export function addTextClip(
 
   const clip: Clip = {
     id: generateId(),
-    clipKind: trackKind,
+    clipKind: "title",
     assetId: "",
     startMs,
     durationMs: clampedDuration,
