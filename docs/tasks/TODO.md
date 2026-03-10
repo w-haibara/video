@@ -102,7 +102,7 @@
 | 96 | プレビュープレーヤーの描画 Strategy 化 | [x] Done | 93 |
 | 97 | sequence-ops のトラックルーティング Strategy 化 | [x] Done | 93 |
 | 98 | アセット種別検出のプラグイン化 | [x] Done | 93 |
-| 99 | エクスポートのトラック/アセットハンドラ Strategy 化 | [ ] Pending | 93 |
+| 99 | エクスポートのトラック/アセットハンドラ Strategy 化 | [x] Done | 93 |
 | 100 | プラグインシステムの基盤設計 | [ ] Pending | 93, 94, 95, 96, 97, 98, 99 |
 | 101 | リファクタリング全体のテスト・Story 更新 | [ ] Pending | 94, 95, 96, 97, 98, 99 |
 
@@ -2845,7 +2845,7 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. エクスポートハンドラインターフェースの定義** (`export-handler-registry.ts`)
 
-- [ ] `ExportClipHandler` 型を定義（ビジュアルクリップ用）:
+- [x] `ExportClipHandler` 型を定義（ビジュアルクリップ用）:
   ```typescript
   type ExportBuildContext = {
     project: Project;
@@ -2862,7 +2862,7 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
     // inputArgs, filterParts を ctx に push し、inputIndex をインクリメント
   };
   ```
-- [ ] `ExportOverlayHandler` 型を定義（テキスト等のオーバーレイ用）:
+- [x] `ExportOverlayHandler` 型を定義（テキスト等のオーバーレイ用）:
   ```typescript
   type ExportOverlayHandler = {
     trackKind: string;
@@ -2870,7 +2870,7 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
     // filterParts を ctx に push し、新しい videoOut ラベルを返す
   };
   ```
-- [ ] `ExportAudioHandler` 型を定義（オーディオミキシング用）:
+- [x] `ExportAudioHandler` 型を定義（オーディオミキシング用）:
   ```typescript
   type ExportAudioHandler = {
     trackKind: string;
@@ -2878,27 +2878,27 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
     // filterParts を ctx に push し、audioOut ラベルを返す（空文字 = 音声なし）
   };
   ```
-- [ ] `ExportHandlerRegistry` を実装:
+- [x] `ExportHandlerRegistry` を実装:
   - `registerClipHandler(handler: ExportClipHandler): void`
   - `registerOverlayHandler(handler: ExportOverlayHandler): void`
   - `registerAudioHandler(handler: ExportAudioHandler): void`
 
 **B. 既存ロジックのハンドラ分離**
 
-- [ ] `video-clip-handler.ts`: video アセットの FFmpeg 入力・フィルタ構築（現在の 129〜139 行目）を移行
-- [ ] `image-clip-handler.ts`: image アセットの FFmpeg 入力・フィルタ構築（現在の 140〜149 行目）を移行
-- [ ] `text-overlay-handler.ts`: drawtext フィルタ構築（現在の 159〜187 行目）を移行
-- [ ] `audio-mix-handler.ts`: オーディオストリーム結合・BGM ミキシング（現在の 192〜287 行目）を移行
+- [x] `video-clip-handler.ts`: video アセットの FFmpeg 入力・フィルタ構築（現在の 129〜139 行目）を移行
+- [x] `image-clip-handler.ts`: image アセットの FFmpeg 入力・フィルタ構築（現在の 140〜149 行目）を移行
+- [x] `text-overlay-handler.ts`: drawtext フィルタ構築（現在の 159〜187 行目）を移行
+- [x] `audio-mix-handler.ts`: オーディオストリーム結合・BGM ミキシング（現在の 192〜287 行目）を移行
 
 **C. buildExportArgs のリファクタリング**
 
-- [ ] `buildExportArgs` をオーケストレータとしてリファクタリング:
+- [x] `buildExportArgs` をオーケストレータとしてリファクタリング:
   1. video トラックのクリップをループし、`clipHandlerRegistry.get(asset.kind).buildInput()` を呼ぶ
   2. concat フィルタを構築
   3. overlay ハンドラを順番に適用
   4. audio ハンドラを適用
   5. 出力引数を構築
-- [ ] 各ハンドラは独立してテスト可能であること
+- [x] 各ハンドラは独立してテスト可能であること
 
 **確認方法:**
 - `buildExportArgs` のテストが全て変更なく通ること
