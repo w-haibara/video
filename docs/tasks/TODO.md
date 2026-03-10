@@ -123,7 +123,7 @@
 | 117 | クリップのトラック間ドラッグ移動 UI | [x] Done | 116 |
 | 118 | Add Layer ボタンの移動 — ツールバーからトラックヘッダー「+」行へ | [x] Done | 09 |
 | 119 | トラックヘッダー右クリックメニュー + 確認ダイアログ付きトラック削除 | [x] Done | 116, 118 |
-| 120 | トラック操作改善のテスト・Story 更新 | [ ] Todo | 116, 117, 118, 119 |
+| 120 | トラック操作改善のテスト・Story 更新 | [x] Done | 116, 117, 118, 119 |
 
 ## Phase 1 Tasks
 
@@ -3716,25 +3716,25 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. sequence-ops のテスト追加**
 
-- [ ] `moveClip` に `targetTrackId` を指定してトラック間移動するテスト
-- [ ] 移動先トラックでの重なり防止テスト
-- [ ] 元トラックが空になった場合の自動削除テスト
-- [ ] `removeTrack` の正常削除テスト
-- [ ] `removeTrack` で存在しないトラック ID を指定した場合のテスト
+- [x] `moveClip` に `targetTrackId` を指定してトラック間移動するテスト
+- [x] 移動先トラックでの重なり防止テスト
+- [x] 元トラックが空になった場合の自動削除テスト
+- [x] `removeTrack` の正常削除テスト
+- [x] `removeTrack` で存在しないトラック ID を指定した場合のテスト
 
 **B. Timeline Story の更新**
 
-- [ ] クリップのトラック間ドラッグ移動を確認できる Story の追加
-- [ ] トラック末尾の「+」ボタン表示を確認する Story の追加
-- [ ] トラックヘッダー右クリックメニュー表示を確認する Story の追加
+- [x] クリップのトラック間ドラッグ移動を確認できる Story の追加
+- [x] トラック末尾の「+」ボタン表示を確認する Story の追加
+- [x] トラックヘッダー右クリックメニュー表示を確認する Story の追加
 
 **C. ConfirmDialog の Story 追加**
 
-- [ ] ConfirmDialog の基本表示 Story
-- [ ] ConfirmDialog の操作確認 Story（OK / キャンセル）
+- [x] ConfirmDialog の基本表示 Story
+- [x] ConfirmDialog の操作確認 Story（OK / キャンセル）
 
 **D. TimelineTrack Story の更新**
 
-- [ ] トラックヘッダーの右クリックメニュー対応 Story の追加
+- [x] トラックヘッダーの右クリックメニュー対応 Story の追加
 
 **確認方法:** `bun run test` で全テストが通ること。`cd app/frontend && bun run storybook` で全 Story が正常表示されること。
