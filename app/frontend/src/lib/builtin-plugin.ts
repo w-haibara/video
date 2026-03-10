@@ -1,6 +1,6 @@
 import { DEFAULT_IMAGE_DURATION_MS } from "@video/shared";
 import type { FrontendPlugin } from "./plugin-loader";
-import type { TrackKindRegistry } from "./track-kind-registry";
+import type { ClipKindRegistry } from "./clip-kind-registry";
 import type { AssetKindRegistry } from "./asset-kind-registry";
 import type { InspectorEditorRegistry } from "./inspector-editor-registry";
 import type { PreviewRendererRegistry } from "./preview-renderer-registry";
@@ -22,7 +22,7 @@ export const builtinPlugin: FrontendPlugin = {
   version: "1.0.0",
   description: "Default video/audio/image/title support",
 
-  registerTrackKinds(registry: TrackKindRegistry) {
+  registerClipKinds(registry: ClipKindRegistry) {
     registry.register({
       kind: "video",
       label: "V",
@@ -89,21 +89,21 @@ export const builtinPlugin: FrontendPlugin = {
       id: "text",
       label: "Text",
       order: 10,
-      canHandle: (ctx) => ctx.trackKind === "title",
+      canHandle: (ctx) => ctx.clipKind === "title",
       Component: TextEditor,
     });
     registry.register({
       id: "transform",
       label: "Transform",
       order: 20,
-      canHandle: (ctx) => ctx.trackKind === "video",
+      canHandle: (ctx) => ctx.clipKind === "video",
       Component: TransformEditor,
     });
     registry.register({
       id: "audio-volume",
       label: "Volume",
       order: 30,
-      canHandle: (ctx) => ctx.trackKind === "audio",
+      canHandle: (ctx) => ctx.clipKind === "audio",
       Component: AudioVolumeEditor,
     });
   },

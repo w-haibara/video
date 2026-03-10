@@ -3,7 +3,7 @@ import type { Clip, Asset } from "@video/shared";
 export type InspectorEditorContext = {
   clip: Clip;
   asset: Asset | undefined;
-  trackKind: string;
+  clipKind: string;
   onUpdate: (updates: Partial<Clip>) => void;
 };
 

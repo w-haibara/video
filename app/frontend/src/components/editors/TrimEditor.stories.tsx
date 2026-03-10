@@ -15,7 +15,7 @@ export const VideoClip = meta.story({
   args: {
     clip: mockClip({ durationMs: 5000, inMs: 1000, outMs: 6000 }),
     asset: mockAsset({ kind: "video", durationMs: 10000 }),
-    trackKind: "video",
+    clipKind: "video",
   },
 });
 
@@ -23,6 +23,7 @@ export const AudioClip = meta.story({
   args: {
     clip: mockClip({
       id: "clip-audio",
+      clipKind: "audio",
       assetId: "asset-audio",
       durationMs: 8000,
       inMs: 0,
@@ -34,7 +35,7 @@ export const AudioClip = meta.story({
       originalPath: "/audio/track.mp3",
       durationMs: 15000,
     }),
-    trackKind: "audio",
+    clipKind: "audio",
   },
 });
 
@@ -42,13 +43,14 @@ export const TitleClip = meta.story({
   args: {
     clip: mockClip({
       id: "clip-title",
+      clipKind: "title",
       assetId: "",
       durationMs: 3000,
       inMs: 0,
       outMs: 3000,
     }),
     asset: undefined,
-    trackKind: "title",
+    clipKind: "title",
   },
 });
 
@@ -56,6 +58,7 @@ export const ImageClip = meta.story({
   args: {
     clip: mockClip({
       id: "clip-image",
+      clipKind: "image",
       assetId: "asset-image",
       durationMs: 5000,
       inMs: 0,
@@ -67,7 +70,7 @@ export const ImageClip = meta.story({
       originalPath: "/images/photo.jpg",
       durationMs: undefined,
     }),
-    trackKind: "video",
+    clipKind: "image",
   },
 });
 

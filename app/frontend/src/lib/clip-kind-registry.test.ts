@@ -1,10 +1,10 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { TrackKindRegistry } from "./track-kind-registry";
-import { trackKindRegistry } from "./track-kind-registry";
+import { ClipKindRegistry } from "./clip-kind-registry";
+import { clipKindRegistry } from "./clip-kind-registry";
 
-describe("TrackKindRegistry", () => {
+describe("ClipKindRegistry", () => {
   test("builtin plugin registers 3 default kinds", () => {
-    const all = trackKindRegistry.all();
+    const all = clipKindRegistry.all();
     expect(all.length).toBe(3);
     const kinds = all.map((d) => d.kind);
     expect(kinds).toContain("video");
@@ -13,23 +13,22 @@ describe("TrackKindRegistry", () => {
   });
 
   test("get returns descriptor for registered kind", () => {
-    const video = trackKindRegistry.get("video");
+    const video = clipKindRegistry.get("video");
     expect(video).toBeDefined();
     expect(video!.kind).toBe("video");
-    expect(video!.label).toBe("V");
     expect(video!.hasSourceTrim).toBe(true);
     expect(video!.hasAsset).toBe(true);
   });
 
   test("get returns undefined for unregistered kind", () => {
-    expect(trackKindRegistry.get("nonexistent")).toBeUndefined();
+    expect(clipKindRegistry.get("nonexistent")).toBeUndefined();
   });
 
   describe("isolated instance", () => {
-    let registry: TrackKindRegistry;
+    let registry: ClipKindRegistry;
 
     beforeEach(() => {
-      registry = new TrackKindRegistry();
+      registry = new ClipKindRegistry();
     });
 
     test("register adds a new kind", () => {

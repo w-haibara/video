@@ -1,17 +1,17 @@
 import type { PluginManifest } from "@video/shared";
-import type { TrackKindRegistry } from "./track-kind-registry";
+import type { ClipKindRegistry } from "./clip-kind-registry";
 import type { AssetKindRegistry } from "./asset-kind-registry";
 import type { InspectorEditorRegistry } from "./inspector-editor-registry";
 import type { PreviewRendererRegistry } from "./preview-renderer-registry";
 import type { CompositeStrategyRegistry } from "./composite-strategy-registry";
-import { trackKindRegistry } from "./track-kind-registry";
+import { clipKindRegistry } from "./clip-kind-registry";
 import { assetKindRegistry } from "./asset-kind-registry";
 import { inspectorEditorRegistry } from "./inspector-editor-registry";
 import { previewRendererRegistry } from "./preview-renderer-registry";
 import { compositeStrategyRegistry } from "./composite-strategy-registry";
 
 export type FrontendPlugin = PluginManifest & {
-  registerTrackKinds?: (registry: TrackKindRegistry) => void;
+  registerClipKinds?: (registry: ClipKindRegistry) => void;
   registerAssetKinds?: (registry: AssetKindRegistry) => void;
   registerInspectorEditors?: (registry: InspectorEditorRegistry) => void;
   registerPreviewRenderers?: (registry: PreviewRendererRegistry) => void;
@@ -20,7 +20,7 @@ export type FrontendPlugin = PluginManifest & {
 
 export function loadPlugins(plugins: FrontendPlugin[]): void {
   for (const plugin of plugins) {
-    plugin.registerTrackKinds?.(trackKindRegistry);
+    plugin.registerClipKinds?.(clipKindRegistry);
     plugin.registerAssetKinds?.(assetKindRegistry);
     plugin.registerInspectorEditors?.(inspectorEditorRegistry);
     plugin.registerPreviewRenderers?.(previewRendererRegistry);

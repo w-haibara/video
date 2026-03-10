@@ -1,12 +1,11 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import type { Clip, Asset } from "@video/shared";
 import { theme } from "../theme";
-import { trackKindRegistry } from "../lib/track-kind-registry";
+import { clipKindRegistry } from "../lib/clip-kind-registry";
 
 type Props = {
   clip: Clip;
   asset: Asset | undefined;
-  trackKind: string;
   msToPx: (ms: number) => number;
   pxToMs: (px: number) => number;
   maxDurationMs: number;
@@ -22,7 +21,6 @@ const TRIM_HANDLE_WIDTH = 6;
 export function TimelineClip({
   clip,
   asset,
-  trackKind,
   msToPx,
   pxToMs,
   maxDurationMs,
@@ -41,7 +39,7 @@ export function TimelineClip({
       ? asset.originalPath.split("/").pop() ?? asset.kind
       : "clip";
 
-  const descriptor = trackKindRegistry.get(trackKind);
+  const descriptor = clipKindRegistry.get(clip.clipKind);
   const bgColor = isSelected ? (descriptor?.clipColor ?? theme.clipVideo) : (descriptor?.clipSelectedColor ?? theme.clipVideoSelect);
   const borderColor = isSelected ? theme.text : (descriptor?.clipSelectedColor ?? theme.clipVideoSelect);
   const dragRef = useRef<{ startX: number; startMs: number } | null>(null);

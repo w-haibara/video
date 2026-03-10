@@ -215,10 +215,11 @@ export function Timeline({
                 No clips yet. Add assets from the panel.
               </div>
             ) : (
-              project.sequence.tracks.map((track: Track) => (
+              project.sequence.tracks.map((track: Track, index: number) => (
                 <TimelineTrack
                   key={track.id}
                   track={track}
+                  trackIndex={index}
                   assets={project.assets}
                   msToPx={msToPx}
                   pxToMs={pxToMs}

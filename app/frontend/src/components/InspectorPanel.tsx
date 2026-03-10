@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Project, Clip, Asset } from "@video/shared";
-import { inferTrackKind } from "@video/shared";
 import { theme, inputStyle, sectionHeadingStyle } from "../theme";
-import { trackKindRegistry } from "../lib/track-kind-registry";
+import { clipKindRegistry } from "../lib/clip-kind-registry";
 import { inspectorEditorRegistry } from "../lib/inspector-editor-registry";
 
 type Props = {
@@ -15,12 +14,12 @@ type Props = {
 function findClipAndAsset(
   project: Project,
   clipId: string,
-): { clip: Clip; asset: Asset | undefined; trackKind: string } | null {
+): { clip: Clip; asset: Asset | undefined } | null {
   for (const track of project.sequence.tracks) {
     const clip = track.clips.find((c: Clip) => c.id === clipId);
     if (clip) {
       const asset = project.assets.find((a: Asset) => a.id === clip.assetId);
-      return { clip, asset, trackKind: inferTrackKind(track) };
+      return { clip, asset };
     }
   }
   return null;
@@ -44,15 +43,15 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveCl
     );
   }
 
-  const { clip, asset, trackKind } = result;
-  const descriptor = trackKindRegistry.get(trackKind);
+  const { clip, asset } = result;
+  const descriptor = clipKindRegistry.get(clip.clipKind);
   const hasAsset = descriptor?.hasAsset ?? true;
   const fileName = asset?.originalPath.split("/").pop() ?? "\u2014";
 
   const editorCtx = {
     clip,
     asset,
-    trackKind,
+    clipKind: clip.clipKind,
     onUpdate: (updates: Partial<Clip>) => onUpdateClip?.(clip.id, updates),
   };
   const editors = inspectorEditorRegistry.getEditorsFor(editorCtx);

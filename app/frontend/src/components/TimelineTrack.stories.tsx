@@ -7,6 +7,7 @@ const meta = preview.meta({
   title: "Components/TimelineTrack",
   component: TimelineTrack,
   args: {
+    trackIndex: 0,
     msToPx: storyMsToPx,
     pxToMs: storyPxToMs,
     totalWidth: 1500,

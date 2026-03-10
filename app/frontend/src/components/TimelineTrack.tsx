@@ -1,11 +1,10 @@
 import type { Track, Asset, Clip } from "@video/shared";
-import { inferTrackKind } from "@video/shared";
 import { TimelineClip } from "./TimelineClip";
 import { theme } from "../theme";
-import { trackKindRegistry } from "../lib/track-kind-registry";
 
 type Props = {
   track: Track;
+  trackIndex: number;
   assets: Asset[];
   msToPx: (ms: number) => number;
   pxToMs: (px: number) => number;
@@ -20,6 +19,7 @@ type Props = {
 
 export function TimelineTrack({
   track,
+  trackIndex,
   assets,
   msToPx,
   pxToMs,
@@ -32,8 +32,6 @@ export function TimelineTrack({
   onContextMenu,
 }: Props) {
   const assetMap = new Map(assets.map((a) => [a.id, a]));
-  const trackKind = inferTrackKind(track);
-  const descriptor = trackKindRegistry.get(trackKind);
 
   return (
     <div style={{ display: "flex", height: "40px" }}>
@@ -52,7 +50,7 @@ export function TimelineTrack({
           userSelect: "none",
         }}
       >
-        {descriptor?.label ?? trackKind[0].toUpperCase()}
+        {trackIndex + 1}
       </div>
       <div
         style={{
@@ -68,7 +66,6 @@ export function TimelineTrack({
             key={clip.id}
             clip={clip}
             asset={assetMap.get(clip.assetId)}
-            trackKind={trackKind}
             msToPx={msToPx}
             pxToMs={pxToMs}
             maxDurationMs={maxDurationMs}

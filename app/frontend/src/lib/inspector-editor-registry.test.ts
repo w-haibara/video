@@ -9,7 +9,7 @@ function makeCtx(overrides: Partial<InspectorEditorContext> = {}): InspectorEdit
   return {
     clip: { id: "c1", assetId: "a1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
     asset: { id: "a1", kind: "video", originalPath: "/test.mp4", durationMs: 10000 },
-    trackKind: "video",
+    clipKind: "video",
     onUpdate: () => {},
     ...overrides,
   };
@@ -101,10 +101,10 @@ describe("InspectorEditorRegistry", () => {
         Component: dummyComponent,
       });
 
-      const ctx = makeCtx({ trackKind: "audio" });
+      const ctx = makeCtx({ clipKind: "audio" });
       registry.getEditorsFor(ctx);
       expect(calls.length).toBe(1);
-      expect(calls[0].trackKind).toBe("audio");
+      expect(calls[0].clipKind).toBe("audio");
     });
   });
 });

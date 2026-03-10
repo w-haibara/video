@@ -12,9 +12,9 @@ function secToMs(sec: string): number {
   return Math.round(parseFloat(sec) * 1000);
 }
 
-export function TrimEditor({ clip, asset, trackKind, onUpdate }: InspectorEditorContext) {
-  const isTextOrImage = trackKind === "title" || asset?.kind === "image";
-  const hasSourceTrim = trackKind !== "title";
+export function TrimEditor({ clip, asset, clipKind, onUpdate }: InspectorEditorContext) {
+  const isTextOrImage = clipKind === "title" || asset?.kind === "image";
+  const hasSourceTrim = clipKind !== "title";
   const maxSourceMs = asset?.durationMs;
 
   const [durationVal, setDurationVal] = useState(msToSec(clip.durationMs));

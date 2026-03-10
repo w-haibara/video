@@ -18,7 +18,7 @@ export const Default = meta.story({
       kind: "audio",
       originalPath: "/audio/track.mp3",
     }),
-    trackKind: "audio",
+    clipKind: "audio",
   },
 });
 
@@ -29,7 +29,7 @@ export const HalfVolume = meta.story({
       kind: "audio",
       originalPath: "/audio/track.mp3",
     }),
-    trackKind: "audio",
+    clipKind: "audio",
   },
 });
 
@@ -40,7 +40,7 @@ export const Muted = meta.story({
       kind: "audio",
       originalPath: "/audio/track.mp3",
     }),
-    trackKind: "audio",
+    clipKind: "audio",
   },
 });
 

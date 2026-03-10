@@ -24,7 +24,7 @@ export const Default = meta.story({
       },
     }),
     asset: undefined,
-    trackKind: "title",
+    clipKind: "title",
   },
 });
 
@@ -36,7 +36,7 @@ export const EmptyText = meta.story({
       text: { value: "" },
     }),
     asset: undefined,
-    trackKind: "title",
+    clipKind: "title",
   },
 });
 
@@ -53,7 +53,7 @@ export const CustomColors = meta.story({
       },
     }),
     asset: undefined,
-    trackKind: "title",
+    clipKind: "title",
   },
 });
 

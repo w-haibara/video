@@ -15,7 +15,7 @@ export const Default = meta.story({
   args: {
     clip: mockClip(),
     asset: mockAsset({ width: 1920, height: 1080 }),
-    trackKind: "video",
+    clipKind: "video",
   },
 });
 
@@ -25,7 +25,7 @@ export const WithTransform = meta.story({
       transform: { x: 50, y: -30, scale: 1.5, rotation: 90 },
     }),
     asset: mockAsset({ width: 1920, height: 1080 }),
-    trackKind: "video",
+    clipKind: "video",
   },
 });
 
@@ -35,7 +35,7 @@ export const WithCrop = meta.story({
       crop: { x: 100, y: 50, width: 800, height: 600 },
     }),
     asset: mockAsset({ width: 1920, height: 1080 }),
-    trackKind: "video",
+    clipKind: "video",
   },
 });
 
@@ -46,7 +46,7 @@ export const WithTransformAndCrop = meta.story({
       crop: { x: 200, y: 100, width: 640, height: 480 },
     }),
     asset: mockAsset({ width: 1920, height: 1080 }),
-    trackKind: "video",
+    clipKind: "video",
   },
 });
 
@@ -56,7 +56,7 @@ export const WithFreeRotation = meta.story({
       transform: { rotation: 45 },
     }),
     asset: mockAsset({ width: 1920, height: 1080 }),
-    trackKind: "video",
+    clipKind: "video",
   },
 });
 
@@ -66,7 +66,7 @@ export const WithNegativeRotation = meta.story({
       transform: { rotation: -90 },
     }),
     asset: mockAsset({ width: 1920, height: 1080 }),
-    trackKind: "video",
+    clipKind: "video",
   },
 });
 
