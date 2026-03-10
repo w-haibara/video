@@ -118,7 +118,7 @@
 | 112 | Inspector の clipKind ベース判定 + BlendModeEditor 追加 | [x] Done | 108, 109 |
 | 113 | プレビューレンダラーのトラック間レイヤー合成対応 | [x] Done | 108, 109 |
 | 114 | エクスポートのトラック間レイヤー合成対応 | [x] Done | 108, 109 |
-| 115 | レイヤーモデル移行のテスト・Story 追加 | [ ] TODO | 110, 111, 112, 113, 114 |
+| 115 | レイヤーモデル移行のテスト・Story 追加 | [x] Done | 110, 111, 112, 113, 114 |
 
 ## Phase 1 Tasks
 
@@ -3534,41 +3534,41 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. 共有型・マイグレーションのテスト**
 
-- [ ] `migrateProject` が旧形式 → 新形式に正しく変換することのテスト
-- [ ] `Clip.clipKind` / `Clip.blendMode` のデフォルト値テスト
+- [x] `migrateProject` が旧形式 → 新形式に正しく変換することのテスト
+- [x] `Clip.clipKind` / `Clip.blendMode` のデフォルト値テスト
 
 **B. CompositeStrategy のテスト**
 
-- [ ] `CoverPreviewStrategy` の `containerStyle()` テスト
-- [ ] `CoverExportStrategy` の `buildOverlayFilter()` テスト
-- [ ] レジストリの登録・取得テスト
+- [x] `CoverPreviewStrategy` の `containerStyle()` テスト
+- [x] `CoverExportStrategy` の `buildOverlayFilter()` テスト
+- [x] レジストリの登録・取得テスト
 
 **C. タイムライン Story の更新**
 
-- [ ] 1 トラックに複数種類のクリップが混在する Story の追加
-- [ ] 複数トラック（レイヤー）の Story の追加
-- [ ] トラックラベルがレイヤー番号で表示される確認
+- [x] 1 トラックに複数種類のクリップが混在する Story の追加
+- [x] 複数トラック（レイヤー）の Story の追加
+- [x] トラックラベルがレイヤー番号で表示される確認
 
 **D. Inspector Story の更新**
 
-- [ ] BlendModeEditor の Story 追加
-- [ ] clipKind ベースの各エディタ表示条件テスト
+- [x] BlendModeEditor の Story 追加
+- [x] clipKind ベースの各エディタ表示条件テスト
 
 **E. sequence-ops テストの更新**
 
-- [ ] `addClipFromAsset` の `targetTrackId` 指定テスト
-- [ ] 混在トラックへのクリップ追加テスト
-- [ ] `addTextClip` の `targetTrackId` 指定テスト
+- [x] `addClipFromAsset` の `targetTrackId` 指定テスト
+- [x] 混在トラックへのクリップ追加テスト
+- [x] `addTextClip` の `targetTrackId` 指定テスト
 
 **F. プレビューレンダラーのテスト**
 
-- [ ] 複数トラックの映像クリップ重なりプレビュー Story の追加
-- [ ] CoverStrategy 適用時のレイヤー表示テスト
+- [x] 複数トラックの映像クリップ重なりプレビュー Story の追加
+- [x] CoverStrategy 適用時のレイヤー表示テスト
 
 **G. エクスポートのテスト**
 
-- [ ] `buildExportArgs` の複数トラックレイヤー合成テスト
-- [ ] 重なりあり・なし両方のケースのテスト
-- [ ] テキスト・オーディオの clipKind ベース収集テスト
+- [x] `buildExportArgs` の複数トラックレイヤー合成テスト
+- [x] 重なりあり・なし両方のケースのテスト
+- [x] テキスト・オーディオの clipKind ベース収集テスト
 
 **確認方法:** `bun run test` で全テストが通ること。`cd app/frontend && bun run storybook` で全 Story が正常表示されること。
