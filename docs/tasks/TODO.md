@@ -115,7 +115,7 @@
 | 109 | ClipKind レジストリの導入と TrackKind レジストリの廃止 | [x] Done | 107, 93 |
 | 110 | タイムライン UI の混在クリップ対応 | [x] Done | 109 |
 | 111 | sequence-ops の混在トラック対応 | [x] Done | 109 |
-| 112 | Inspector の clipKind ベース判定 + BlendModeEditor 追加 | [ ] TODO | 108, 109 |
+| 112 | Inspector の clipKind ベース判定 + BlendModeEditor 追加 | [x] Done | 108, 109 |
 | 113 | プレビューレンダラーのトラック間レイヤー合成対応 | [ ] TODO | 108, 109 |
 | 114 | エクスポートのトラック間レイヤー合成対応 | [ ] TODO | 108, 109 |
 | 115 | レイヤーモデル移行のテスト・Story 追加 | [ ] TODO | 110, 111, 112, 113, 114 |
@@ -3410,30 +3410,30 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. InspectorEditorContext の変更**
 
-- [ ] `trackKind: string` を `clipKind: string` に変更する
+- [x] `trackKind: string` を `clipKind: string` に変更する
 
 **B. 各エディタの canHandle 条件更新**
 
-- [ ] `TrimEditor`: `() => true` のまま維持（全クリップ共通）
-- [ ] `TextEditor`: `ctx.trackKind === "title"` → `ctx.clipKind === "title"` に変更
-- [ ] `TransformEditor`: `ctx.trackKind === "video"` → `ctx.clipKind === "video" || ctx.clipKind === "image"` に変更
-- [ ] `AudioVolumeEditor`: `ctx.trackKind === "audio"` → `ctx.clipKind === "audio"` に変更
+- [x] `TrimEditor`: `() => true` のまま維持（全クリップ共通）
+- [x] `TextEditor`: `ctx.trackKind === "title"` → `ctx.clipKind === "title"` に変更
+- [x] `TransformEditor`: `ctx.trackKind === "video"` → `ctx.clipKind === "video" || ctx.clipKind === "image"` に変更
+- [x] `AudioVolumeEditor`: `ctx.trackKind === "audio"` → `ctx.clipKind === "audio"` に変更
 
 **C. BlendModeEditor の新規作成**
 
-- [ ] `BlendModeEditor.tsx` コンポーネントを作成する
-- [ ] `canHandle`: `ctx.clipKind === "video" || ctx.clipKind === "image"`（映像系クリップのみ）
-- [ ] `compositeStrategyRegistry.all()` からドロップダウンの選択肢を生成する
-- [ ] 現在の `clip.blendMode ?? "cover"` を表示し、変更時に `onUpdate({ blendMode: value })` を呼ぶ
-- [ ] `order: 25`（TransformEditor の後）
+- [x] `BlendModeEditor.tsx` コンポーネントを作成する
+- [x] `canHandle`: `ctx.clipKind === "video" || ctx.clipKind === "image"`（映像系クリップのみ）
+- [x] `compositeStrategyRegistry.all()` からドロップダウンの選択肢を生成する
+- [x] 現在の `clip.blendMode ?? "cover"` を表示し、変更時に `onUpdate({ blendMode: value })` を呼ぶ
+- [x] `order: 25`（TransformEditor の後）
 
 **D. builtin-plugin への登録**
 
-- [ ] `registerInspectorEditors` に BlendModeEditor を追加する
+- [x] `registerInspectorEditors` に BlendModeEditor を追加する
 
 **E. InspectorPanel の変更**
 
-- [ ] `InspectorEditorContext` に渡す値を `trackKind` から `clipKind: clip.clipKind` に変更する
+- [x] `InspectorEditorContext` に渡す値を `trackKind` から `clipKind: clip.clipKind` に変更する
 
 **確認方法:** 動画クリップ選択時に BlendModeEditor が表示され、"Cover (覆い隠す)" が選択されていること。テキストクリップ選択時には BlendModeEditor が表示されないこと。
 
