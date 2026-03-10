@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
 import { inferTrackKind } from "@video/shared";
-import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration } from "./sequence-ops";
+import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -504,6 +504,120 @@ describe("updateClip", () => {
     seq = updateClip(seq, firstId, { transform: { rotation: 180 } });
     expect(seq.tracks[0].clips[0].transform?.rotation).toBe(180);
     expect(seq.tracks[0].clips[1].transform).toBeUndefined();
+  });
+});
+
+describe("moveClip cross-track", () => {
+  test("moves clip to a different track", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const sourceTrackId = seq.tracks[0].id;
+    const clipId = seq.tracks[0].clips[0].id;
+    // Add a second track
+    const track2: Track = { id: "track-2", clips: [] };
+    seq = { ...seq, tracks: [...seq.tracks, track2] };
+    seq = moveClip(seq, clipId, 1000, undefined, "track-2");
+    // Clip should be in track-2
+    const t2 = seq.tracks.find((t: Track) => t.id === "track-2")!;
+    expect(t2.clips.length).toBe(1);
+    expect(t2.clips[0].id).toBe(clipId);
+    expect(t2.clips[0].startMs).toBe(1000);
+    // Source track should be removed (empty)
+    expect(seq.tracks.find((t: Track) => t.id === sourceTrackId)).toBeUndefined();
+  });
+
+  test("prevents overlap on target track", () => {
+    // Track 1: clip at 0-5000; Track 2: existing clip at 0-3000
+    let seq = addClipFromAsset(emptySeq, videoAsset); // track1 clip: 0-5000
+    const clipId = seq.tracks[0].clips[0].id;
+    const track2: Track = {
+      id: "track-2",
+      clips: [{ id: "existing", clipKind: "video", assetId: "v2", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 }],
+    };
+    seq = { ...seq, tracks: [...seq.tracks, track2] };
+    // Move clip to track-2 at position 1000 (overlapping existing clip 0-3000)
+    seq = moveClip(seq, clipId, 1000, undefined, "track-2");
+    const t2 = seq.tracks.find((t: Track) => t.id === "track-2")!;
+    const movedClip = t2.clips.find((c: Clip) => c.id === clipId)!;
+    // Should snap to non-overlapping position (after existing clip at 3000)
+    expect(movedClip.startMs).toBe(3000);
+  });
+
+  test("keeps source track if it still has clips", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    seq = addClipFromAsset(seq, { ...videoAsset, id: "v2", durationMs: 3000 });
+    const sourceTrackId = seq.tracks[0].id;
+    const clip1Id = seq.tracks[0].clips[0].id;
+    const track2: Track = { id: "track-2", clips: [] };
+    seq = { ...seq, tracks: [...seq.tracks, track2] };
+    seq = moveClip(seq, clip1Id, 0, undefined, "track-2");
+    // Source track should still exist (has clip2)
+    expect(seq.tracks.find((t: Track) => t.id === sourceTrackId)).toBeDefined();
+    expect(seq.tracks.find((t: Track) => t.id === sourceTrackId)!.clips.length).toBe(1);
+  });
+
+  test("no-op when targetTrackId does not exist", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const clipId = seq.tracks[0].clips[0].id;
+    const before = JSON.stringify(seq);
+    seq = moveClip(seq, clipId, 1000, undefined, "nonexistent");
+    expect(JSON.stringify(seq)).toBe(before);
+  });
+
+  test("falls back to same-track move when targetTrackId equals source", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const trackId = seq.tracks[0].id;
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = moveClip(seq, clipId, 2000, undefined, trackId);
+    expect(seq.tracks[0].clips[0].startMs).toBe(2000);
+  });
+
+  test("respects maxDurationMs on cross-track move", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset); // duration 5000
+    const clipId = seq.tracks[0].clips[0].id;
+    const track2: Track = { id: "track-2", clips: [] };
+    seq = { ...seq, tracks: [...seq.tracks, track2] };
+    seq = moveClip(seq, clipId, 8000, 10000, "track-2");
+    const t2 = seq.tracks.find((t: Track) => t.id === "track-2")!;
+    expect(t2.clips[0].startMs).toBe(5000); // clamped: 10000 - 5000
+  });
+});
+
+describe("removeTrack", () => {
+  test("removes track and its clips", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const trackId = seq.tracks[0].id;
+    seq = removeTrack(seq, trackId);
+    expect(seq.tracks.length).toBe(0);
+  });
+
+  test("returns empty sequence when removing the only track", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const trackId = seq.tracks[0].id;
+    seq = removeTrack(seq, trackId);
+    expect(seq.tracks).toEqual([]);
+  });
+
+  test("preserves other tracks", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const track2: Track = { id: "track-2", clips: [{ id: "c2", clipKind: "audio", assetId: "a1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 }] };
+    seq = { ...seq, tracks: [...seq.tracks, track2] };
+    seq = removeTrack(seq, "track-2");
+    expect(seq.tracks.length).toBe(1);
+    expect(seq.tracks[0].clips[0].clipKind).toBe("video");
+  });
+
+  test("no-op for non-existent trackId", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    seq = removeTrack(seq, "nonexistent");
+    expect(seq.tracks.length).toBe(1);
+  });
+
+  test("does not mutate original sequence", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const trackId = seq.tracks[0].id;
+    const original = seq;
+    removeTrack(seq, trackId);
+    expect(original.tracks.length).toBe(1);
   });
 });
 

@@ -118,29 +118,60 @@ export function moveClip(
   targetTrackId?: string,
 ): Sequence {
   let startMs = Math.max(0, Math.round(newStartMs));
-  if (maxDurationMs != null) {
-    // Find the clip to get its duration for clamping
-    for (const track of sequence.tracks) {
-      const clip = track.clips.find((c: Clip) => c.id === clipId);
-      if (clip) {
-        const maxStart = Math.max(0, maxDurationMs - clip.durationMs);
-        startMs = Math.min(startMs, maxStart);
-        break;
-      }
-    }
-  }
 
-  // Apply overlap prevention within the same track
+  // Find the clip and its source track
+  let sourceTrack: Track | undefined;
+  let movingClip: Clip | undefined;
   for (const track of sequence.tracks) {
     const clip = track.clips.find((c: Clip) => c.id === clipId);
     if (clip) {
-      startMs = findNonOverlappingPosition(track.clips, clipId, startMs, clip.durationMs);
-      startMs = Math.max(0, startMs);
-      if (maxDurationMs != null) {
-        startMs = Math.min(startMs, Math.max(0, maxDurationMs - clip.durationMs));
-      }
+      sourceTrack = track;
+      movingClip = clip;
       break;
     }
+  }
+  if (!sourceTrack || !movingClip) return sequence;
+
+  if (maxDurationMs != null) {
+    const maxStart = Math.max(0, maxDurationMs - movingClip.durationMs);
+    startMs = Math.min(startMs, maxStart);
+  }
+
+  // Cross-track move
+  if (targetTrackId && targetTrackId !== sourceTrack.id) {
+    const targetTrack = sequence.tracks.find((t: Track) => t.id === targetTrackId);
+    if (!targetTrack) return sequence;
+
+    // Apply overlap prevention on the target track
+    startMs = findNonOverlappingPosition(targetTrack.clips, clipId, startMs, movingClip.durationMs);
+    startMs = Math.max(0, startMs);
+    if (maxDurationMs != null) {
+      startMs = Math.min(startMs, Math.max(0, maxDurationMs - movingClip.durationMs));
+    }
+
+    const movedClip = { ...movingClip, startMs };
+    const tracks = sequence.tracks
+      .map((track: Track) => {
+        if (track.id === sourceTrack!.id) {
+          return { ...track, clips: track.clips.filter((c: Clip) => c.id !== clipId) };
+        }
+        if (track.id === targetTrackId) {
+          return {
+            ...track,
+            clips: [...track.clips, movedClip].sort((a: Clip, b: Clip) => a.startMs - b.startMs),
+          };
+        }
+        return { ...track, clips: [...track.clips] };
+      })
+      .filter((track: Track) => track.clips.length > 0);
+    return { ...sequence, tracks };
+  }
+
+  // Same-track move
+  startMs = findNonOverlappingPosition(sourceTrack.clips, clipId, startMs, movingClip.durationMs);
+  startMs = Math.max(0, startMs);
+  if (maxDurationMs != null) {
+    startMs = Math.min(startMs, Math.max(0, maxDurationMs - movingClip.durationMs));
   }
 
   const tracks = sequence.tracks.map((track: Track) => ({
@@ -149,6 +180,11 @@ export function moveClip(
       .map((c: Clip) => (c.id === clipId ? { ...c, startMs } : c))
       .sort((a: Clip, b: Clip) => a.startMs - b.startMs),
   }));
+  return { ...sequence, tracks };
+}
+
+export function removeTrack(sequence: Sequence, trackId: string): Sequence {
+  const tracks = sequence.tracks.filter((t: Track) => t.id !== trackId);
   return { ...sequence, tracks };
 }
 
