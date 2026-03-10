@@ -109,7 +109,7 @@
 | 103 | Rotation UI の改善: 自由入力 + 回転ボタン | [x] Done | 19, 102 |
 | 104 | Rotation 改善のテスト・Story 更新 | [x] Done | 102, 103 |
 | 105 | シークバーの画面下端延長 + トラック下部空白クリックシーク | [x] Done | 09, 26 |
-| 106 | タスク 105 のテスト・Story 更新 | [ ] Todo | 105 |
+| 106 | タスク 105 のテスト・Story 更新 | [x] Done | 105 |
 
 ## Phase 1 Tasks
 
@@ -3172,7 +3172,7 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. Timeline Story の更新**
 
-- [ ] 既存の Timeline Story がレイアウト変更後も正常に表示されることを確認・更新
-- [ ] トラック下部の空白領域が表示される Story を追加（少数トラックで高さに余裕がある状態）
+- [x] 既存の Timeline Story がレイアウト変更後も正常に表示されることを確認・更新
+- [x] トラック下部の空白領域が表示される Story を追加（少数トラックで高さに余裕がある状態）
 
 **確認方法:** `cd app/frontend && bun run storybook` で全 Story が正常表示されること
