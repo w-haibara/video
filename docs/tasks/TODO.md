@@ -97,7 +97,7 @@
 | 91 | プレビューの別ウィンドウ表示 | [x] Done | 90 |
 | 92 | プレビュー拡大表示のテスト・Story 追加 | [x] Done | 90, 91 |
 | 93 | TrackKind / AssetKind レジストリの導入 | [x] Done | 02 |
-| 94 | Inspector パネルのエディタプラグインレジストリ化 | [ ] Pending | 93 |
+| 94 | Inspector パネルのエディタプラグインレジストリ化 | [x] Done | 93 |
 | 95 | タイムラインクリップの外観レジストリ化 | [ ] Pending | 93 |
 | 96 | プレビュープレーヤーの描画 Strategy 化 | [ ] Pending | 93 |
 | 97 | sequence-ops のトラックルーティング Strategy 化 | [ ] Pending | 93 |
@@ -2601,7 +2601,7 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. エディタプラグインインターフェースの定義** (`inspector-editor-registry.ts`)
 
-- [ ] `InspectorEditorPlugin` 型を定義:
+- [x] `InspectorEditorPlugin` 型を定義:
   ```typescript
   type InspectorEditorContext = {
     clip: Clip;
@@ -2618,31 +2618,31 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
     Component: React.ComponentType<InspectorEditorContext>;
   };
   ```
-- [ ] `InspectorEditorRegistry` クラスを実装:
+- [x] `InspectorEditorRegistry` クラスを実装:
   - `register(plugin: InspectorEditorPlugin): void`
   - `getEditorsFor(ctx: InspectorEditorContext): InspectorEditorPlugin[]`（`canHandle` でフィルタし `order` でソート）
 
 **B. 既存エディタの分離・プラグイン化**
 
-- [ ] `TrimEditor` を独立コンポーネントファイルに抽出し、`InspectorEditorPlugin` として登録
+- [x] `TrimEditor` を独立コンポーネントファイルに抽出し、`InspectorEditorPlugin` として登録
   - `canHandle`: 常に `true`（全クリップに表示）
-- [ ] `TextEditor` を独立コンポーネントファイルに抽出し、プラグインとして登録
+- [x] `TextEditor` を独立コンポーネントファイルに抽出し、プラグインとして登録
   - `canHandle`: `trackKind === "title"`
-- [ ] `TransformEditor` を独立コンポーネントファイルに抽出し、プラグインとして登録
+- [x] `TransformEditor` を独立コンポーネントファイルに抽出し、プラグインとして登録
   - `canHandle`: `trackKind === "video"`
-- [ ] `AudioVolumeEditor` を独立コンポーネントファイルに抽出し、プラグインとして登録（現在は `InspectorPanel` 内にインラインで記述: 95〜111 行目）
+- [x] `AudioVolumeEditor` を独立コンポーネントファイルに抽出し、プラグインとして登録（現在は `InspectorPanel` 内にインラインで記述: 95〜111 行目）
   - `canHandle`: `trackKind === "audio"`
 
 **C. InspectorPanel のリファクタリング**
 
-- [ ] if/else チェーンを削除し、レジストリから取得したエディタを動的にレンダリング:
+- [x] if/else チェーンを削除し、レジストリから取得したエディタを動的にレンダリング:
   ```typescript
   const editors = inspectorEditorRegistry.getEditorsFor(ctx);
   {editors.map((editor) => (
     <editor.Component key={editor.id} {...ctx} />
   ))}
   ```
-- [ ] メタ情報テーブル（File, Type, Size, Codec）の表示も `TrackKindDescriptor.hasAsset` を参照して分岐
+- [x] メタ情報テーブル（File, Type, Size, Codec）の表示も `TrackKindDescriptor.hasAsset` を参照して分岐
 
 **確認方法:**
 - Inspector の表示・操作が全く同じであること
