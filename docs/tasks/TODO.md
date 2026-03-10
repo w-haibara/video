@@ -114,7 +114,7 @@
 | 108 | CompositeStrategy インターフェース設計 + CoverStrategy 実装 | [x] Done | 107 |
 | 109 | ClipKind レジストリの導入と TrackKind レジストリの廃止 | [x] Done | 107, 93 |
 | 110 | タイムライン UI の混在クリップ対応 | [x] Done | 109 |
-| 111 | sequence-ops の混在トラック対応 | [ ] TODO | 109 |
+| 111 | sequence-ops の混在トラック対応 | [x] Done | 109 |
 | 112 | Inspector の clipKind ベース判定 + BlendModeEditor 追加 | [ ] TODO | 108, 109 |
 | 113 | プレビューレンダラーのトラック間レイヤー合成対応 | [ ] TODO | 108, 109 |
 | 114 | エクスポートのトラック間レイヤー合成対応 | [ ] TODO | 108, 109 |
@@ -3373,26 +3373,26 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. addClipFromAsset の変更**
 
-- [ ] 引数にオプショナルな `targetTrackId?: string` を追加する
-- [ ] `targetTrackId` が指定されていればそのトラックに追加する
-- [ ] 指定がなければ、最後のトラック（最上位レイヤー）の末尾に追加する
-- [ ] トラックが 1 つもなければ新規トラックを作成する（`kind` フィールドなし）
-- [ ] 作成するクリップに `clipKind` を設定する（`assetKindRegistry` の `kind` をそのまま使用。ただし `defaultTrackKind` が "video" のアセット種別は asset.kind を使う）
+- [x] 引数にオプショナルな `targetTrackId?: string` を追加する
+- [x] `targetTrackId` が指定されていればそのトラックに追加する
+- [x] 指定がなければ、最後のトラック（最上位レイヤー）の末尾に追加する
+- [x] トラックが 1 つもなければ新規トラックを作成する（`kind` フィールドなし）
+- [x] 作成するクリップに `clipKind` を設定する（`assetKindRegistry` の `kind` をそのまま使用。ただし `defaultTrackKind` が "video" のアセット種別は asset.kind を使う）
 
 **B. addTextClip の変更**
 
-- [ ] 引数の `trackKind` を `targetTrackId?: string` に変更する
-- [ ] 指定トラックに追加する。指定がなければ新規トラックを作成する
-- [ ] 作成するクリップに `clipKind: "title"` を設定する
+- [x] 引数の `trackKind` を `targetTrackId?: string` に変更する
+- [x] 指定トラックに追加する。指定がなければ新規トラックを作成する
+- [x] 作成するクリップに `clipKind: "title"` を設定する
 
 **C. removeClip の変更**
 
-- [ ] クリップ削除後に空になったトラックを削除するロジックは維持する
+- [x] クリップ削除後に空になったトラックを削除するロジックは維持する
 
 **D. moveClip の変更**
 
-- [ ] 同一トラック内の重なり防止ロジックは維持する
-- [ ] 将来的なトラック間移動（ドラッグでレイヤー変更）に備え、`targetTrackId` 引数をオプショナルで追加する（今回は未実装）
+- [x] 同一トラック内の重なり防止ロジックは維持する
+- [x] 将来的なトラック間移動（ドラッグでレイヤー変更）に備え、`targetTrackId` 引数をオプショナルで追加する（今回は未実装）
 
 **確認方法:** `bun run test` で既存テストが通ること。異なる種類のクリップを同一トラックに追加できること。
 
