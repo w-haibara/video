@@ -121,7 +121,7 @@
 | 115 | レイヤーモデル移行のテスト・Story 追加 | [x] Done | 110, 111, 112, 113, 114 |
 | 116 | sequence-ops のトラック操作拡張 — moveClipToTrack・removeTrack | [x] Done | 111 |
 | 117 | クリップのトラック間ドラッグ移動 UI | [x] Done | 116 |
-| 118 | Add Layer ボタンの移動 — ツールバーからトラックヘッダー「+」行へ | [ ] Todo | 09 |
+| 118 | Add Layer ボタンの移動 — ツールバーからトラックヘッダー「+」行へ | [x] Done | 09 |
 | 119 | トラックヘッダー右クリックメニュー + 確認ダイアログ付きトラック削除 | [ ] Todo | 116, 118 |
 | 120 | トラック操作改善のテスト・Story 更新 | [ ] Todo | 116, 117, 118, 119 |
 
@@ -3648,15 +3648,15 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. ツールバーから「+ Add Layer」ボタンを削除**
 
-- [ ] Timeline ツールバーセクションから `onAddTrack` ボタンの JSX を削除する
+- [x] Timeline ツールバーセクションから `onAddTrack` ボタンの JSX を削除する
 
 **B. トラック末尾に「+」行を追加**
 
-- [ ] トラック一覧（`project.sequence.tracks.map(...)` ）の直後に、トラックヘッダーと同じ幅（32px）の「+」ボタン行を追加する
-- [ ] ボタンのスタイルを既存のトラックヘッダーと統一する（`theme.bgHover`, `theme.textMuted`, `fontSize: 11px`, `fontWeight: bold`）
-- [ ] ボタンの高さは既存トラックヘッダーと同じ 40px にする
-- [ ] 「+」のテキストを表示し、ホバー時に背景色を変化させる
-- [ ] クリック時に `onAddTrack` コールバックを呼び出す
+- [x] トラック一覧（`project.sequence.tracks.map(...)` ）の直後に、トラックヘッダーと同じ幅（32px）の「+」ボタン行を追加する
+- [x] ボタンのスタイルを既存のトラックヘッダーと統一する（`theme.bgHover`, `theme.textMuted`, `fontSize: 11px`, `fontWeight: bold`）
+- [x] ボタンの高さは既存トラックヘッダーと同じ 40px にする
+- [x] 「+」のテキストを表示し、ホバー時に背景色を変化させる
+- [x] クリック時に `onAddTrack` コールバックを呼び出す
 
 **確認方法:** ツールバーから「+ Add Layer」ボタンが消えていること。トラック一覧の末尾に「+」ボタンが表示されること。クリックでトラックが追加されること。
 
