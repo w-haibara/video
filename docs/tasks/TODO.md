@@ -108,7 +108,7 @@
 | 102 | エクスポートへの clip.transform.rotation 反映 | [x] Done | 15, 19, 99 |
 | 103 | Rotation UI の改善: 自由入力 + 回転ボタン | [x] Done | 19, 102 |
 | 104 | Rotation 改善のテスト・Story 更新 | [x] Done | 102, 103 |
-| 105 | シークバーの画面下端延長 + トラック下部空白クリックシーク | [ ] Todo | 09, 26 |
+| 105 | シークバーの画面下端延長 + トラック下部空白クリックシーク | [x] Done | 09, 26 |
 | 106 | タスク 105 のテスト・Story 更新 | [ ] Todo | 105 |
 
 ## Phase 1 Tasks
@@ -3145,15 +3145,15 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. タイムライン内コンテナの高さをスクロール領域全体に拡張**
 
-- [ ] スクロール領域内の内側コンテナ（`position: relative` の div）に `display: "flex"`, `flexDirection: "column"`, `minHeight: "100%"` を追加し、スクロール領域の高さいっぱいに広げる
-- [ ] "Seek bar + Tracks wrapper"（`position: relative` の div）に `flex: 1` を追加し、トラック下部の残りスペースを埋める
-- [ ] これにより `Playhead` コンポーネント（`position: absolute`, `top: 0`, `bottom: 0`）が自動的にタイムライン領域の下端まで描画される
+- [x] スクロール領域内の内側コンテナ（`position: relative` の div）に `display: "flex"`, `flexDirection: "column"`, `minHeight: "100%"` を追加し、スクロール領域の高さいっぱいに広げる
+- [x] "Seek bar + Tracks wrapper"（`position: relative` の div）に `flex: 1` を追加し、トラック下部の残りスペースを埋める
+- [x] これにより `Playhead` コンポーネント（`position: absolute`, `top: 0`, `bottom: 0`）が自動的にタイムライン領域の下端まで描画される
 
 **B. トラック下部の空白領域でクリック・ドラッグシークを有効化**
 
-- [ ] "Seek bar + Tracks wrapper" div に `onMouseDown={handleRulerMouseDown}` を追加する
-- [ ] `TimelineClip` の `handleMouseDown` は既に `e.stopPropagation()` を呼んでいるため、クリップ上のクリックではシークが発動しないことを確認する
-- [ ] 空白領域のカーソルを `col-resize` に設定する（`cursor: "col-resize"` を wrapper に追加）
+- [x] "Seek bar + Tracks wrapper" div に `onMouseDown={handleRulerMouseDown}` を追加する
+- [x] `TimelineClip` の `handleMouseDown` は既に `e.stopPropagation()` を呼んでいるため、クリップ上のクリックではシークが発動しないことを確認する
+- [x] 空白領域のカーソルを `col-resize` に設定する（`cursor: "col-resize"` を wrapper に追加）
 
 **確認方法:**
 - タイムラインのプレイヘッド縦線がトラック下部の空白領域まで描画されること
