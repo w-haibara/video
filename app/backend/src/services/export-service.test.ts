@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
-import type { Project } from "@video/shared";
-import { buildExportArgs } from "./export-service";
+import type { Project, Clip } from "@video/shared";
+import { buildExportArgs, buildTransformFilter } from "./export-service";
 
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {
@@ -711,6 +711,64 @@ describe("buildExportArgs", () => {
     expect(args).not.toContain("-ignore_unknown");
   });
 
+  test("applies rotation filter for 90 degrees", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              {
+                id: "c1",
+                assetId: "v1",
+                startMs: 0,
+                durationMs: 5000,
+                inMs: 0,
+                outMs: 5000,
+                transform: { rotation: 90 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    const expectedRad = (90 * Math.PI) / 180;
+    expect(filter).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+  });
+
+  test("applies rotation filter for 180 degrees", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            kind: "video",
+            clips: [
+              {
+                id: "c1",
+                assetId: "v1",
+                startMs: 0,
+                durationMs: 5000,
+                inMs: 0,
+                outMs: 5000,
+                transform: { rotation: 180 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    const expectedRad = (180 * Math.PI) / 180;
+    expect(filter).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+  });
+
   test("excludes text overlays beyond project duration", () => {
     const project = makeProject({
       sequence: {
@@ -757,5 +815,74 @@ describe("buildExportArgs", () => {
     expect(filter).not.toContain("drawtext=text='Hidden'");
     // Visible text should be clamped to end at 3s
     expect(filter).toContain("enable='between(t,1,3)'");
+  });
+});
+
+describe("buildTransformFilter", () => {
+  const preset = { width: 1920, height: 1080 };
+
+  function makeClip(transform?: Clip["transform"]): Clip {
+    return {
+      id: "c1",
+      assetId: "v1",
+      startMs: 0,
+      durationMs: 5000,
+      inMs: 0,
+      outMs: 5000,
+      transform,
+    };
+  }
+
+  test("returns empty string when rotation is 0", () => {
+    expect(buildTransformFilter(makeClip({ rotation: 0 }), preset)).toBe("");
+  });
+
+  test("returns empty string when rotation is undefined", () => {
+    expect(buildTransformFilter(makeClip({}), preset)).toBe("");
+    expect(buildTransformFilter(makeClip(undefined), preset)).toBe("");
+  });
+
+  test("generates rotate filter for 90 degrees", () => {
+    const result = buildTransformFilter(makeClip({ rotation: 90 }), preset);
+    const expectedRad = (90 * Math.PI) / 180;
+    expect(result).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+  });
+
+  test("generates rotate filter for 180 degrees", () => {
+    const result = buildTransformFilter(makeClip({ rotation: 180 }), preset);
+    const expectedRad = (180 * Math.PI) / 180;
+    expect(result).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+  });
+
+  test("generates rotate filter for 45 degrees", () => {
+    const result = buildTransformFilter(makeClip({ rotation: 45 }), preset);
+    const expectedRad = (45 * Math.PI) / 180;
+    expect(result).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+  });
+
+  test("generates rotate filter for negative angle (-90)", () => {
+    const result = buildTransformFilter(makeClip({ rotation: -90 }), preset);
+    const expectedRad = (-90 * Math.PI) / 180;
+    expect(result).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+  });
+
+  test("combines rotation with scale", () => {
+    const result = buildTransformFilter(makeClip({ rotation: 90, scale: 1.5 }), preset);
+    const expectedRad = (90 * Math.PI) / 180;
+    expect(result).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+    expect(result).toContain("scale=iw*1.5:ih*1.5");
+    // Rotation should come before scale
+    const rotIdx = result.indexOf("rotate=");
+    const scaleIdx = result.indexOf("scale=");
+    expect(rotIdx).toBeLessThan(scaleIdx);
+  });
+
+  test("combines rotation with translate", () => {
+    const result = buildTransformFilter(makeClip({ rotation: 45, x: 10, y: 20 }), preset);
+    const expectedRad = (45 * Math.PI) / 180;
+    expect(result).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+    // Should also have pad+crop for translate
+    expect(result).toContain("pad=");
+    expect(result).toContain("crop=");
   });
 });

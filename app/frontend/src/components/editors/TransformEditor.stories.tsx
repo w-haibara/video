@@ -50,11 +50,35 @@ export const WithTransformAndCrop = meta.story({
   },
 });
 
-Default.test("shows rotation buttons", async ({ canvas }) => {
-  await canvas.findByRole("button", { name: "0°" });
-  await canvas.findByRole("button", { name: "90°" });
-  await canvas.findByRole("button", { name: "180°" });
-  await canvas.findByRole("button", { name: "270°" });
+export const WithFreeRotation = meta.story({
+  args: {
+    clip: mockClip({
+      transform: { rotation: 45 },
+    }),
+    asset: mockAsset({ width: 1920, height: 1080 }),
+    trackKind: "video",
+  },
+});
+
+export const WithNegativeRotation = meta.story({
+  args: {
+    clip: mockClip({
+      transform: { rotation: -90 },
+    }),
+    asset: mockAsset({ width: 1920, height: 1080 }),
+    trackKind: "video",
+  },
+});
+
+Default.test("shows rotation controls", async ({ canvas }) => {
+  // Reset button (text "0°")
+  await canvas.findByTitle("Reset rotation to 0°");
+  // Left rotate button (text "↶")
+  await canvas.findByTitle("Rotate left -90°");
+  // Right rotate button (text "↷")
+  await canvas.findByTitle("Rotate right +90°");
+  // Rotation label
+  await canvas.findByText(/Rotation \(0°\)/);
 });
 
 WithCrop.test("shows crop active label", async ({ canvas }) => {
@@ -63,4 +87,12 @@ WithCrop.test("shows crop active label", async ({ canvas }) => {
 
 WithTransform.test("shows reset button when transform applied", async ({ canvas }) => {
   await canvas.findByRole("button", { name: /Reset Position/ });
+});
+
+WithFreeRotation.test("shows rotation value in label", async ({ canvas }) => {
+  await canvas.findByText(/Rotation \(45°\)/);
+});
+
+WithNegativeRotation.test("shows negative rotation in label", async ({ canvas }) => {
+  await canvas.findByText(/Rotation \(-90°\)/);
 });
