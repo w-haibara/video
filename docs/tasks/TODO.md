@@ -101,7 +101,7 @@
 | 95 | タイムラインクリップの外観レジストリ化 | [x] Done | 93 |
 | 96 | プレビュープレーヤーの描画 Strategy 化 | [x] Done | 93 |
 | 97 | sequence-ops のトラックルーティング Strategy 化 | [x] Done | 93 |
-| 98 | アセット種別検出のプラグイン化 | [ ] Pending | 93 |
+| 98 | アセット種別検出のプラグイン化 | [x] Done | 93 |
 | 99 | エクスポートのトラック/アセットハンドラ Strategy 化 | [ ] Pending | 93 |
 | 100 | プラグインシステムの基盤設計 | [ ] Pending | 93, 94, 95, 96, 97, 98, 99 |
 | 101 | リファクタリング全体のテスト・Story 更新 | [ ] Pending | 94, 95, 96, 97, 98, 99 |
@@ -2795,7 +2795,7 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. アセットディテクタインターフェースの定義** (`asset-detector-registry.ts`)
 
-- [ ] `AssetDetector` インターフェースを定義:
+- [x] `AssetDetector` インターフェースを定義:
   ```typescript
   type AssetDetectionContext = {
     filename: string;
@@ -2809,20 +2809,20 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
     detect: (ctx: AssetDetectionContext) => string | null;  // AssetKind を返す or null（判定不能）
   };
   ```
-- [ ] `AssetDetectorRegistry` クラスを実装:
+- [x] `AssetDetectorRegistry` クラスを実装:
   - `register(detector: AssetDetector): void`
   - `detect(ctx: AssetDetectionContext): string`（priority 順に評価、全て null なら `"image"` フォールバック）
 
 **B. 既存の拡張子判定をディテクタに移行**
 
-- [ ] `extension-detector.ts`: 現在の `detectKind` のロジックを `AssetDetector` として実装
+- [x] `extension-detector.ts`: 現在の `detectKind` のロジックを `AssetDetector` として実装
   - `AssetKindRegistry` の `extensions` フィールドを参照して判定
-- [ ] `asset-service.ts` の `detectKind` を `assetDetectorRegistry.detect()` 呼び出しに置換
+- [x] `asset-service.ts` の `detectKind` を `assetDetectorRegistry.detect()` 呼び出しに置換
 
 **C. 将来の拡張例（コメントで記載）**
 
-- [ ] `magic-byte-detector.ts` の stub をコメントで記載（将来的にファイルヘッダを読んで判定する想定）
-- [ ] `mime-type-detector.ts` の stub をコメントで記載
+- [x] `magic-byte-detector.ts` の stub をコメントで記載（将来的にファイルヘッダを読んで判定する想定）
+- [x] `mime-type-detector.ts` の stub をコメントで記載
 
 **確認方法:**
 - アセットインポートの動作が完全に同一であること
