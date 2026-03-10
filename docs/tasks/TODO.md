@@ -112,7 +112,7 @@
 | 106 | タスク 105 のテスト・Story 更新 | [x] Done | 105 |
 | 107 | 共有型の拡張 — Clip.clipKind・Clip.blendMode 追加 + Track.kind 廃止 | [x] Done | 02, 93 |
 | 108 | CompositeStrategy インターフェース設計 + CoverStrategy 実装 | [x] Done | 107 |
-| 109 | ClipKind レジストリの導入と TrackKind レジストリの廃止 | [ ] TODO | 107, 93 |
+| 109 | ClipKind レジストリの導入と TrackKind レジストリの廃止 | [x] Done | 107, 93 |
 | 110 | タイムライン UI の混在クリップ対応 | [ ] TODO | 109 |
 | 111 | sequence-ops の混在トラック対応 | [ ] TODO | 109 |
 | 112 | Inspector の clipKind ベース判定 + BlendModeEditor 追加 | [ ] TODO | 108, 109 |
