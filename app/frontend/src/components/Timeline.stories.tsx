@@ -110,3 +110,76 @@ SingleTrackWithEmptySpace.test(
     await expect(matches.length).toBeGreaterThan(0);
   },
 );
+
+// --- Task 115: Mixed clip kinds and multi-layer stories ---
+
+export const MixedClipKinds = meta.story({
+  args: {
+    project: mockProject({
+      name: "Mixed Clips",
+      assets: [
+        mockAsset({ id: "asset-v1" }),
+        mockAsset({ id: "asset-a1", kind: "audio", originalPath: "/audio/bgm.mp3", thumbnailPath: undefined, width: undefined, height: undefined, durationMs: 15000 }),
+        mockAsset({ id: "asset-i1", kind: "image", originalPath: "/images/photo.jpg", durationMs: undefined }),
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "track-1",
+            clips: [
+              mockClip({ id: "clip-v1", clipKind: "video", assetId: "asset-v1", startMs: 0, durationMs: 5000, outMs: 5000 }),
+              mockClip({ id: "clip-a1", clipKind: "audio", assetId: "asset-a1", startMs: 5000, durationMs: 8000, outMs: 8000 }),
+              mockClip({ id: "clip-i1", clipKind: "image", assetId: "asset-i1", startMs: 13000, durationMs: 3000, outMs: 3000 }),
+            ],
+          },
+        ],
+      },
+    }),
+    currentTimeMs: 0,
+    selectedClipId: null,
+  },
+});
+
+MixedClipKinds.test("renders clips with different kinds in same track", async ({ canvasElement }) => {
+  await expect(canvasElement.textContent?.length).toBeGreaterThan(0);
+});
+
+export const MultiLayerTracks = meta.story({
+  args: {
+    project: mockProject({
+      name: "Multi Layer",
+      assets: [
+        mockAsset({ id: "asset-v1" }),
+        mockAsset({ id: "asset-v2", originalPath: "/videos/sample2.mp4" }),
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "layer-1",
+            clips: [
+              mockClip({ id: "clip-l1-1", clipKind: "video", assetId: "asset-v1", startMs: 0, durationMs: 10000, outMs: 10000 }),
+            ],
+          },
+          {
+            id: "layer-2",
+            clips: [
+              mockClip({ id: "clip-l2-1", clipKind: "video", assetId: "asset-v2", startMs: 2000, durationMs: 5000, outMs: 5000, blendMode: "cover" }),
+            ],
+          },
+          {
+            id: "layer-3",
+            clips: [
+              mockClip({ id: "clip-t1", clipKind: "title", assetId: "", startMs: 1000, durationMs: 3000, outMs: 3000, text: { value: "Layer 3 Text", fontSize: 48, color: "#FFFFFF" } }),
+            ],
+          },
+        ],
+      },
+    }),
+    currentTimeMs: 3000,
+    selectedClipId: null,
+  },
+});
+
+MultiLayerTracks.test("renders multiple layer tracks", async ({ canvasElement }) => {
+  await expect(canvasElement.textContent?.length).toBeGreaterThan(0);
+});

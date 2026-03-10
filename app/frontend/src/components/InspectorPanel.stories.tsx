@@ -151,3 +151,17 @@ VideoClip.test("shows blend mode editor for video clip", async ({ canvas }) => {
 ImageClip.test("shows blend mode editor for image clip", async ({ canvas }) => {
   await canvas.findByText(/Blend Mode/);
 });
+
+// --- Task 115: clipKind-based editor display ---
+
+AudioClip.test("does not show blend mode editor for audio clip", async ({ canvas }) => {
+  await canvas.findByText(/Volume/);
+  const blendLabels = canvas.queryAllByText(/Blend Mode/);
+  await expect(blendLabels.length).toBe(0);
+});
+
+TextClip.test("does not show blend mode editor for text clip", async ({ canvas }) => {
+  await canvas.findByRole("textbox");
+  const blendLabels = canvas.queryAllByText(/Blend Mode/);
+  await expect(blendLabels.length).toBe(0);
+});

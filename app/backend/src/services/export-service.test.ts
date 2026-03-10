@@ -760,6 +760,153 @@ describe("buildExportArgs", () => {
     expect(filter).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
   });
 
+  test("generates overlay filters for multi-track layer compositing", () => {
+    const project = makeProject({
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 10000, hasAudio: false },
+        { id: "v2", kind: "video", originalPath: "assets/v2.mp4", durationMs: 5000, hasAudio: false },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "layer-bg",
+            clips: [
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 10000, inMs: 0, outMs: 10000 },
+            ],
+          },
+          {
+            id: "layer-fg",
+            clips: [
+              { id: "c2", clipKind: "video", assetId: "v2", startMs: 2000, durationMs: 5000, inMs: 0, outMs: 5000 },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Both clips should be overlaid
+    const overlayMatches = filter.match(/overlay=0:0/g);
+    expect(overlayMatches?.length).toBe(2);
+    // Track ordering: bg clip first (enable 0-10), fg clip second (enable 2-7)
+    expect(filter).toContain("enable='between(t,0,10)'");
+    expect(filter).toContain("enable='between(t,2,7)'");
+  });
+
+  test("handles multi-track with no temporal overlap", () => {
+    const project = makeProject({
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 5000, hasAudio: false },
+        { id: "v2", kind: "video", originalPath: "assets/v2.mp4", durationMs: 3000, hasAudio: false },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            clips: [
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+            ],
+          },
+          {
+            id: "t2",
+            clips: [
+              { id: "c2", clipKind: "video", assetId: "v2", startMs: 6000, durationMs: 3000, inMs: 0, outMs: 3000 },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Both clips included with separate enable windows
+    expect(filter).toContain("enable='between(t,0,5)'");
+    expect(filter).toContain("enable='between(t,6,9)'");
+  });
+
+  test("collects text clips by clipKind across all tracks", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            clips: [
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+            ],
+          },
+          {
+            id: "t2",
+            clips: [
+              {
+                id: "tc1",
+                clipKind: "title",
+                assetId: "",
+                startMs: 0,
+                durationMs: 2000,
+                inMs: 0,
+                outMs: 2000,
+                text: { value: "Title A" },
+              },
+            ],
+          },
+          {
+            id: "t3",
+            clips: [
+              {
+                id: "tc2",
+                clipKind: "title",
+                assetId: "",
+                startMs: 3000,
+                durationMs: 1000,
+                inMs: 0,
+                outMs: 1000,
+                text: { value: "Title B" },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    expect(filter).toContain("drawtext=text='Title A'");
+    expect(filter).toContain("drawtext=text='Title B'");
+  });
+
+  test("collects audio clips by clipKind across all tracks", () => {
+    const project = makeProject({
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 5000, hasAudio: false },
+        { id: "a1", kind: "audio", originalPath: "assets/bgm.mp3", durationMs: 60000 },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            clips: [
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+            ],
+          },
+          {
+            id: "t2",
+            clips: [
+              { id: "ac1", clipKind: "audio", assetId: "a1", startMs: 0, durationMs: 10000, inMs: 0, outMs: 10000, volume: 0.5 },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Audio clip from a separate track should be collected and processed
+    expect(filter).toContain("volume=0.5");
+    expect(args).toContain("-c:a");
+    expect(args).toContain("aac");
+  });
+
   test("excludes text overlays beyond project duration", () => {
     const project = makeProject({
       sequence: {

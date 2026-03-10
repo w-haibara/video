@@ -382,3 +382,78 @@ PopoutPlaceholder.test("fullscreen button is disabled during popout", async ({ c
   const fsBtn = await canvas.findByTitle("Fullscreen");
   expect(fsBtn).toHaveProperty("disabled", true);
 });
+
+// --- Task 115: Multi-layer overlay preview ---
+
+export const MultiLayerOverlay = meta.story({
+  args: {
+    project: mockProject({
+      name: "Multi Layer Preview",
+      assets: [
+        mockAsset({ id: "v1", originalPath: "/media/video1.mp4", durationMs: 10000 }),
+        mockAsset({ id: "v2", originalPath: "/media/video2.mp4", durationMs: 8000 }),
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "layer-bg",
+            clips: [
+              mockClip({ id: "c-bg", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 10000, outMs: 10000 }),
+            ],
+          },
+          {
+            id: "layer-fg",
+            clips: [
+              mockClip({ id: "c-fg", clipKind: "video", assetId: "v2", startMs: 2000, durationMs: 5000, outMs: 5000, blendMode: "cover" }),
+            ],
+          },
+        ],
+      },
+      settings: { durationMs: 10000, canvasWidth: 1920, canvasHeight: 1080 },
+    }),
+    currentTimeMs: 4000,
+    isPlaying: false,
+    selectedClipId: null,
+  },
+});
+
+MultiLayerOverlay.test("renders canvas for multi-layer project", async ({ canvas }) => {
+  await canvas.findByTestId("preview-canvas");
+});
+
+export const MultiLayerWithCover = meta.story({
+  args: {
+    project: mockProject({
+      name: "Cover Strategy",
+      assets: [
+        mockAsset({ id: "v1", originalPath: "/media/video1.mp4", durationMs: 10000 }),
+        mockAsset({ id: "v2", originalPath: "/media/video2.mp4", durationMs: 5000 }),
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "layer-1",
+            clips: [
+              mockClip({ id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 10000, outMs: 10000 }),
+            ],
+          },
+          {
+            id: "layer-2",
+            clips: [
+              mockClip({ id: "c2", clipKind: "video", assetId: "v2", startMs: 0, durationMs: 5000, outMs: 5000, blendMode: "cover" }),
+            ],
+          },
+        ],
+      },
+      settings: { durationMs: 10000, canvasWidth: 1920, canvasHeight: 1080 },
+    }),
+    currentTimeMs: 2500,
+    isPlaying: false,
+    selectedClipId: null,
+  },
+});
+
+MultiLayerWithCover.test("renders multiple layers with cover blend", async ({ canvas }) => {
+  const canvasEl = await canvas.findByTestId("preview-canvas");
+  expect(canvasEl).toBeTruthy();
+});

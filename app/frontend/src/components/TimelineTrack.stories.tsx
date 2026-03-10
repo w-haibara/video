@@ -78,3 +78,44 @@ export const AudioTrack = meta.story({
     assets: [audioAsset],
   },
 });
+
+// --- Task 115: Mixed clip kinds in same track ---
+
+const imageAsset = mockAsset({
+  id: "asset-image",
+  kind: "image",
+  originalPath: "/images/photo.jpg",
+  thumbnailPath: "/thumb/photo.jpg",
+  durationMs: undefined,
+});
+
+const titleClip = mockClip({
+  id: "clip-title",
+  clipKind: "title",
+  assetId: "",
+  startMs: 14000,
+  durationMs: 3000,
+  inMs: 0,
+  outMs: 3000,
+  text: { value: "Title Text", fontSize: 36 },
+});
+
+const imageClip = mockClip({
+  id: "clip-image",
+  clipKind: "image",
+  assetId: "asset-image",
+  startMs: 9000,
+  durationMs: 5000,
+  inMs: 0,
+  outMs: 5000,
+});
+
+export const MixedKindTrack = meta.story({
+  args: {
+    track: {
+      id: "track-mixed",
+      clips: [mockClip(), audioClip, imageClip, titleClip],
+    },
+    assets: [videoAsset, audioAsset, imageAsset],
+  },
+});
