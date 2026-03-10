@@ -122,7 +122,7 @@
 | 116 | sequence-ops のトラック操作拡張 — moveClipToTrack・removeTrack | [x] Done | 111 |
 | 117 | クリップのトラック間ドラッグ移動 UI | [x] Done | 116 |
 | 118 | Add Layer ボタンの移動 — ツールバーからトラックヘッダー「+」行へ | [x] Done | 09 |
-| 119 | トラックヘッダー右クリックメニュー + 確認ダイアログ付きトラック削除 | [ ] Todo | 116, 118 |
+| 119 | トラックヘッダー右クリックメニュー + 確認ダイアログ付きトラック削除 | [x] Done | 116, 118 |
 | 120 | トラック操作改善のテスト・Story 更新 | [ ] Todo | 116, 117, 118, 119 |
 
 ## Phase 1 Tasks
@@ -3674,32 +3674,32 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. ConfirmDialog コンポーネントの新規作成**
 
-- [ ] `ConfirmDialog` コンポーネントを作成する（props: `message`, `onConfirm`, `onCancel`）
-- [ ] モーダルオーバーレイ付きの確認ダイアログ UI を実装する（「OK」「キャンセル」ボタン）
-- [ ] Escape キーでキャンセルできるようにする
-- [ ] テーマ変数を使用してスタイリングする
+- [x] `ConfirmDialog` コンポーネントを作成する（props: `message`, `onConfirm`, `onCancel`）
+- [x] モーダルオーバーレイ付きの確認ダイアログ UI を実装する（「OK」「キャンセル」ボタン）
+- [x] Escape キーでキャンセルできるようにする
+- [x] テーマ変数を使用してスタイリングする
 
 **B. TimelineTrack のトラックヘッダー右クリック対応**
 
-- [ ] TimelineTrack の Props に `onTrackContextMenu?: (trackId: string, position: { x: number; y: number }) => void` を追加する
-- [ ] トラックヘッダー div に `onContextMenu` ハンドラを追加する
-- [ ] 右クリック時に `onTrackContextMenu(track.id, { x, y })` を呼び出す
+- [x] TimelineTrack の Props に `onTrackContextMenu?: (trackId: string, position: { x: number; y: number }) => void` を追加する
+- [x] トラックヘッダー div に `onContextMenu` ハンドラを追加する
+- [x] 右クリック時に `onTrackContextMenu(track.id, { x, y })` を呼び出す
 
 **C. Timeline のトラック右クリックメニュー管理**
 
-- [ ] トラック右クリック用の state を追加する: `trackContextMenu: { trackId: string; x: number; y: number } | null`
-- [ ] 既存の `ContextMenu` コンポーネントを再利用し、「Delete Track」メニュー項目を表示する
-- [ ] 「Delete Track」クリック時に ConfirmDialog を表示する
-- [ ] ConfirmDialog で「OK」を選択した場合に `onDeleteTrack(trackId)` を呼び出す
+- [x] トラック右クリック用の state を追加する: `trackContextMenu: { trackId: string; x: number; y: number } | null`
+- [x] 既存の `ContextMenu` コンポーネントを再利用し、「Delete Track」メニュー項目を表示する
+- [x] 「Delete Track」クリック時に ConfirmDialog を表示する
+- [x] ConfirmDialog で「OK」を選択した場合に `onDeleteTrack(trackId)` を呼び出す
 
 **D. Timeline の Props 拡張**
 
-- [ ] `onDeleteTrack?: (trackId: string) => void` を Props に追加する
+- [x] `onDeleteTrack?: (trackId: string) => void` を Props に追加する
 
 **E. EditorPage のトラック削除ハンドラ**
 
-- [ ] `handleDeleteTrack` を追加し、`removeTrack(sequence, trackId)` を呼び出して `pushState` する
-- [ ] Timeline に `onDeleteTrack={handleDeleteTrack}` を渡す
+- [x] `handleDeleteTrack` を追加し、`removeTrack(sequence, trackId)` を呼び出して `pushState` する
+- [x] Timeline に `onDeleteTrack={handleDeleteTrack}` を渡す
 
 **確認方法:** トラックヘッダーを右クリックするとコンテキストメニューが表示されること。「Delete Track」をクリックすると確認ダイアログが表示されること。「OK」でトラックが削除されること。「キャンセル」で何も起きないこと。削除が undo/redo で復元できること。
 
