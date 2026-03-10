@@ -1,6 +1,9 @@
 import { useRef, useEffect, useState } from "react";
-import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
+import type { Project, Clip, Asset } from "@video/shared";
 import { theme, buttonStyle } from "../theme";
+import { previewRendererRegistry } from "../lib/preview-renderer-registry";
+import type { ActiveClip, PreviewRenderContext } from "../lib/preview-renderer-registry";
+import "./renderers/index";
 
 type Props = {
   project: Project;
@@ -15,46 +18,6 @@ type Props = {
   isPopout?: boolean;
   onTogglePopout?: () => void;
 };
-
-type ActiveClip = {
-  clip: Clip;
-  asset: Asset;
-  clipTimeMs: number; // time relative to clip's source (inMs + offset)
-};
-
-type ActiveTextClip = {
-  clip: Clip;
-  text: ClipText;
-};
-
-function findActiveClip(project: Project, timeMs: number): ActiveClip | null {
-  for (const track of project.sequence.tracks) {
-    if (track.kind !== "video") continue;
-    for (const clip of track.clips) {
-      if (timeMs >= clip.startMs && timeMs < clip.startMs + clip.durationMs) {
-        const asset = project.assets.find((a: Asset) => a.id === clip.assetId);
-        if (!asset) continue;
-        const offset = timeMs - clip.startMs;
-        const clipTimeMs = clip.inMs + offset;
-        return { clip, asset, clipTimeMs };
-      }
-    }
-  }
-  return null;
-}
-
-function findActiveTextClips(project: Project, timeMs: number): ActiveTextClip[] {
-  const result: ActiveTextClip[] = [];
-  for (const track of project.sequence.tracks) {
-    if (track.kind !== "title") continue;
-    for (const clip of track.clips) {
-      if (timeMs >= clip.startMs && timeMs < clip.startMs + clip.durationMs && clip.text) {
-        result.push({ clip, text: clip.text });
-      }
-    }
-  }
-  return result;
-}
 
 function getSequenceEndMs(project: Project): number {
   let endMs = 0;
@@ -123,52 +86,78 @@ export function PreviewPlayer({
   const selectedClipIdRef = useRef(selectedClipId);
   selectedClipIdRef.current = selectedClipId;
 
-  const activeClip = findActiveClip(project, currentTimeMs);
-  const activeTextClips = findActiveTextClips(project, currentTimeMs);
+  // Canvas dimensions
+  const canvasW = project.settings.canvasWidth;
+  const canvasH = project.settings.canvasHeight;
 
-  const mediaUrl = activeClip
-    ? getMediaUrl(activeClip.asset, project.id)
-    : "";
+  // Track rendered canvas size so text overlay pixel values can be scaled
+  const [canvasScale, setCanvasScale] = useState(1);
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const w = entries[0].contentRect.width;
+      if (w > 0) setCanvasScale(w / canvasW);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [canvasW]);
+
+  // Build render context for renderers
+  const renderCtx: PreviewRenderContext = {
+    project, currentTimeMs, canvasW, canvasH, canvasScale, isPlaying,
+    videoRef: videoRef as React.RefObject<HTMLVideoElement | null>,
+  };
+
+  // Find active content from all renderers
+  const allRenderers = previewRendererRegistry.all();
+  const layers = allRenderers.map((renderer) => ({
+    renderer,
+    content: renderer.findActiveContent(renderCtx),
+  }));
+
+  const hasMediaContent = layers.some((l) => l.renderer.zOrder === 0 && l.content !== null);
+
+  // Get active video clip for video element management
+  const videoContent = layers.find((l) => l.renderer.id === "video-clip")?.content as ActiveClip | null;
+  const hasVideoContent = videoContent !== null;
+  const mediaUrl = videoContent ? getMediaUrl(videoContent.asset, project.id) : "";
 
   // Handle video source changes
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !activeClip) return;
+    if (!video || !videoContent) return;
 
-    const clipChanged = lastClipIdRef.current !== activeClip.clip.id;
-    const srcMissing = activeClip.asset.kind === "video" && !video.src;
+    const clipChanged = lastClipIdRef.current !== videoContent.clip.id;
+    const srcMissing = !video.src;
 
     if (clipChanged || srcMissing) {
-      lastClipIdRef.current = activeClip.clip.id;
+      lastClipIdRef.current = videoContent.clip.id;
       videoEndedRef.current = false;
-      if (activeClip.asset.kind === "video") {
-        const urlChanged = lastMediaUrlRef.current !== mediaUrl;
-        if (urlChanged || srcMissing) {
-          lastMediaUrlRef.current = mediaUrl;
-          sourceChangingRef.current = true;
-          video.src = mediaUrl;
-          // Wait for load before seeking when source changes
-          const seekTarget = activeClip.clipTimeMs / 1000;
-          const onLoadedData = () => {
-            video.removeEventListener("loadeddata", onLoadedData);
-            sourceChangingRef.current = false;
-            video.currentTime = seekTarget;
-            if (isPlayingRef.current) {
-              video.play().catch(() => {});
-            }
-          };
-          video.addEventListener("loadeddata", onLoadedData);
-          return () => video.removeEventListener("loadeddata", onLoadedData);
-        } else {
-          // Same URL — can seek immediately
-          video.currentTime = activeClip.clipTimeMs / 1000;
-          if (isPlaying) {
+      const urlChanged = lastMediaUrlRef.current !== mediaUrl;
+      if (urlChanged || srcMissing) {
+        lastMediaUrlRef.current = mediaUrl;
+        sourceChangingRef.current = true;
+        video.src = mediaUrl;
+        const seekTarget = videoContent.clipTimeMs / 1000;
+        const onLoadedData = () => {
+          video.removeEventListener("loadeddata", onLoadedData);
+          sourceChangingRef.current = false;
+          video.currentTime = seekTarget;
+          if (isPlayingRef.current) {
             video.play().catch(() => {});
           }
+        };
+        video.addEventListener("loadeddata", onLoadedData);
+        return () => video.removeEventListener("loadeddata", onLoadedData);
+      } else {
+        video.currentTime = videoContent.clipTimeMs / 1000;
+        if (isPlaying) {
+          video.play().catch(() => {});
         }
       }
     }
-  }, [activeClip?.clip.id, mediaUrl, isPlaying]);
+  }, [videoContent?.clip.id, mediaUrl, isPlaying]);
 
   // Listen for video ended event to advance clips
   useEffect(() => {
@@ -186,17 +175,18 @@ export function PreviewPlayer({
     const video = videoRef.current;
     if (!video) return;
 
-    if (isPlaying && activeClip?.asset.kind === "video") {
+    if (isPlaying && hasVideoContent) {
       video.play().catch(() => {});
     } else {
       video.pause();
     }
-  }, [isPlaying, activeClip?.asset.kind]);
+  }, [isPlaying, hasVideoContent]);
 
   // Sync video time back to timeline during playback
   useEffect(() => {
     if (!isPlaying) return;
 
+    const mediaRenderers = previewRendererRegistry.all().filter((r) => r.zOrder === 0);
     let lastFrameTime = performance.now();
 
     const tick = () => {
@@ -219,38 +209,38 @@ export function PreviewPlayer({
         return;
       }
 
-      const clip = findActiveClip(proj, curTime);
+      // Find active media clip through renderers
+      const tickRenderCtx: PreviewRenderContext = {
+        project: proj, currentTimeMs: curTime,
+        canvasW, canvasH, canvasScale: 1, isPlaying: true,
+        videoRef: videoRef as React.RefObject<HTMLVideoElement | null>,
+      };
 
-      if (clip && clip.asset.kind === "video") {
-        const video = videoRef.current;
-        const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
-        const videoReady = clip.clip.id === lastClipIdRef.current;
+      let activeMedia: ActiveClip | null = null;
+      for (const r of mediaRenderers) {
+        const c = r.findActiveContent(tickRenderCtx);
+        if (c) { activeMedia = c as ActiveClip; break; }
+      }
 
-        if (!video) {
-          // No video element — skip
-        } else if (!videoReady) {
-          const newTime = curTime + deltaMs;
-          onTimeUpdateRef.current(Math.min(newTime, clipEndMs));
-        } else if (video.ended || videoEndedRef.current) {
-          videoEndedRef.current = false;
-          const newTime = curTime + deltaMs;
-          onTimeUpdateRef.current(Math.min(newTime, clipEndMs));
-        } else if (video.readyState >= 2 && !video.paused) {
-          const videoTimeMs = video.currentTime * 1000;
-          const expectedVideoTime = clip.clip.inMs + (curTime - clip.clip.startMs);
-          if (Math.abs(videoTimeMs - expectedVideoTime) > 500) {
-            const newTime = curTime + deltaMs;
-            onTimeUpdateRef.current(Math.min(newTime, clipEndMs));
-          } else {
-            const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs);
-            const clampedMs = Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
-            onTimeUpdateRef.current(clampedMs);
+      if (activeMedia) {
+        const strategy = previewRendererRegistry.getTickStrategy(activeMedia.asset.kind);
+        if (strategy) {
+          const tickCtx = {
+            currentTimeMs: curTime,
+            videoRef: videoRef.current,
+            lastClipId: lastClipIdRef.current,
+            videoEnded: videoEndedRef.current,
+            resetVideoEnded: () => { videoEndedRef.current = false; },
+          };
+          const newTime = strategy.tick(activeMedia, deltaMs, tickCtx);
+          if (newTime !== null) {
+            onTimeUpdateRef.current(newTime);
           }
+        } else {
+          // Unknown asset kind — advance like a static clip
+          const clipEndMs = activeMedia.clip.startMs + activeMedia.clip.durationMs;
+          onTimeUpdateRef.current(Math.min(curTime + deltaMs, clipEndMs));
         }
-      } else if (clip && clip.asset.kind === "image") {
-        const newTime = curTime + deltaMs;
-        const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
-        onTimeUpdateRef.current(Math.min(newTime, clipEndMs));
       } else {
         const newTime = curTime + deltaMs;
         if (newTime < playEnd) {
@@ -272,54 +262,10 @@ export function PreviewPlayer({
   // Seek video when timeline is scrubbed (not playing)
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || isPlaying || !activeClip) return;
+    if (!video || isPlaying || !videoContent) return;
     if (sourceChangingRef.current) return;
-    if (activeClip.asset.kind === "video") {
-      video.currentTime = activeClip.clipTimeMs / 1000;
-    }
+    video.currentTime = videoContent.clipTimeMs / 1000;
   }, [currentTimeMs, isPlaying]);
-
-  // Canvas dimensions
-  const canvasW = project.settings.canvasWidth;
-  const canvasH = project.settings.canvasHeight;
-
-  // Track rendered canvas size so text overlay pixel values can be scaled
-  // to match the actual canvas resolution (e.g. fontSize 48 in 1920-space).
-  const [canvasScale, setCanvasScale] = useState(1);
-  useEffect(() => {
-    const el = canvasRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver((entries) => {
-      const w = entries[0].contentRect.width;
-      if (w > 0) setCanvasScale(w / canvasW);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [canvasW]);
-
-  // Asset dimensions & transform
-  const assetW = activeClip?.asset.width ?? canvasW;
-  const assetH = activeClip?.asset.height ?? canvasH;
-  const clipTransform = activeClip?.clip.transform;
-  const translateX = clipTransform?.x ?? 0;
-  const translateY = clipTransform?.y ?? 0;
-  const scale = clipTransform?.scale ?? 1;
-  const rotation = clipTransform?.rotation ?? 0;
-  const crop = activeClip?.clip.crop;
-
-  // After crop the visible region becomes crop.width × crop.height.
-  // Use these "effective" dimensions so the container matches the FFmpeg
-  // pipeline order: crop → center on canvas → scale/position.
-  const effectiveW = crop?.width ?? assetW;
-  const effectiveH = crop?.height ?? assetH;
-
-  const containerWidthPct = (effectiveW / canvasW) * 100 * scale;
-  const containerHeightPct = (effectiveH / canvasH) * 100 * scale;
-  const offsetXPct = (translateX / canvasW) * 100;
-  const offsetYPct = (translateY / canvasH) * 100;
-
-  // Build CSS transform for rotation only (position handled via top/left)
-  const rotationCss = rotation ? `rotate(${rotation}deg)` : undefined;
 
   // Escape key exits fullscreen
   useEffect(() => {
@@ -333,15 +279,6 @@ export function PreviewPlayer({
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isFullscreen, onToggleFullscreen]);
-
-  const isImage = activeClip?.asset.kind === "image";
-  const thumbnailUrl = activeClip
-    ? (() => {
-        const thumb = activeClip.asset.thumbnailPath;
-        if (!thumb) return "";
-        return `/media/projects/${project.id}/thumbnails/${thumb.split("/").pop()}`;
-      })()
-    : "";
 
   return (
     <div
@@ -370,7 +307,7 @@ export function PreviewPlayer({
           background: theme.bgDark,
         }}
       >
-        {!activeClip ? (
+        {!hasMediaContent ? (
           <span style={{ color: theme.textMuted, fontSize: "14px" }}>No clip at playhead</span>
         ) : (
           /* Canvas container — fixed aspect ratio, black background */
@@ -387,71 +324,10 @@ export function PreviewPlayer({
               background: theme.black,
             }}
           >
-            {/* Media element — sized & positioned relative to canvas */}
-            <div
-              style={{
-                position: "absolute",
-                width: `${containerWidthPct}%`,
-                height: `${containerHeightPct}%`,
-                left: `calc(50% + ${offsetXPct}%)`,
-                top: `calc(50% + ${offsetYPct}%)`,
-                transform: `translate(-50%, -50%)${rotationCss ? ` ${rotationCss}` : ""}`,
-                transformOrigin: "center center",
-                overflow: crop ? "hidden" : undefined,
-              }}
-            >
-              {isImage ? (
-                <img
-                  src={thumbnailUrl}
-                  alt=""
-                  style={mediaStyle(crop, assetW, assetH)}
-                />
-              ) : (
-                <video
-                  ref={videoRef}
-                  style={mediaStyle(crop, assetW, assetH)}
-                  muted
-                />
-              )}
-            </div>
-
-            {/* Text overlay layer — within canvas bounds.
-                Pixel values are scaled by canvasScale so that e.g. fontSize 48
-                means 48px in the actual canvas resolution (1920×1080), not 48
-                CSS pixels in the (potentially much smaller) rendered element. */}
-            {activeTextClips.length > 0 && (
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                pointerEvents: "none",
-                padding: `${40 * canvasScale}px`,
-              }}>
-                {activeTextClips.map(({ clip, text }) => (
-                  <div
-                    key={clip.id}
-                    style={{
-                      fontSize: `${(text.fontSize ?? 48) * canvasScale}px`,
-                      color: text.color ?? "#ffffff",
-                      backgroundColor: text.backgroundColor ?? "rgba(0,0,0,0.5)",
-                      textAlign: (text.align as React.CSSProperties["textAlign"]) ?? "center",
-                      fontFamily: text.fontFamily ?? "sans-serif",
-                      padding: `${8 * canvasScale}px`,
-                      borderRadius: `${4 * canvasScale}px`,
-                      marginBottom: "0px",
-                      maxWidth: "90%",
-                      wordBreak: "break-word",
-                      whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {text.value}
-                  </div>
-                ))}
-              </div>
-            )}
+            {layers.map(({ renderer, content }) => {
+              if (!content) return null;
+              return <renderer.Component key={renderer.id} content={content} ctx={renderCtx} />;
+            })}
           </div>
         )}
       </div>
@@ -532,25 +408,6 @@ export function PreviewPlayer({
       </div>
     </div>
   );
-}
-
-/**
- * Compute inner media element styles.
- * Without crop: fills container 100%.
- * With crop: oversizes the media and offsets it so only the crop region is visible
- * (container has overflow:hidden).
- */
-function mediaStyle(crop: ClipCrop | undefined, assetW: number, assetH: number): React.CSSProperties {
-  if (!crop) {
-    return { width: "100%", height: "100%", objectFit: "fill" as const };
-  }
-  return {
-    width: `${(assetW / crop.width) * 100}%`,
-    height: `${(assetH / crop.height) * 100}%`,
-    marginLeft: `${-(crop.x / crop.width) * 100}%`,
-    marginTop: `${-(crop.y / crop.height) * 100}%`,
-    objectFit: "fill" as const,
-  };
 }
 
 function formatTime(ms: number): string {
