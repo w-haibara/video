@@ -5,8 +5,10 @@ import path from "node:path";
 import { assetsDir, exportDir } from "../utils/paths";
 import * as jobQueue from "./job-queue";
 import * as projectService from "./project-service";
+import { exportHandlerRegistry } from "../lib/export-handler-registry";
+import "../lib/export-handlers/index";
 
-function sanitizeColor(value: string): string {
+export function sanitizeColor(value: string): string {
   // Allow hex (#rgb, #rrggbb, #rrggbbaa), named colors, and color@opacity
   if (/^#[0-9a-fA-F]{3,8}$/.test(value)) return value;
   if (/^[a-zA-Z]+(@[0-9.]+)?$/.test(value)) return value;
@@ -17,7 +19,7 @@ function sanitizeColor(value: string): string {
  * Build FFmpeg filter segment for clip position/scale transform.
  * Returns empty string or ",filter1,filter2" to append to existing chain.
  */
-function buildTransformFilter(
+export function buildTransformFilter(
   clip: Clip,
   preset: { width: number; height: number },
 ): string {
@@ -101,196 +103,58 @@ export function buildExportArgs(
     throw new Error("No video clips to export");
   }
 
-  const inputArgs: string[] = [];
-  const filterParts: string[] = [];
+  const ctx = {
+    project,
+    preset,
+    assetsBase,
+    inputArgs: [] as string[],
+    filterParts: [] as string[],
+    inputIndex: 0,
+  };
 
-  // Add inputs for each clip
-  clips.forEach((clip, i) => {
+  // 1. Build inputs for each clip via clip handlers
+  clips.forEach((clip) => {
     const asset = project.assets.find((a) => a.id === clip.assetId);
     if (!asset) throw new Error(`Asset not found: ${clip.assetId}`);
 
-    const assetPath = path.join(assetsBase, path.basename(asset.originalPath));
-
-    // Resolve effective duration: ensure consistency between durationMs and outMs-inMs,
-    // and clamp to source length to prevent FFmpeg freeze on last frame
-    let effectiveDurationMs = Math.min(clip.durationMs, clip.outMs - clip.inMs);
-    if (asset.kind === "video" && asset.durationMs) {
-      const maxFromSource = asset.durationMs - clip.inMs;
-      if (maxFromSource > 0) {
-        effectiveDurationMs = Math.min(effectiveDurationMs, maxFromSource);
-      }
-    }
-
-    // Build user crop filter segment (applied before canvas pad/crop)
-    const userCrop = clip.crop
-      ? `,crop=${clip.crop.width}:${clip.crop.height}:${clip.crop.x}:${clip.crop.y}`
-      : "";
-
-    if (asset.kind === "video") {
-      inputArgs.push("-ignore_unknown", "-i", assetPath);
-      const trimStart = clip.inMs / 1000;
-      const duration = effectiveDurationMs / 1000;
-      let chain =
-        `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS` +
-        `${userCrop},` +
-        `pad=w='max(iw,${preset.width})':h='max(ih,${preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black,` +
-        `crop=${preset.width}:${preset.height}:(iw-${preset.width})/2:(ih-${preset.height})/2`;
-      chain += buildTransformFilter(clip, preset);
-      filterParts.push(`${chain}[v${i}]`);
-    } else if (asset.kind === "image") {
-      inputArgs.push("-loop", "1", "-t", String(effectiveDurationMs / 1000), "-i", assetPath);
-      let chain =
-        `[${i}:v]` +
-        `${clip.crop ? `crop=${clip.crop.width}:${clip.crop.height}:${clip.crop.x}:${clip.crop.y},` : ""}` +
-        `pad=w='max(iw,${preset.width})':h='max(ih,${preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black,` +
-        `crop=${preset.width}:${preset.height}:(iw-${preset.width})/2:(ih-${preset.height})/2,setsar=1`;
-      chain += buildTransformFilter(clip, preset);
-      filterParts.push(`${chain}[v${i}]`);
+    const handler = exportHandlerRegistry.getClipHandler(asset.kind);
+    if (handler) {
+      handler.buildInput(clip, asset, ctx);
     }
   });
 
-  // Concat all video streams
+  // 2. Concat all video streams
   const concatInputs = clips.map((_, i) => `[v${i}]`).join("");
-  filterParts.push(
+  ctx.filterParts.push(
     `${concatInputs}concat=n=${clips.length}:v=1:a=0[outv]`,
   );
 
-  // Add text overlays (drawtext)
-  const textTrack = project.sequence.tracks.find((t) => t.kind === "title");
+  // 3. Apply overlay handlers
   let videoOut = "[outv]";
-  if (textTrack && textTrack.clips.length > 0) {
-    const textClips = textTrack.clips.filter(
-      (tc) => projectDurationMs == null || tc.startMs < projectDurationMs,
-    );
-    textClips.forEach((textClip, i) => {
-      if (!textClip.text) return;
-      const enableStart = textClip.startMs / 1000;
-      const rawEnd = textClip.startMs + textClip.durationMs;
-      const clampedEnd = projectDurationMs != null ? Math.min(rawEnd, projectDurationMs) : rawEnd;
-      const enableEnd = clampedEnd / 1000;
-      const escapedText = textClip.text.value
-        .replace(/'/g, "'\\''")
-        .replace(/:/g, "\\:");
-      const fontSize = Math.max(8, Math.min(500, Math.round(textClip.text.fontSize ?? 48)));
-      const fontColor = sanitizeColor(textClip.text.color ?? "white");
-      const bgColor = sanitizeColor(textClip.text.backgroundColor ?? "black@0.5");
-      const prevOut = i === 0 ? "[outv]" : `[txt${i - 1}]`;
-      const curOut = `[txt${i}]`;
-
-      filterParts.push(
-        `${prevOut}drawtext=text='${escapedText}':fontsize=${fontSize}:` +
-          `fontcolor=${fontColor}:box=1:boxcolor=${bgColor}:boxborderw=8:` +
-          `x=(w-text_w)/2:y=h-th-40:enable='between(t,${enableStart},${enableEnd})'${curOut}`,
-      );
-      videoOut = curOut;
-    });
-  }
-
-  // Handle audio
-  let audioFilter = "";
-
-  // Check if any video clip has audio
-  const hasVideoAudio = clips.some((clip) => {
-    const asset = project.assets.find((a) => a.id === clip.assetId);
-    return asset?.kind === "video" && asset.hasAudio;
-  });
-
-  if (audioTrack && audioTrack.clips.length > 0) {
-    const bgmClip = audioTrack.clips[0];
-    const bgmAsset = project.assets.find((a) => a.id === bgmClip.assetId);
-    if (bgmAsset) {
-      const bgmPath = path.join(assetsBase, path.basename(bgmAsset.originalPath));
-      const bgmInputIdx = clips.length;
-      inputArgs.push("-i", bgmPath);
-      const volume = bgmClip.volume ?? 1.0;
-      const bgmStart = bgmClip.startMs / 1000;
-      const bgmDuration = bgmClip.durationMs / 1000;
-
-      if (hasVideoAudio) {
-        // Mix video audio with BGM
-        // Only include clips that actually have audio streams
-        const audioClipIndices = clips
-          .map((clip, i) => {
-            const a = project.assets.find((a) => a.id === clip.assetId);
-            return a?.kind === "video" && a.hasAudio ? i : -1;
-          })
-          .filter((i) => i >= 0);
-
-        // For clips without audio, generate silence; for those with audio, trim to match video
-        const audioParts: string[] = [];
-        clips.forEach((clip, i) => {
-          const a = project.assets.find((a) => a.id === clip.assetId);
-          if (a?.kind === "video" && a.hasAudio) {
-            const trimStart = clip.inMs / 1000;
-            let dur = Math.min(clip.durationMs, clip.outMs - clip.inMs);
-            if (a.durationMs) dur = Math.min(dur, a.durationMs - clip.inMs);
-            filterParts.push(
-              `[${i}:a]atrim=start=${trimStart}:duration=${dur / 1000},asetpts=PTS-STARTPTS[at${i}]`,
-            );
-            audioParts.push(`[at${i}]`);
-          } else {
-            const dur = clip.durationMs / 1000;
-            filterParts.push(
-              `anullsrc=r=48000:cl=stereo[sil${i}]`,
-            );
-            filterParts.push(
-              `[sil${i}]atrim=duration=${dur}[sa${i}]`,
-            );
-            audioParts.push(`[sa${i}]`);
-          }
-        });
-        const audioConcat = audioParts.join("");
-        filterParts.push(
-          `${audioConcat}concat=n=${clips.length}:v=0:a=1[va]`,
-        );
-        filterParts.push(
-          `[${bgmInputIdx}:a]atrim=start=0:duration=${bgmDuration},` +
-            `adelay=${Math.round(bgmStart * 1000)}|${Math.round(bgmStart * 1000)},` +
-            `volume=${volume}[bgm]`,
-        );
-        filterParts.push(`[va][bgm]amix=inputs=2:duration=longest[outa]`);
-        audioFilter = "[outa]";
-      } else {
-        filterParts.push(
-          `[${bgmInputIdx}:a]atrim=start=0:duration=${bgmDuration},` +
-            `adelay=${Math.round(bgmStart * 1000)}|${Math.round(bgmStart * 1000)},` +
-            `volume=${volume}[outa]`,
-        );
-        audioFilter = "[outa]";
-      }
+  for (const overlayHandler of exportHandlerRegistry.getOverlayHandlers()) {
+    const track = project.sequence.tracks.find((t) => t.kind === overlayHandler.trackKind);
+    if (track && track.clips.length > 0) {
+      videoOut = overlayHandler.buildOverlay(track.clips, ctx, videoOut);
     }
-  } else if (hasVideoAudio) {
-    // Just concat video audio, generating silence for clips without audio
-    const audioParts: string[] = [];
-    clips.forEach((clip, i) => {
-      const a = project.assets.find((a) => a.id === clip.assetId);
-      if (a?.kind === "video" && a.hasAudio) {
-        const trimStart = clip.inMs / 1000;
-        let dur = Math.min(clip.durationMs, clip.outMs - clip.inMs);
-        if (a.durationMs) dur = Math.min(dur, a.durationMs - clip.inMs);
-        filterParts.push(
-          `[${i}:a]atrim=start=${trimStart}:duration=${dur / 1000},asetpts=PTS-STARTPTS[at${i}]`,
-        );
-        audioParts.push(`[at${i}]`);
-      } else {
-        const dur = clip.durationMs / 1000;
-        filterParts.push(`anullsrc=r=48000:cl=stereo[sil${i}]`);
-        filterParts.push(`[sil${i}]atrim=duration=${dur}[sa${i}]`);
-        audioParts.push(`[sa${i}]`);
-      }
-    });
-    const audioConcat = audioParts.join("");
-    filterParts.push(
-      `${audioConcat}concat=n=${clips.length}:v=0:a=1[outa]`,
-    );
-    audioFilter = "[outa]";
   }
 
-  const filterComplex = filterParts.join(";");
+  // 4. Apply audio handlers
+  let audioFilter = "";
+  for (const audioHandler of exportHandlerRegistry.getAudioHandlers()) {
+    const track = project.sequence.tracks.find((t) => t.kind === audioHandler.trackKind);
+    const audioClips = track ? track.clips : [];
+    const result = audioHandler.buildAudio(audioClips, ctx, clips);
+    if (result) {
+      audioFilter = result;
+    }
+  }
+
+  // 5. Build output args
+  const filterComplex = ctx.filterParts.join(";");
 
   const args = [
     "-y",
-    ...inputArgs,
+    ...ctx.inputArgs,
     "-filter_complex", filterComplex,
     "-map", videoOut,
   ];
