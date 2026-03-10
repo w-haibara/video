@@ -12,6 +12,8 @@ type Props = {
   onSelectClip: (id: string | null) => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
+  isPopout?: boolean;
+  onTogglePopout?: () => void;
 };
 
 type ActiveClip = {
@@ -96,6 +98,8 @@ export function PreviewPlayer({
   onSelectClip,
   isFullscreen,
   onToggleFullscreen,
+  isPopout,
+  onTogglePopout,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -503,15 +507,28 @@ export function PreviewPlayer({
         <span style={{ color: theme.textMuted, fontSize: "12px" }}>
           {formatTime(currentTimeMs)}
         </span>
-        {onToggleFullscreen && (
-          <button
-            onClick={onToggleFullscreen}
-            style={{ ...buttonStyle.secondary, padding: "4px 16px", fontSize: "13px", minWidth: "36px", marginLeft: "auto" }}
-            title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-          >
-            {isFullscreen ? "⛶" : "⛶"}
-          </button>
-        )}
+        <span style={{ marginLeft: "auto", display: "flex", gap: "4px" }}>
+          {onTogglePopout && (
+            <button
+              onClick={onTogglePopout}
+              disabled={!!isFullscreen}
+              style={{ ...buttonStyle.secondary, padding: "4px 16px", fontSize: "13px", minWidth: "36px" }}
+              title={isPopout ? "Close popout" : "Open in new window"}
+            >
+              {isPopout ? "↙" : "↗"}
+            </button>
+          )}
+          {onToggleFullscreen && (
+            <button
+              onClick={onToggleFullscreen}
+              disabled={!!isPopout}
+              style={{ ...buttonStyle.secondary, padding: "4px 16px", fontSize: "13px", minWidth: "36px" }}
+              title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+            >
+              ⛶
+            </button>
+          )}
+        </span>
       </div>
     </div>
   );

@@ -10,6 +10,8 @@ import { AssetPanel } from "../components/AssetPanel";
 import { Timeline } from "../components/Timeline";
 import { InspectorPanel } from "../components/InspectorPanel";
 import { PreviewPlayer } from "../components/PreviewPlayer";
+import { PreviewPopout } from "../components/PreviewPopout";
+import { usePreviewPopout } from "../hooks/usePreviewPopout";
 import { SaveIndicator } from "../components/SaveIndicator";
 import { JobProgress } from "../components/JobProgress";
 import { ProjectSettingsPanel } from "../components/ProjectSettingsPanel";
@@ -61,6 +63,12 @@ function EditorPageLoaded({
 }) {
   const [isPreviewFullscreen, setIsPreviewFullscreen] = useState(false);
   const togglePreviewFullscreen = useCallback(() => setIsPreviewFullscreen((v) => !v), []);
+
+  const { popoutWindow, isPopout, openPopout, closePopout } = usePreviewPopout();
+  const togglePopout = useCallback(() => {
+    if (isPopout) closePopout();
+    else openPopout();
+  }, [isPopout, openPopout, closePopout]);
 
   const [exportFilename, setExportFilename] = useState(`export-${Date.now()}.mp4`);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -164,17 +172,59 @@ function EditorPageLoaded({
         />
       }
       preview={
-        <PreviewPlayer
-          project={currentProject}
-          currentTimeMs={currentTimeMs}
-          onTimeUpdate={onSeek}
-          isPlaying={isPlaying}
-          onPlayPause={onPlayPause}
-          selectedClipId={selectedClipId}
-          onSelectClip={handleSelectClip}
-          isFullscreen={isPreviewFullscreen}
-          onToggleFullscreen={togglePreviewFullscreen}
-        />
+        <>
+          {isPopout && popoutWindow ? (
+            <>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "100%",
+                height: "100%",
+                background: theme.bgDark,
+                flexDirection: "column",
+                gap: "8px",
+              }}>
+                <span style={{ color: theme.textMuted, fontSize: "14px" }}>
+                  別ウィンドウで表示中
+                </span>
+                <button
+                  onClick={closePopout}
+                  style={{ ...buttonStyle.secondary, padding: "4px 16px", fontSize: "13px" }}
+                >
+                  ↙ 元に戻す
+                </button>
+              </div>
+              <PreviewPopout popoutWindow={popoutWindow}>
+                <PreviewPlayer
+                  project={currentProject}
+                  currentTimeMs={currentTimeMs}
+                  onTimeUpdate={onSeek}
+                  isPlaying={isPlaying}
+                  onPlayPause={onPlayPause}
+                  selectedClipId={selectedClipId}
+                  onSelectClip={handleSelectClip}
+                  isPopout={isPopout}
+                  onTogglePopout={togglePopout}
+                />
+              </PreviewPopout>
+            </>
+          ) : (
+            <PreviewPlayer
+              project={currentProject}
+              currentTimeMs={currentTimeMs}
+              onTimeUpdate={onSeek}
+              isPlaying={isPlaying}
+              onPlayPause={onPlayPause}
+              selectedClipId={selectedClipId}
+              onSelectClip={handleSelectClip}
+              isFullscreen={isPreviewFullscreen}
+              onToggleFullscreen={togglePreviewFullscreen}
+              isPopout={isPopout}
+              onTogglePopout={togglePopout}
+            />
+          )}
+        </>
       }
       mainPanel={
         <>
