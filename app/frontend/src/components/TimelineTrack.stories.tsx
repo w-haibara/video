@@ -32,7 +32,6 @@ export const VideoTrack = meta.story({
   args: {
     track: {
       id: "track-v",
-      kind: "video",
       clips: [mockClip(), secondClip],
     },
     assets: [videoAsset],
@@ -43,7 +42,6 @@ export const EmptyTrack = meta.story({
   args: {
     track: {
       id: "track-v",
-      kind: "video",
       clips: [],
     },
     assets: [],
@@ -62,6 +60,7 @@ const audioAsset = mockAsset({
 
 const audioClip = mockClip({
   id: "clip-audio",
+  clipKind: "audio",
   assetId: "asset-audio",
   startMs: 1000,
   durationMs: 8000,
@@ -73,7 +72,6 @@ export const AudioTrack = meta.story({
   args: {
     track: {
       id: "track-a",
-      kind: "audio",
       clips: [audioClip],
     },
     assets: [audioAsset],

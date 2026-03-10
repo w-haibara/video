@@ -1,6 +1,6 @@
 // Types
 export type { Asset, AssetKind, BuiltinAssetKind } from "./types/asset";
-export type { Project, ProjectSettings, Sequence, Track, BuiltinTrackKind, Clip, ClipText, ClipTransform, ClipCrop, ExportPreset } from "./types/project";
+export type { Project, ProjectSettings, Sequence, Track, Clip, BuiltinClipKind, BuiltinBlendMode, ClipText, ClipTransform, ClipCrop, ExportPreset } from "./types/project";
 export type { Job, JobStatus } from "./types/job";
 export type { PluginManifest } from "./types/plugin";
 export type {
@@ -16,6 +16,8 @@ export type {
 
 // Utils
 export { generateId } from "./utils/id";
+export { inferTrackKind } from "./utils/track";
+export { migrateProject } from "./utils/migration";
 
 // Constants
 export {

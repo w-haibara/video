@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Project, Clip, Asset } from "@video/shared";
+import { inferTrackKind } from "@video/shared";
 import { theme, inputStyle, sectionHeadingStyle } from "../theme";
 import { trackKindRegistry } from "../lib/track-kind-registry";
 import { inspectorEditorRegistry } from "../lib/inspector-editor-registry";
@@ -19,7 +20,7 @@ function findClipAndAsset(
     const clip = track.clips.find((c: Clip) => c.id === clipId);
     if (clip) {
       const asset = project.assets.find((a: Asset) => a.id === clip.assetId);
-      return { clip, asset, trackKind: track.kind };
+      return { clip, asset, trackKind: inferTrackKind(track) };
     }
   }
   return null;

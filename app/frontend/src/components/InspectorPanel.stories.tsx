@@ -38,6 +38,7 @@ const audioAsset = mockAsset({
 
 const audioClip = mockClip({
   id: "clip-audio",
+  clipKind: "audio",
   assetId: "asset-audio",
   durationMs: 8000,
   outMs: 8000,
@@ -50,8 +51,8 @@ export const AudioClip = meta.story({
       assets: [mockAsset(), audioAsset],
       sequence: {
         tracks: [
-          { id: "track-v", kind: "video", clips: [mockClip()] },
-          { id: "track-a", kind: "audio", clips: [audioClip] },
+          { id: "track-v", clips: [mockClip()] },
+          { id: "track-a", clips: [audioClip] },
         ],
       },
     }),
@@ -61,6 +62,7 @@ export const AudioClip = meta.story({
 
 const textClip = mockClip({
   id: "clip-text",
+  clipKind: "title",
   assetId: "",
   durationMs: 3000,
   outMs: 3000,
@@ -72,9 +74,9 @@ export const TextClip = meta.story({
     project: mockProject({
       sequence: {
         tracks: [
-          { id: "track-v", kind: "video", clips: [mockClip()] },
-          { id: "track-a", kind: "audio", clips: [] },
-          { id: "track-t", kind: "title", clips: [textClip] },
+          { id: "track-v", clips: [mockClip()] },
+          { id: "track-a", clips: [] },
+          { id: "track-t", clips: [textClip] },
         ],
       },
     }),
@@ -111,10 +113,9 @@ export const ImageClip = meta.story({
         tracks: [
           {
             id: "track-v",
-            kind: "video",
             clips: [mockClip(), imageClip],
           },
-          { id: "track-a", kind: "audio", clips: [] },
+          { id: "track-a", clips: [] },
         ],
       },
     }),

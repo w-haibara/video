@@ -21,12 +21,8 @@ export type Sequence = {
   tracks: Track[];
 };
 
-/** Built-in track kinds for convenience. The Track.kind field accepts any string. */
-export type BuiltinTrackKind = "video" | "audio" | "title";
-
 export type Track = {
   id: string;
-  kind: string;
   clips: Clip[];
 };
 
@@ -53,8 +49,15 @@ export type ClipCrop = {
   height: number;
 };
 
+/** Built-in clip kinds. The Clip.clipKind field accepts any string. */
+export type BuiltinClipKind = "video" | "audio" | "title" | "image";
+
+/** Built-in blend modes. The Clip.blendMode field accepts any string. */
+export type BuiltinBlendMode = "cover";
+
 export type Clip = {
   id: string;
+  clipKind: string;
   assetId: string;
   startMs: number; // タイムライン上の開始位置
   durationMs: number; // クリップの表示/再生時間
@@ -64,6 +67,7 @@ export type Clip = {
   volume?: number; // 0.0 - 1.0
   transform?: ClipTransform;
   crop?: ClipCrop;
+  blendMode?: string; // 省略時は "cover" として扱う
 };
 
 export type ExportPreset = {

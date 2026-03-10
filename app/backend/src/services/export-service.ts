@@ -1,5 +1,6 @@
 import type { Project, Clip, ExportPreset } from "@video/shared";
 import type { Job } from "@video/shared";
+import { inferTrackKind } from "@video/shared";
 import { mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
 import { assetsDir, exportDir } from "../utils/paths";
@@ -71,7 +72,7 @@ export function buildExportArgs(
   assetsBase: string,
   outputPath: string,
 ): string[] {
-  const videoTrack = project.sequence.tracks.find((t) => t.kind === "video");
+  const videoTrack = project.sequence.tracks.find((t) => inferTrackKind(t) === "video");
   const audioTrack = project.sequence.tracks.find((t) => t.kind === "audio");
 
   if (!videoTrack || videoTrack.clips.length === 0) {
@@ -137,7 +138,7 @@ export function buildExportArgs(
   // 3. Apply overlay handlers
   let videoOut = "[outv]";
   for (const overlayHandler of exportHandlerRegistry.getOverlayHandlers()) {
-    const track = project.sequence.tracks.find((t) => t.kind === overlayHandler.trackKind);
+    const track = project.sequence.tracks.find((t) => inferTrackKind(t) === overlayHandler.trackKind);
     if (track && track.clips.length > 0) {
       videoOut = overlayHandler.buildOverlay(track.clips, ctx, videoOut);
     }
@@ -146,7 +147,7 @@ export function buildExportArgs(
   // 4. Apply audio handlers
   let audioFilter = "";
   for (const audioHandler of exportHandlerRegistry.getAudioHandlers()) {
-    const track = project.sequence.tracks.find((t) => t.kind === audioHandler.trackKind);
+    const track = project.sequence.tracks.find((t) => inferTrackKind(t) === audioHandler.trackKind);
     const audioClips = track ? track.clips : [];
     const result = audioHandler.buildAudio(audioClips, ctx, clips);
     if (result) {
@@ -203,7 +204,7 @@ export async function startExport(
   const assetsBase = assetsDir(projectId);
 
   // Validate
-  const videoTrack = project.sequence.tracks.find((t) => t.kind === "video");
+  const videoTrack = project.sequence.tracks.find((t) => inferTrackKind(t) === "video");
   if (!videoTrack || videoTrack.clips.length === 0) {
     throw new Error("No video clips to export");
   }

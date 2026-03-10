@@ -75,7 +75,7 @@ export const SmallAssetOnLargeCanvas = meta.story({
       assets: [mockAsset({ id: "small", width: 640, height: 480 })],
       sequence: {
         tracks: [
-          { id: "tv", kind: "video", clips: [mockClip({ id: "c1", assetId: "small" })] },
+          { id: "tv", clips: [mockClip({ id: "c1", assetId: "small" })] },
         ],
       },
       settings: { durationMs: 30000, canvasWidth: 1920, canvasHeight: 1080 },
@@ -107,7 +107,6 @@ export const WithCrop = meta.story({
         tracks: [
           {
             id: "tv",
-            kind: "video",
             clips: [
               mockClip({
                 id: "c1",
@@ -135,7 +134,6 @@ export const WithCropAndScale = meta.story({
         tracks: [
           {
             id: "tv",
-            kind: "video",
             clips: [
               mockClip({
                 id: "c1",
@@ -164,15 +162,14 @@ export const WithTextOverlayDefaultBg = meta.story({
         tracks: [
           {
             id: "tv",
-            kind: "video",
             clips: [mockClip({ id: "c1", assetId: "v1", durationMs: 10000, outMs: 10000 })],
           },
           {
             id: "tt",
-            kind: "title",
             clips: [
               mockClip({
                 id: "ct",
+                clipKind: "title",
                 assetId: "",
                 durationMs: 5000,
                 outMs: 5000,
@@ -365,8 +362,8 @@ Fullscreen.test("fullscreen button shows exit title", async ({ canvas }) => {
 Fullscreen.test("fullscreen container has position:fixed", async ({ canvas }) => {
   // The outermost div rendered by PreviewPlayer should have position:fixed
   const canvasEl = await canvas.findByTestId("preview-canvas");
-  // Walk up to find the fixed container
-  const outer = canvasEl.closest("[style]")?.parentElement as HTMLElement;
+  // Walk up: canvas → flex container → root (with position:fixed)
+  const outer = canvasEl.parentElement?.parentElement as HTMLElement;
   expect(outer).toBeTruthy();
   expect(outer.style.position).toBe("fixed");
 });

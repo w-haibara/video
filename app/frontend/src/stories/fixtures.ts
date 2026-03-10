@@ -17,6 +17,7 @@ export const mockAsset = (overrides?: Partial<Asset>): Asset => ({
 
 export const mockClip = (overrides?: Partial<Clip>): Clip => ({
   id: "clip-1",
+  clipKind: "video",
   assetId: "asset-1",
   startMs: 0,
   durationMs: 5000,
@@ -33,8 +34,8 @@ export const mockProject = (overrides?: Partial<Project>): Project => ({
   assets: [mockAsset()],
   sequence: {
     tracks: [
-      { id: "track-v", kind: "video", clips: [mockClip()] },
-      { id: "track-a", kind: "audio", clips: [] },
+      { id: "track-v", clips: [mockClip()] },
+      { id: "track-a", clips: [] },
     ],
   },
   settings: { durationMs: 30000, canvasWidth: 1920, canvasHeight: 1080 },
@@ -76,10 +77,10 @@ export const projectWithClips: Project = {
     tracks: [
       {
         id: "track-v",
-        kind: "video",
         clips: [
           mockClip({
             id: "clip-v1",
+            clipKind: "video",
             assetId: "asset-v1",
             durationMs: 10000,
             outMs: 10000,
@@ -88,10 +89,10 @@ export const projectWithClips: Project = {
       },
       {
         id: "track-a",
-        kind: "audio",
         clips: [
           mockClip({
             id: "clip-a1",
+            clipKind: "audio",
             assetId: "asset-a1",
             startMs: 2000,
             durationMs: 8000,
@@ -118,10 +119,10 @@ export const projectWithTextOverlay: Project = {
     tracks: [
       {
         id: "track-v",
-        kind: "video",
         clips: [
           mockClip({
             id: "clip-v1",
+            clipKind: "video",
             assetId: "asset-v1",
             durationMs: 10000,
             outMs: 10000,
@@ -130,10 +131,10 @@ export const projectWithTextOverlay: Project = {
       },
       {
         id: "track-t",
-        kind: "title",
         clips: [
           mockClip({
             id: "clip-t",
+            clipKind: "title",
             assetId: "",
             durationMs: 5000,
             outMs: 5000,

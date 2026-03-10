@@ -21,10 +21,10 @@ function makeProject(overrides: Partial<Project> = {}): Project {
       tracks: [
         {
           id: "t1",
-          kind: "video",
           clips: [
             {
               id: "c1",
+              clipKind: "video",
               assetId: "v1",
               startMs: 0,
               durationMs: 5000,
@@ -66,7 +66,7 @@ describe("buildExportArgs", () => {
   test("throws when video track is empty", () => {
     const project = makeProject({
       sequence: {
-        tracks: [{ id: "t1", kind: "video", clips: [] }],
+        tracks: [{ id: "t1", clips: [] }],
       },
     });
     expect(() => buildExportArgs(project, "/assets", "/out.mp4")).toThrow(
@@ -83,10 +83,10 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
               {
                 id: "c1",
+                clipKind: "image",
                 assetId: "i1",
                 startMs: 0,
                 durationMs: 3000,
@@ -115,10 +115,9 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
-              { id: "c2", assetId: "v2", startMs: 5000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+              { id: "c2", clipKind: "video", assetId: "v2", startMs: 5000, durationMs: 3000, inMs: 0, outMs: 3000 },
             ],
           },
         ],
@@ -138,17 +137,16 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
             ],
           },
           {
             id: "t2",
-            kind: "title",
             clips: [
               {
                 id: "tc1",
+                clipKind: "title",
                 assetId: "",
                 startMs: 1000,
                 durationMs: 2000,
@@ -180,16 +178,14 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
             ],
           },
           {
             id: "t2",
-            kind: "audio",
             clips: [
-              { id: "ac1", assetId: "a1", startMs: 0, durationMs: 10000, inMs: 0, outMs: 10000, volume: 0.5 },
+              { id: "ac1", clipKind: "audio", assetId: "a1", startMs: 0, durationMs: 10000, inMs: 0, outMs: 10000, volume: 0.5 },
             ],
           },
         ],
@@ -213,16 +209,14 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
             ],
           },
           {
             id: "t2",
-            kind: "audio",
             clips: [
-              { id: "ac1", assetId: "a1", startMs: 0, durationMs: 10000, inMs: 0, outMs: 10000, volume: 0.8 },
+              { id: "ac1", clipKind: "audio", assetId: "a1", startMs: 0, durationMs: 10000, inMs: 0, outMs: 10000, volume: 0.8 },
             ],
           },
         ],
@@ -297,11 +291,10 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
-              { id: "c2", assetId: "v2", startMs: 3000, durationMs: 3000, inMs: 0, outMs: 3000 },
-              { id: "c3", assetId: "v3", startMs: 6000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c2", clipKind: "video", assetId: "v2", startMs: 3000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c3", clipKind: "video", assetId: "v3", startMs: 6000, durationMs: 3000, inMs: 0, outMs: 3000 },
             ],
           },
         ],
@@ -327,10 +320,9 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
-              { id: "c2", assetId: "v2", startMs: 5000, durationMs: 5000, inMs: 0, outMs: 5000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+              { id: "c2", clipKind: "video", assetId: "v2", startMs: 5000, durationMs: 5000, inMs: 0, outMs: 5000 },
             ],
           },
         ],
@@ -360,14 +352,13 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
-              { id: "c2", assetId: "v2", startMs: 3000, durationMs: 3000, inMs: 0, outMs: 3000 },
-              { id: "c3", assetId: "v3", startMs: 6000, durationMs: 3000, inMs: 0, outMs: 3000 },
-              { id: "c4", assetId: "v4", startMs: 9000, durationMs: 3000, inMs: 0, outMs: 3000 },
-              { id: "c5", assetId: "v5", startMs: 12000, durationMs: 3000, inMs: 0, outMs: 3000 },
-              { id: "c6", assetId: "v6", startMs: 15000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c2", clipKind: "video", assetId: "v2", startMs: 3000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c3", clipKind: "video", assetId: "v3", startMs: 6000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c4", clipKind: "video", assetId: "v4", startMs: 9000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c5", clipKind: "video", assetId: "v5", startMs: 12000, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c6", clipKind: "video", assetId: "v6", startMs: 15000, durationMs: 3000, inMs: 0, outMs: 3000 },
             ],
           },
         ],
@@ -390,10 +381,9 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
               // Clip claims 5s duration but source is only 3s
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
             ],
           },
         ],
@@ -415,10 +405,9 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
               // inMs=2000, so only 3s of source remains, but durationMs claims 4s
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 4000, inMs: 2000, outMs: 6000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 4000, inMs: 2000, outMs: 6000 },
             ],
           },
         ],
@@ -440,10 +429,9 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
               // durationMs=5000 but outMs-inMs=3000 (inconsistent)
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 1000, outMs: 4000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 1000, outMs: 4000 },
             ],
           },
         ],
@@ -465,9 +453,8 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 3000, inMs: 1000, outMs: 4000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 3000, inMs: 1000, outMs: 4000 },
             ],
           },
         ],
@@ -486,10 +473,10 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
               {
                 id: "c1",
+                clipKind: "video",
                 assetId: "v1",
                 startMs: 0,
                 durationMs: 5000,
@@ -529,10 +516,10 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
               {
                 id: "c1",
+                clipKind: "image",
                 assetId: "i1",
                 startMs: 0,
                 durationMs: 3000,
@@ -558,10 +545,10 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
               {
                 id: "c1",
+                clipKind: "video",
                 assetId: "v1",
                 startMs: 0,
                 durationMs: 5000,
@@ -593,10 +580,10 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
               {
                 id: "c1",
+                clipKind: "video",
                 assetId: "v1",
                 startMs: 0,
                 durationMs: 5000,
@@ -624,10 +611,10 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
               {
                 id: "c1",
+                clipKind: "video",
                 assetId: "v1",
                 startMs: 0,
                 durationMs: 5000,
@@ -657,10 +644,10 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
               {
                 id: "c1",
+                clipKind: "video",
                 assetId: "v1",
                 startMs: 0,
                 durationMs: 5000,
@@ -699,9 +686,8 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
-              { id: "c1", assetId: "i1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
+              { id: "c1", clipKind: "image", assetId: "i1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
             ],
           },
         ],
@@ -717,10 +703,10 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
               {
                 id: "c1",
+                clipKind: "video",
                 assetId: "v1",
                 startMs: 0,
                 durationMs: 5000,
@@ -746,10 +732,10 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
               {
                 id: "c1",
+                clipKind: "video",
                 assetId: "v1",
                 startMs: 0,
                 durationMs: 5000,
@@ -775,17 +761,16 @@ describe("buildExportArgs", () => {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
             ],
           },
           {
             id: "t2",
-            kind: "title",
             clips: [
               {
                 id: "tc1",
+                clipKind: "title",
                 assetId: "",
                 startMs: 1000,
                 durationMs: 2000,
@@ -795,6 +780,7 @@ describe("buildExportArgs", () => {
               },
               {
                 id: "tc2",
+                clipKind: "title",
                 assetId: "",
                 startMs: 4000,
                 durationMs: 2000,
@@ -824,6 +810,7 @@ describe("buildTransformFilter", () => {
   function makeClip(transform?: Clip["transform"]): Clip {
     return {
       id: "c1",
+      clipKind: "video",
       assetId: "v1",
       startMs: 0,
       durationMs: 5000,

@@ -22,8 +22,8 @@ export const Empty = meta.story({
       assets: [],
       sequence: {
         tracks: [
-          { id: "track-v", kind: "video", clips: [] },
-          { id: "track-a", kind: "audio", clips: [] },
+          { id: "track-v", clips: [] },
+          { id: "track-a", clips: [] },
         ],
       },
     }),
@@ -71,10 +71,10 @@ export const SingleTrackWithEmptySpace = meta.story({
         tracks: [
           {
             id: "track-v",
-            kind: "video",
             clips: [
               {
                 id: "clip-1",
+                clipKind: "video",
                 assetId: "asset-1",
                 startMs: 0,
                 durationMs: 5000,

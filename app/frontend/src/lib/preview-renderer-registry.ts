@@ -1,5 +1,6 @@
 import type { CSSProperties, RefObject } from "react";
 import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
+import { inferTrackKind } from "@video/shared";
 
 export type ActiveClip = {
   clip: Clip;
@@ -73,7 +74,7 @@ export function findActiveClipInTracks(
   assetKind?: string,
 ): ActiveClip | null {
   for (const track of project.sequence.tracks) {
-    if (track.kind !== trackKind) continue;
+    if (inferTrackKind(track) !== trackKind) continue;
     for (const clip of track.clips) {
       if (timeMs >= clip.startMs && timeMs < clip.startMs + clip.durationMs) {
         const asset = project.assets.find((a: Asset) => a.id === clip.assetId);

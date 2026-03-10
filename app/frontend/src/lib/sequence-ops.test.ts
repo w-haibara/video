@@ -1,5 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
+import { inferTrackKind } from "@video/shared";
 import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
@@ -28,9 +29,10 @@ describe("addClipFromAsset", () => {
   test("creates video track and clip for video asset", () => {
     const seq = addClipFromAsset(emptySeq, videoAsset);
     expect(seq.tracks.length).toBe(1);
-    expect(seq.tracks[0].kind).toBe("video");
+    expect(inferTrackKind(seq.tracks[0])).toBe("video");
     expect(seq.tracks[0].clips.length).toBe(1);
     const clip = seq.tracks[0].clips[0];
+    expect(clip.clipKind).toBe("video");
     expect(clip.assetId).toBe("v1");
     expect(clip.startMs).toBe(0);
     expect(clip.durationMs).toBe(5000);
@@ -46,7 +48,7 @@ describe("addClipFromAsset", () => {
 
   test("creates audio track for audio asset", () => {
     const seq = addClipFromAsset(emptySeq, audioAsset);
-    expect(seq.tracks[0].kind).toBe("audio");
+    expect(inferTrackKind(seq.tracks[0])).toBe("audio");
   });
 
   test("appends clip after existing clips in same track", () => {
@@ -76,10 +78,10 @@ describe("removeClip", () => {
   test("removes empty tracks", () => {
     let seq = addClipFromAsset(emptySeq, videoAsset);
     seq = addClipFromAsset(seq, audioAsset);
-    const audioClipId = seq.tracks.find((t: Track) => t.kind === "audio")!.clips[0].id;
+    const audioClipId = seq.tracks.find((t: Track) => inferTrackKind(t) === "audio")!.clips[0].id;
     seq = removeClip(seq, audioClipId);
     expect(seq.tracks.length).toBe(1);
-    expect(seq.tracks[0].kind).toBe("video");
+    expect(inferTrackKind(seq.tracks[0])).toBe("video");
   });
 
   test("no-op for non-existent clip", () => {
@@ -203,7 +205,7 @@ describe("addTextClip", () => {
       color: "#ffffff",
     });
     expect(seq.tracks.length).toBe(1);
-    expect(seq.tracks[0].kind).toBe("title");
+    expect(inferTrackKind(seq.tracks[0])).toBe("title");
     expect(seq.tracks[0].clips.length).toBe(1);
     const clip = seq.tracks[0].clips[0];
     expect(clip.startMs).toBe(1000);

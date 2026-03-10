@@ -1,5 +1,5 @@
 import type { Project } from "@video/shared";
-import { generateId, DEFAULT_PROJECT_DURATION_MS, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT } from "@video/shared";
+import { generateId, DEFAULT_PROJECT_DURATION_MS, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT, migrateProject } from "@video/shared";
 import {
   projectDir,
   projectJsonPath,
@@ -36,7 +36,7 @@ export async function createProject(name: string): Promise<Project> {
 
 export async function getProject(id: string): Promise<Project> {
   const data = await readFile(projectJsonPath(id), "utf-8");
-  return JSON.parse(data) as Project;
+  return migrateProject(JSON.parse(data));
 }
 
 export async function listProjects(): Promise<Project[]> {

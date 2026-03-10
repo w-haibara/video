@@ -1,5 +1,5 @@
 import type { Asset, Clip, ClipText, Sequence, Track } from "@video/shared";
-import { generateId, DEFAULT_IMAGE_DURATION_MS } from "@video/shared";
+import { generateId, DEFAULT_IMAGE_DURATION_MS, inferTrackKind } from "@video/shared";
 import { assetKindRegistry } from "./asset-kind-registry";
 
 export function addClipFromAsset(
@@ -10,9 +10,9 @@ export function addClipFromAsset(
   const tracks = sequence.tracks.map((t: Track) => ({ ...t, clips: [...t.clips] }));
   const descriptor = assetKindRegistry.get(asset.kind);
   const trackKind = descriptor?.defaultTrackKind ?? "video";
-  let track = tracks.find((t: Track) => t.kind === trackKind);
+  let track = tracks.find((t: Track) => inferTrackKind(t) === trackKind);
   if (!track) {
-    track = { id: generateId(), kind: trackKind, clips: [] };
+    track = { id: generateId(), clips: [] };
     tracks.push(track);
   }
 
@@ -35,8 +35,11 @@ export function addClipFromAsset(
     durationMs = maxDurationMs - lastEnd;
   }
 
+  const clipKind = asset.kind === "image" ? "image" : (trackKind === "audio" ? "audio" : "video");
+
   const clip: Clip = {
     id: generateId(),
+    clipKind,
     assetId: asset.id,
     startMs: lastEnd,
     durationMs,
@@ -162,14 +165,15 @@ export function addTextClip(
   }
 
   const tracks = sequence.tracks.map((t: Track) => ({ ...t, clips: [...t.clips] }));
-  let track = tracks.find((t: Track) => t.kind === trackKind);
+  let track = tracks.find((t: Track) => inferTrackKind(t) === trackKind);
   if (!track) {
-    track = { id: generateId(), kind: trackKind, clips: [] };
+    track = { id: generateId(), clips: [] };
     tracks.push(track);
   }
 
   const clip: Clip = {
     id: generateId(),
+    clipKind: trackKind,
     assetId: "",
     startMs,
     durationMs: clampedDuration,
