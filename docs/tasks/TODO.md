@@ -119,6 +119,11 @@
 | 113 | プレビューレンダラーのトラック間レイヤー合成対応 | [x] Done | 108, 109 |
 | 114 | エクスポートのトラック間レイヤー合成対応 | [x] Done | 108, 109 |
 | 115 | レイヤーモデル移行のテスト・Story 追加 | [x] Done | 110, 111, 112, 113, 114 |
+| 116 | sequence-ops のトラック操作拡張 — moveClipToTrack・removeTrack | [x] Done | 111 |
+| 117 | クリップのトラック間ドラッグ移動 UI | [ ] Todo | 116 |
+| 118 | Add Layer ボタンの移動 — ツールバーからトラックヘッダー「+」行へ | [ ] Todo | 09 |
+| 119 | トラックヘッダー右クリックメニュー + 確認ダイアログ付きトラック削除 | [ ] Todo | 116, 118 |
+| 120 | トラック操作改善のテスト・Story 更新 | [ ] Todo | 116, 117, 118, 119 |
 
 ## Phase 1 Tasks
 
@@ -3570,5 +3575,166 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 - [x] `buildExportArgs` の複数トラックレイヤー合成テスト
 - [x] 重なりあり・なし両方のケースのテスト
 - [x] テキスト・オーディオの clipKind ベース収集テスト
+
+**確認方法:** `bun run test` で全テストが通ること。`cd app/frontend && bun run storybook` で全 Story が正常表示されること。
+
+### 116: sequence-ops のトラック操作拡張 — moveClipToTrack・removeTrack
+
+**背景:** クリップのトラック間移動とトラック削除を実現するために、まず純粋関数レイヤー（sequence-ops）に必要な操作を追加する。既存の `moveClip` 関数は `targetTrackId` 引数を受け取れるが、実際のトラック間移動ロジックは未実装。また、トラック削除は `removeClip` のようにクリップ削除後の空トラック自動除去しかなく、トラック自体を明示的に削除する関数がない。GoF の Strategy パターンに沿い、移動先トラックの重なり判定は既存の `findNonOverlappingPosition` を再利用する（Open/Closed 原則: 新関数の追加のみで既存関数は変更しない）。
+
+**対象ファイル:**
+- `app/frontend/src/lib/sequence-ops.ts`（moveClip 拡張・removeTrack 追加）
+
+**変更内容:**
+
+**A. moveClip のトラック間移動対応**
+
+- [x] `moveClip` に `targetTrackId` が指定された場合、クリップを元トラックから削除し、対象トラックに移動するロジックを追加する
+- [x] 移動先トラックで `findNonOverlappingPosition` を適用し、重なりを防止する
+- [x] 元トラックが空になった場合は自動削除する（既存の `removeClip` と同じ方針）
+- [x] `targetTrackId` が未指定の場合は従来通り同一トラック内での移動とする（後方互換性維持）
+
+**B. removeTrack 関数の追加**
+
+- [x] `removeTrack(sequence: Sequence, trackId: string): Sequence` — 指定トラックとそのクリップをすべて削除する
+- [x] トラックが 1 つしかない場合の動作を定義する（空の sequence を返す）
+
+**確認方法:** `bun run test` で既存テストが通ること。新しい関数が正しく動作すること。
+
+### 117: クリップのトラック間ドラッグ移動 UI
+
+**背景:** タスク 116 で追加した `moveClip` のトラック間移動ロジックを、UI のドラッグ操作で利用できるようにする。現在のクリップドラッグは水平方向のみ（同一トラック内の位置変更）。垂直方向のドラッグを検出し、別トラックへの移動を可能にする。GoF の Observer パターンに沿い、ドラッグ中のトラック変更イベントを Timeline コンポーネントに通知し、Timeline 側で `moveClip` を呼び出す。
+
+**対象ファイル:**
+- `app/frontend/src/components/TimelineClip.tsx`（ドラッグ中の垂直移動検出）
+- `app/frontend/src/components/TimelineTrack.tsx`（ドラッグ中のトラックハイライト表示）
+- `app/frontend/src/components/Timeline.tsx`（トラック間移動コールバックの追加）
+- `app/frontend/src/pages/EditorPage.tsx`（ハンドラ接続）
+- `app/frontend/src/hooks/useProjectEditor.ts`（moveClip の targetTrackId 対応）
+
+**変更内容:**
+
+**A. Timeline の Props 拡張**
+
+- [ ] `onMoveClip` の型を `(clipId: string, newStartMs: number, targetTrackId?: string) => void` に拡張する
+- [ ] Timeline 内でトラック間移動時に `targetTrackId` を渡してコールバックを呼び出す
+
+**B. TimelineClip のドラッグ拡張**
+
+- [ ] `onMove` の型に `targetTrackId` を追加する: `(clipId: string, newStartMs: number, targetTrackId?: string) => void`
+- [ ] ドラッグ中にマウスの Y 座標変位を追跡し、トラック高さ（40px）を超えた場合にトラック間移動と判定する
+- [ ] ドラッグ中の移動先トラックインデックスを算出し、`onMove` に `targetTrackId` として渡す
+
+**C. ドラッグ中のビジュアルフィードバック**
+
+- [ ] ドラッグ中の移動先トラックをハイライト表示する（背景色を `theme.bgHover` に変更）
+- [ ] クリップが元トラックから離れたことを半透明表示で示す
+
+**D. EditorPage・useProjectEditor の接続**
+
+- [ ] `useProjectEditor.moveClip` に `targetTrackId` 引数を追加する
+- [ ] `EditorPage` のハンドラを更新して `targetTrackId` を `moveClip` に渡す
+
+**確認方法:** クリップを上下にドラッグして別トラックに移動できること。移動先トラックで重なり防止が機能すること。元トラックが空になった場合に自動削除されること。
+
+### 118: Add Layer ボタンの移動 — ツールバーからトラックヘッダー「+」行へ
+
+**背景:** 現在の「+ Add Layer」ボタンはタイムラインツールバー右端にある。これを削除し、代わりにトラック一覧の末尾（最後のトラック番号の下）に「+」ボタンを配置する。これにより、トラックの追加操作がトラックヘッダー列に統合され、直感的な UI になる。Open/Closed 原則に沿い、既存の TimelineTrack コンポーネントは変更せず、Timeline コンポーネント内にトラック追加行を新設する。
+
+**対象ファイル:**
+- `app/frontend/src/components/Timeline.tsx`（ツールバーボタン削除・トラック末尾「+」行追加）
+
+**変更内容:**
+
+**A. ツールバーから「+ Add Layer」ボタンを削除**
+
+- [ ] Timeline ツールバーセクションから `onAddTrack` ボタンの JSX を削除する
+
+**B. トラック末尾に「+」行を追加**
+
+- [ ] トラック一覧（`project.sequence.tracks.map(...)` ）の直後に、トラックヘッダーと同じ幅（32px）の「+」ボタン行を追加する
+- [ ] ボタンのスタイルを既存のトラックヘッダーと統一する（`theme.bgHover`, `theme.textMuted`, `fontSize: 11px`, `fontWeight: bold`）
+- [ ] ボタンの高さは既存トラックヘッダーと同じ 40px にする
+- [ ] 「+」のテキストを表示し、ホバー時に背景色を変化させる
+- [ ] クリック時に `onAddTrack` コールバックを呼び出す
+
+**確認方法:** ツールバーから「+ Add Layer」ボタンが消えていること。トラック一覧の末尾に「+」ボタンが表示されること。クリックでトラックが追加されること。
+
+### 119: トラックヘッダー右クリックメニュー + 確認ダイアログ付きトラック削除
+
+**背景:** トラックヘッダー（「1」「2」...の番号表示部分）を右クリックしたときにコンテキストメニューを表示し、「トラックを削除」操作を提供する。削除時には確認ダイアログを表示し、誤操作を防止する。GoF の Command パターンに沿い、トラック操作（削除）をコールバック経由で実行し、undo/redo システム（pushState）に統合する。ContextMenu コンポーネントは既存のものを再利用する（Open/Closed 原則: 新しいメニュー項目の追加のみ）。
+
+**対象ファイル:**
+- `app/frontend/src/components/ConfirmDialog.tsx`（新規 — 確認ダイアログコンポーネント）
+- `app/frontend/src/components/TimelineTrack.tsx`（トラックヘッダーに onContextMenu 追加）
+- `app/frontend/src/components/Timeline.tsx`（トラック右クリックメニュー状態管理・ConfirmDialog 統合）
+- `app/frontend/src/pages/EditorPage.tsx`（onDeleteTrack ハンドラ追加）
+
+**変更内容:**
+
+**A. ConfirmDialog コンポーネントの新規作成**
+
+- [ ] `ConfirmDialog` コンポーネントを作成する（props: `message`, `onConfirm`, `onCancel`）
+- [ ] モーダルオーバーレイ付きの確認ダイアログ UI を実装する（「OK」「キャンセル」ボタン）
+- [ ] Escape キーでキャンセルできるようにする
+- [ ] テーマ変数を使用してスタイリングする
+
+**B. TimelineTrack のトラックヘッダー右クリック対応**
+
+- [ ] TimelineTrack の Props に `onTrackContextMenu?: (trackId: string, position: { x: number; y: number }) => void` を追加する
+- [ ] トラックヘッダー div に `onContextMenu` ハンドラを追加する
+- [ ] 右クリック時に `onTrackContextMenu(track.id, { x, y })` を呼び出す
+
+**C. Timeline のトラック右クリックメニュー管理**
+
+- [ ] トラック右クリック用の state を追加する: `trackContextMenu: { trackId: string; x: number; y: number } | null`
+- [ ] 既存の `ContextMenu` コンポーネントを再利用し、「Delete Track」メニュー項目を表示する
+- [ ] 「Delete Track」クリック時に ConfirmDialog を表示する
+- [ ] ConfirmDialog で「OK」を選択した場合に `onDeleteTrack(trackId)` を呼び出す
+
+**D. Timeline の Props 拡張**
+
+- [ ] `onDeleteTrack?: (trackId: string) => void` を Props に追加する
+
+**E. EditorPage のトラック削除ハンドラ**
+
+- [ ] `handleDeleteTrack` を追加し、`removeTrack(sequence, trackId)` を呼び出して `pushState` する
+- [ ] Timeline に `onDeleteTrack={handleDeleteTrack}` を渡す
+
+**確認方法:** トラックヘッダーを右クリックするとコンテキストメニューが表示されること。「Delete Track」をクリックすると確認ダイアログが表示されること。「OK」でトラックが削除されること。「キャンセル」で何も起きないこと。削除が undo/redo で復元できること。
+
+### 120: トラック操作改善のテスト・Story 更新
+
+**背景:** タスク 116〜119 の全変更に対するテストと Storybook Story の追加・更新。
+
+**対象ファイル:**
+- `app/frontend/src/lib/__tests__/sequence-ops.test.ts`（moveClip トラック間移動・removeTrack テスト追加）
+- `app/frontend/src/components/*.stories.tsx`（Timeline・TimelineTrack Story 更新）
+- `app/frontend/src/components/ConfirmDialog.stories.tsx`（新規 Story）
+
+**変更内容:**
+
+**A. sequence-ops のテスト追加**
+
+- [ ] `moveClip` に `targetTrackId` を指定してトラック間移動するテスト
+- [ ] 移動先トラックでの重なり防止テスト
+- [ ] 元トラックが空になった場合の自動削除テスト
+- [ ] `removeTrack` の正常削除テスト
+- [ ] `removeTrack` で存在しないトラック ID を指定した場合のテスト
+
+**B. Timeline Story の更新**
+
+- [ ] クリップのトラック間ドラッグ移動を確認できる Story の追加
+- [ ] トラック末尾の「+」ボタン表示を確認する Story の追加
+- [ ] トラックヘッダー右クリックメニュー表示を確認する Story の追加
+
+**C. ConfirmDialog の Story 追加**
+
+- [ ] ConfirmDialog の基本表示 Story
+- [ ] ConfirmDialog の操作確認 Story（OK / キャンセル）
+
+**D. TimelineTrack Story の更新**
+
+- [ ] トラックヘッダーの右クリックメニュー対応 Story の追加
 
 **確認方法:** `bun run test` で全テストが通ること。`cd app/frontend && bun run storybook` で全 Story が正常表示されること。
