@@ -15,6 +15,7 @@ type Props = {
   onMoveClip: (clipId: string, newStartMs: number, targetTrackId?: string) => void;
   onTrimClip: (clipId: string, side: "left" | "right", deltaMs: number) => void;
   onContextMenu?: (clipId: string, position: { x: number; y: number }) => void;
+  onTrackContextMenu?: (trackId: string, position: { x: number; y: number }) => void;
   allTrackIds: string[];
   isDropTarget?: boolean;
   onDragTrackChange?: (targetTrackId: string | null) => void;
@@ -33,6 +34,7 @@ export function TimelineTrack({
   onMoveClip,
   onTrimClip,
   onContextMenu,
+  onTrackContextMenu,
   allTrackIds,
   isDropTarget,
   onDragTrackChange,
@@ -42,6 +44,11 @@ export function TimelineTrack({
   return (
     <div style={{ display: "flex", height: "40px" }}>
       <div
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onTrackContextMenu?.(track.id, { x: e.clientX, y: e.clientY });
+        }}
         style={{
           width: "32px",
           flexShrink: 0,

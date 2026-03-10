@@ -4,6 +4,7 @@ import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTrack } from "./TimelineTrack";
 import { Playhead } from "./Playhead";
 import { ContextMenu } from "./ContextMenu";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { useTimelineZoom } from "../hooks/useTimelineZoom";
 import { theme } from "../theme";
 
@@ -17,6 +18,7 @@ type Props = {
   onMoveClip?: (clipId: string, newStartMs: number, targetTrackId?: string) => void;
   onTrimClip?: (clipId: string, side: "left" | "right", deltaMs: number) => void;
   onAddTrack?: () => void;
+  onDeleteTrack?: (trackId: string) => void;
 };
 
 function getTimelineDuration(project: Project): number {
@@ -33,6 +35,7 @@ export function Timeline({
   onMoveClip,
   onTrimClip,
   onAddTrack,
+  onDeleteTrack,
 }: Props) {
   const { msToPx, pxToMs, zoomIn, zoomOut } = useTimelineZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -43,11 +46,23 @@ export function Timeline({
     y: number;
   } | null>(null);
   const [dragTargetTrackId, setDragTargetTrackId] = useState<string | null>(null);
+  const [trackContextMenu, setTrackContextMenu] = useState<{
+    trackId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [confirmDeleteTrackId, setConfirmDeleteTrackId] = useState<string | null>(null);
   const allTrackIds = project.sequence.tracks.map((t: Track) => t.id);
 
   const handleClipContextMenu = useCallback(
     (clipId: string, position: { x: number; y: number }) => {
       setContextMenu({ clipId, x: position.x, y: position.y });
+    },
+    [],
+  );
+  const handleTrackContextMenu = useCallback(
+    (trackId: string, position: { x: number; y: number }) => {
+      setTrackContextMenu({ trackId, x: position.x, y: position.y });
     },
     [],
   );
@@ -234,6 +249,7 @@ export function Timeline({
                   onMoveClip={handleMove}
                   onTrimClip={handleTrim}
                   onContextMenu={handleClipContextMenu}
+                  onTrackContextMenu={handleTrackContextMenu}
                   allTrackIds={allTrackIds}
                   isDropTarget={dragTargetTrackId === track.id}
                   onDragTrackChange={setDragTargetTrackId}
@@ -314,6 +330,33 @@ export function Timeline({
               },
             },
           ]}
+        />
+      )}
+
+      {trackContextMenu && onDeleteTrack && (
+        <ContextMenu
+          position={{ x: trackContextMenu.x, y: trackContextMenu.y }}
+          onClose={() => setTrackContextMenu(null)}
+          items={[
+            {
+              label: "Delete Track",
+              onClick: () => {
+                setConfirmDeleteTrackId(trackContextMenu.trackId);
+                setTrackContextMenu(null);
+              },
+            },
+          ]}
+        />
+      )}
+
+      {confirmDeleteTrackId && onDeleteTrack && (
+        <ConfirmDialog
+          message="Are you sure you want to delete this track? All clips in this track will be removed."
+          onConfirm={() => {
+            onDeleteTrack(confirmDeleteTrackId);
+            setConfirmDeleteTrackId(null);
+          }}
+          onCancel={() => setConfirmDeleteTrackId(null)}
         />
       )}
     </div>

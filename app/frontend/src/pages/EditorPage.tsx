@@ -17,7 +17,7 @@ import { SaveIndicator } from "../components/SaveIndicator";
 import { JobProgress } from "../components/JobProgress";
 import { ProjectSettingsPanel } from "../components/ProjectSettingsPanel";
 import { useProjectEditor } from "../hooks/useProjectEditor";
-import { clampClipsToDuration } from "../lib/sequence-ops";
+import { clampClipsToDuration, removeTrack } from "../lib/sequence-ops";
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { useAutoSave } from "../hooks/useAutoSave";
 import { theme, buttonStyle, inputStyle } from "../theme";
@@ -128,6 +128,10 @@ function EditorPageLoaded({
   const handleAddTrack = useCallback(() => {
     const newTrack = { id: generateId(), clips: [] };
     pushState({ ...sequence, tracks: [...sequence.tracks, newTrack] });
+  }, [sequence, pushState]);
+
+  const handleDeleteTrack = useCallback((trackId: string) => {
+    pushState(removeTrack(sequence, trackId));
   }, [sequence, pushState]);
 
   const handleAddClipFromAsset = useCallback(
@@ -352,6 +356,7 @@ function EditorPageLoaded({
           onMoveClip={moveClip}
           onTrimClip={trimClip}
           onAddTrack={handleAddTrack}
+          onDeleteTrack={handleDeleteTrack}
         />
       }
     />
