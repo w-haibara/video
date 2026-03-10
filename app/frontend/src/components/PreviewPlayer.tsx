@@ -284,10 +284,14 @@ export function PreviewPlayer({
   const rotation = clipTransform?.rotation ?? 0;
   const crop = activeClip?.clip.crop;
 
-  // Compute asset position & size as percentages of the canvas container
-  // Asset fills (assetW/canvasW * 100)% of canvas width, centered
-  const assetWidthPct = (assetW / canvasW) * 100 * scale;
-  const assetHeightPct = (assetH / canvasH) * 100 * scale;
+  // After crop the visible region becomes crop.width × crop.height.
+  // Use these "effective" dimensions so the container matches the FFmpeg
+  // pipeline order: crop → center on canvas → scale/position.
+  const effectiveW = crop?.width ?? assetW;
+  const effectiveH = crop?.height ?? assetH;
+
+  const containerWidthPct = (effectiveW / canvasW) * 100 * scale;
+  const containerHeightPct = (effectiveH / canvasH) * 100 * scale;
   const offsetXPct = (translateX / canvasW) * 100;
   const offsetYPct = (translateY / canvasH) * 100;
 
@@ -345,33 +349,25 @@ export function PreviewPlayer({
             <div
               style={{
                 position: "absolute",
-                width: `${assetWidthPct}%`,
-                height: `${assetHeightPct}%`,
+                width: `${containerWidthPct}%`,
+                height: `${containerHeightPct}%`,
                 left: `calc(50% + ${offsetXPct}%)`,
                 top: `calc(50% + ${offsetYPct}%)`,
                 transform: `translate(-50%, -50%)${rotationCss ? ` ${rotationCss}` : ""}`,
                 transformOrigin: "center center",
-                ...cropContainerStyle(crop, activeClip.asset),
+                overflow: crop ? "hidden" : undefined,
               }}
             >
               {isImage ? (
                 <img
                   src={thumbnailUrl}
                   alt=""
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "fill",
-                  }}
+                  style={mediaStyle(crop, assetW, assetH)}
                 />
               ) : (
                 <video
                   ref={videoRef}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "fill",
-                  }}
+                  style={mediaStyle(crop, assetW, assetH)}
                   muted
                 />
               )}
@@ -471,14 +467,22 @@ export function PreviewPlayer({
   );
 }
 
-function cropContainerStyle(crop: ClipCrop | undefined, asset: Asset | undefined): React.CSSProperties {
-  if (!crop || !asset?.width || !asset?.height) return {};
-  const top = (crop.y / asset.height) * 100;
-  const left = (crop.x / asset.width) * 100;
-  const right = ((asset.width - crop.x - crop.width) / asset.width) * 100;
-  const bottom = ((asset.height - crop.y - crop.height) / asset.height) * 100;
+/**
+ * Compute inner media element styles.
+ * Without crop: fills container 100%.
+ * With crop: oversizes the media and offsets it so only the crop region is visible
+ * (container has overflow:hidden).
+ */
+function mediaStyle(crop: ClipCrop | undefined, assetW: number, assetH: number): React.CSSProperties {
+  if (!crop) {
+    return { width: "100%", height: "100%", objectFit: "fill" as const };
+  }
   return {
-    clipPath: `inset(${top}% ${right}% ${bottom}% ${left}%)`,
+    width: `${(assetW / crop.width) * 100}%`,
+    height: `${(assetH / crop.height) * 100}%`,
+    marginLeft: `${-(crop.x / crop.width) * 100}%`,
+    marginTop: `${-(crop.y / crop.height) * 100}%`,
+    objectFit: "fill" as const,
   };
 }
 
