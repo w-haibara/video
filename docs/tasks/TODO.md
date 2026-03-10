@@ -3299,31 +3299,31 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. ClipKindDescriptor / ClipKindRegistry の作成**
 
-- [ ] `clip-kind-registry.ts` に以下を定義する:
+- [x] `clip-kind-registry.ts` に以下を定義する:
   - `ClipKindDescriptor`: `{ kind: string; label: string; clipColor: string; clipSelectedColor: string; hasSourceTrim: boolean; hasAsset: boolean }`（TrackKindDescriptor と同構造だがクリップ単位）
   - `ClipKindRegistry` クラス: `register()`, `get(kind)`, `all()`
   - シングルトン `clipKindRegistry` をエクスポート
 
 **B. builtin-plugin の登録変更**
 
-- [ ] `registerTrackKinds(registry)` を `registerClipKinds(registry)` に変更する
-- [ ] 登録内容は同一（"video", "audio", "title"）だがクリップ種別としての登録に変更
+- [x] `registerTrackKinds(registry)` を `registerClipKinds(registry)` に変更する
+- [x] 登録内容は同一（"video", "audio", "title"）だがクリップ種別としての登録に変更
 
 **C. plugin-loader の変更**
 
-- [ ] `FrontendPlugin` インターフェースの `registerTrackKinds` を `registerClipKinds` に変更する
-- [ ] プラグイン読み込み処理で `clipKindRegistry` を渡すように変更する
+- [x] `FrontendPlugin` インターフェースの `registerTrackKinds` を `registerClipKinds` に変更する
+- [x] プラグイン読み込み処理で `clipKindRegistry` を渡すように変更する
 
 **D. 全コンポーネントの参照変更**
 
-- [ ] `TimelineClip.tsx`: `trackKindRegistry.get(track.kind)` → `clipKindRegistry.get(clip.clipKind)` に変更し、クリップ種別に応じた色を取得する
-- [ ] `TimelineTrack.tsx`: トラックラベルを `track.kind` ベースの "V" / "A" / "T" からレイヤー番号（トラックインデックス + 1）に変更する
-- [ ] `InspectorPanel.tsx`: `InspectorEditorContext.trackKind` → `InspectorEditorContext.clipKind`（= `clip.clipKind`）に変更する
+- [x] `TimelineClip.tsx`: `trackKindRegistry.get(track.kind)` → `clipKindRegistry.get(clip.clipKind)` に変更し、クリップ種別に応じた色を取得する
+- [x] `TimelineTrack.tsx`: トラックラベルを `track.kind` ベースの "V" / "A" / "T" からレイヤー番号（トラックインデックス + 1）に変更する
+- [x] `InspectorPanel.tsx`: `InspectorEditorContext.trackKind` → `InspectorEditorContext.clipKind`（= `clip.clipKind`）に変更する
 
 **E. TrackKindRegistry の削除**
 
-- [ ] `track-kind-registry.ts` を削除する
-- [ ] 全 import パスを更新する
+- [x] `track-kind-registry.ts` を削除する
+- [x] 全 import パスを更新する
 
 **確認方法:** `bun run test` でコンパイルが通り、既存テストが通ること。タイムラインのクリップ色とトラックラベルが正しく表示されること。
 
@@ -3496,8 +3496,8 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. buildExportArgs のレイヤー合成対応**
 
-- [ ] 現在の「video トラック → concat」方式から「全トラック → レイヤー合成」方式に変更する
-- [ ] 処理フロー:
+- [x] 現在の「video トラック → concat」方式から「全トラック → レイヤー合成」方式に変更する
+- [x] 処理フロー:
   1. 全トラックを下（インデックス 0）から上へ走査する
   2. 各トラックの映像クリップ（clipKind が "video" / "image"）を時間順にソートする
   3. 各トラックの映像を時間位置に合わせた個別ストリームとして入力する
@@ -3506,17 +3506,17 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **B. 各クリップの時間位置合わせ**
 
-- [ ] 各映像クリップは `clip.startMs` / `clip.durationMs` に基づいて、タイムライン上の正しい位置で表示されるよう `overlay` フィルタの `enable` 条件を設定する
-- [ ] 時間的に隙間がある場合は、下のレイヤーの映像がそのまま表示される
+- [x] 各映像クリップは `clip.startMs` / `clip.durationMs` に基づいて、タイムライン上の正しい位置で表示されるよう `overlay` フィルタの `enable` 条件を設定する
+- [x] 時間的に隙間がある場合は、下のレイヤーの映像がそのまま表示される
 
 **C. テキストオーバーレイの変更**
 
-- [ ] `track.kind === "title"` ではなく `clip.clipKind === "title"` でテキストクリップを全トラックから収集するように変更する
+- [x] `track.kind === "title"` ではなく `clip.clipKind === "title"` でテキストクリップを全トラックから収集するように変更する
 
 **D. オーディオミックスの変更**
 
-- [ ] `track.kind === "audio"` ではなく `clip.clipKind === "audio"` でオーディオクリップを全トラックから収集するように変更する
-- [ ] 映像クリップの音声トラックも全トラック分をミックスする
+- [x] `track.kind === "audio"` ではなく `clip.clipKind === "audio"` でオーディオクリップを全トラックから収集するように変更する
+- [x] 映像クリップの音声トラックも全トラック分をミックスする
 
 **確認方法:** 2 つのトラックに動画クリップを配置してエクスポートし、重なり部分で上トラックの映像が表示されること。音声が全トラック分ミックスされること。
 
