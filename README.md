@@ -12,18 +12,26 @@ Browser-based video editor built with React, Hono, and Bun.
 bun install
 ```
 
-## Usage
+## Development Commands
 
-### Development
+Scripts defined in the root `package.json`:
 
-Start the backend (Hono) and frontend (Vite) servers concurrently:
-
-```sh
-bun run dev
-```
+| Command | Purpose |
+|---------|---------|
+| `bun run dev` | Start the development server (backend + frontend) |
+| `bun run restart` | Restart the development server (kills both on failure) |
+| `bun run test` | Run all tests |
 
 - Frontend: http://localhost:5173
 - Backend: http://localhost:3000
+
+Additional scripts defined in `app/frontend/package.json` (must be run from `app/frontend/`):
+
+| Command | Purpose |
+|---------|---------|
+| `bun run storybook` | Start Storybook dev server on port 6006 |
+| `bun run build-storybook` | Build static Storybook |
+| `bun run test:browser` | Run Vitest browser tests |
 
 ### Production Build
 
@@ -31,41 +39,11 @@ bun run dev
 cd app/frontend && bun run build
 ```
 
-## Testing
+### Storybook
 
-Run backend unit tests:
-
-```sh
-bun test
-```
-
-Run frontend component tests (Vitest + Storybook + Playwright):
-
-```sh
-cd app/frontend && npx vitest --project storybook
-```
+Storybook provides an interactive component catalog and test runner for all UI components. Opens at http://localhost:6006. Test results are visible in the Interactions panel for each story.
 
 Component tests are written as `.test()` calls in `*.stories.tsx` files and run in a real browser via Playwright.
-
-## Storybook
-
-Storybook provides an interactive component catalog and test runner for all UI components.
-
-### Start Storybook
-
-```sh
-cd app/frontend && bun run storybook
-```
-
-Opens at http://localhost:6006. Test results are visible in the Interactions panel for each story.
-
-### Build Storybook (static export)
-
-```sh
-cd app/frontend && bun run build-storybook
-```
-
-Output is written to `app/frontend/storybook-static/`.
 
 ## Project Structure
 
