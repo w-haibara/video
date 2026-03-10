@@ -2,7 +2,9 @@ import type { ClipTransform, ClipCrop } from "@video/shared";
 import { theme, buttonStyle, inputStyle } from "../../theme";
 import type { InspectorEditorContext } from "../../lib/inspector-editor-registry";
 
-const ROTATIONS = [0, 90, 180, 270] as const;
+function clampRotation(v: number): number {
+  return Math.max(-360, Math.min(360, Math.round(v)));
+}
 
 export function TransformEditor({ clip, asset, onUpdate }: InspectorEditorContext) {
   const transform = clip.transform ?? {};
@@ -24,32 +26,53 @@ export function TransformEditor({ clip, asset, onUpdate }: InspectorEditorContex
     }
   };
 
-  const btnStyle = (active: boolean): React.CSSProperties => ({
-    flex: 1,
-    padding: "4px",
-    background: active ? theme.primary : theme.bgPanel,
-    color: active ? theme.buttonText : theme.textMuted,
-    border: `1px solid ${active ? theme.primary : theme.border}`,
+  const rotBtnStyle: React.CSSProperties = {
+    padding: "4px 8px",
+    background: theme.bgPanel,
+    color: theme.textMuted,
+    border: `1px solid ${theme.border}`,
     borderRadius: "3px",
     cursor: "pointer",
-    fontSize: "11px",
-  });
+    fontSize: "13px",
+    lineHeight: 1,
+  };
 
   return (
     <div style={{ marginTop: "8px" }}>
       <label style={{ color: theme.text, display: "block", marginBottom: "4px" }}>
-        Rotation
+        Rotation ({currentRotation}°)
       </label>
-      <div style={{ display: "flex", gap: "4px" }}>
-        {ROTATIONS.map((deg) => (
-          <button
-            key={deg}
-            onClick={() => updateTransform({ rotation: deg })}
-            style={btnStyle(currentRotation === deg)}
-          >
-            {deg}°
-          </button>
-        ))}
+      <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+        <button
+          onClick={() => updateTransform({ rotation: clampRotation(currentRotation - 90) })}
+          style={rotBtnStyle}
+          title="Rotate left -90°"
+        >
+          ↶
+        </button>
+        <button
+          onClick={() => updateTransform({ rotation: clampRotation(currentRotation + 90) })}
+          style={rotBtnStyle}
+          title="Rotate right +90°"
+        >
+          ↷
+        </button>
+        <input
+          type="number"
+          value={currentRotation}
+          onChange={(e) => updateTransform({ rotation: clampRotation(Number(e.target.value)) })}
+          min={-360}
+          max={360}
+          step={1}
+          style={{ ...inputStyle, flex: 1 }}
+        />
+        <button
+          onClick={() => updateTransform({ rotation: 0 })}
+          style={rotBtnStyle}
+          title="Reset rotation to 0°"
+        >
+          0°
+        </button>
       </div>
 
       <label style={{ color: theme.text, display: "block", marginTop: "8px", marginBottom: "4px" }}>
