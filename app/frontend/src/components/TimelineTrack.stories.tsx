@@ -17,6 +17,7 @@ const meta = preview.meta({
     onMoveClip: fn(),
     onTrimClip: fn(),
     onContextMenu: fn(),
+    onTrackContextMenu: fn(),
     allTrackIds: ["track-v", "track-a"],
     onDragTrackChange: fn(),
   },
@@ -119,5 +120,29 @@ export const MixedKindTrack = meta.story({
       clips: [mockClip(), audioClip, imageClip, titleClip],
     },
     assets: [videoAsset, audioAsset, imageAsset],
+  },
+});
+
+// --- Task 120: Track header right-click menu story ---
+
+export const TrackHeaderRightClick = meta.story({
+  args: {
+    track: {
+      id: "track-v",
+      clips: [mockClip(), secondClip],
+    },
+    assets: [videoAsset],
+    onTrackContextMenu: fn(),
+  },
+});
+
+export const DropTargetHighlight = meta.story({
+  args: {
+    track: {
+      id: "track-v",
+      clips: [mockClip()],
+    },
+    assets: [videoAsset],
+    isDropTarget: true,
   },
 });

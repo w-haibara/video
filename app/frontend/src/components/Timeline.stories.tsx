@@ -183,3 +183,110 @@ export const MultiLayerTracks = meta.story({
 MultiLayerTracks.test("renders multiple layer tracks", async ({ canvasElement }) => {
   await expect(canvasElement.textContent?.length).toBeGreaterThan(0);
 });
+
+// --- Task 120: Track operation stories ---
+
+export const CrossTrackDrag = meta.story({
+  args: {
+    project: mockProject({
+      name: "Cross-Track Drag",
+      assets: [
+        mockAsset({ id: "asset-v1" }),
+        mockAsset({ id: "asset-v2", originalPath: "/videos/sample2.mp4" }),
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "layer-1",
+            clips: [
+              mockClip({ id: "clip-l1-1", clipKind: "video", assetId: "asset-v1", startMs: 0, durationMs: 8000, outMs: 8000 }),
+            ],
+          },
+          {
+            id: "layer-2",
+            clips: [
+              mockClip({ id: "clip-l2-1", clipKind: "video", assetId: "asset-v2", startMs: 2000, durationMs: 5000, outMs: 5000 }),
+            ],
+          },
+        ],
+      },
+    }),
+    currentTimeMs: 0,
+    selectedClipId: null,
+  },
+});
+
+CrossTrackDrag.test("renders multiple tracks for cross-track drag", async ({ canvasElement }) => {
+  await expect(canvasElement.textContent?.length).toBeGreaterThan(0);
+  // Both track labels should be visible
+  await expect(canvasElement.textContent).toContain("1");
+  await expect(canvasElement.textContent).toContain("2");
+});
+
+export const WithAddTrackButton = meta.story({
+  args: {
+    project: mockProject({
+      name: "Add Track Button",
+      sequence: {
+        tracks: [
+          {
+            id: "track-1",
+            clips: [
+              mockClip({ id: "clip-1", clipKind: "video", assetId: "asset-1", startMs: 0, durationMs: 5000, outMs: 5000 }),
+            ],
+          },
+        ],
+      },
+    }),
+    currentTimeMs: 0,
+    selectedClipId: null,
+    onAddTrack: fn(),
+  },
+});
+
+WithAddTrackButton.test("renders add track + button", async ({ canvas }) => {
+  // The add track row renders a "+" button
+  const buttons = await canvas.findAllByRole("button", { name: "+" });
+  await expect(buttons.length).toBeGreaterThan(0);
+});
+
+WithAddTrackButton.test("calls onAddTrack when + button is clicked", async ({ canvas, userEvent, args }) => {
+  const buttons = await canvas.findAllByRole("button", { name: "+" });
+  // The last "+" button is the add-track button (zoom "+" is first)
+  const addTrackButton = buttons[buttons.length - 1];
+  await userEvent.click(addTrackButton);
+  await expect(args.onAddTrack).toHaveBeenCalled();
+});
+
+export const TrackHeaderContextMenu = meta.story({
+  args: {
+    project: mockProject({
+      name: "Track Context Menu",
+      assets: [mockAsset({ id: "asset-v1" })],
+      sequence: {
+        tracks: [
+          {
+            id: "track-1",
+            clips: [
+              mockClip({ id: "clip-1", clipKind: "video", assetId: "asset-v1", startMs: 0, durationMs: 5000, outMs: 5000 }),
+            ],
+          },
+          {
+            id: "track-2",
+            clips: [
+              mockClip({ id: "clip-2", clipKind: "video", assetId: "asset-v1", startMs: 0, durationMs: 3000, outMs: 3000 }),
+            ],
+          },
+        ],
+      },
+    }),
+    currentTimeMs: 0,
+    selectedClipId: null,
+    onDeleteTrack: fn(),
+  },
+});
+
+TrackHeaderContextMenu.test("renders two track headers", async ({ canvasElement }) => {
+  await expect(canvasElement.textContent).toContain("1");
+  await expect(canvasElement.textContent).toContain("2");
+});
