@@ -100,7 +100,7 @@
 | 94 | Inspector パネルのエディタプラグインレジストリ化 | [x] Done | 93 |
 | 95 | タイムラインクリップの外観レジストリ化 | [x] Done | 93 |
 | 96 | プレビュープレーヤーの描画 Strategy 化 | [x] Done | 93 |
-| 97 | sequence-ops のトラックルーティング Strategy 化 | [ ] Pending | 93 |
+| 97 | sequence-ops のトラックルーティング Strategy 化 | [x] Done | 93 |
 | 98 | アセット種別検出のプラグイン化 | [ ] Pending | 93 |
 | 99 | エクスポートのトラック/アセットハンドラ Strategy 化 | [ ] Pending | 93 |
 | 100 | プラグインシステムの基盤設計 | [ ] Pending | 93, 94, 95, 96, 97, 98, 99 |
@@ -2759,17 +2759,17 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. トラックルーティングの Strategy 化**
 
-- [ ] `addClipFromAsset` のトラック選択を `AssetKindRegistry.get(asset.kind).defaultTrackKind` で解決:
+- [x] `addClipFromAsset` のトラック選択を `AssetKindRegistry.get(asset.kind).defaultTrackKind` で解決:
   ```typescript
   const descriptor = assetKindRegistry.get(asset.kind);
   const trackKind = descriptor?.defaultTrackKind ?? "video";
   let track = tracks.find((t) => t.kind === trackKind);
   ```
-- [ ] `addTextClip` のトラック選択を `"title"` 定数ではなく引数で受け取れるようにする（デフォルト値は `"title"`）
+- [x] `addTextClip` のトラック選択を `"title"` 定数ではなく引数で受け取れるようにする（デフォルト値は `"title"`）
 
 **B. クリップデフォルト値の外部化**
 
-- [ ] image アセットのデフォルト duration を `AssetKindDescriptor.defaultDurationMs` から取得:
+- [x] image アセットのデフォルト duration を `AssetKindDescriptor.defaultDurationMs` から取得:
   ```typescript
   const descriptor = assetKindRegistry.get(asset.kind);
   const durationMs = descriptor?.hasDuration
