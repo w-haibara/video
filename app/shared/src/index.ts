@@ -1,6 +1,6 @@
 // Types
-export type { Asset, AssetKind } from "./types/asset";
-export type { Project, ProjectSettings, Sequence, Track, Clip, ClipText, ClipTransform, ClipCrop, ExportPreset } from "./types/project";
+export type { Asset, AssetKind, BuiltinAssetKind } from "./types/asset";
+export type { Project, ProjectSettings, Sequence, Track, BuiltinTrackKind, Clip, ClipText, ClipTransform, ClipCrop, ExportPreset } from "./types/project";
 export type { Job, JobStatus } from "./types/job";
 export type {
   CreateProjectRequest,

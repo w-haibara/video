@@ -1,4 +1,7 @@
-export type AssetKind = "video" | "image" | "audio";
+/** Built-in asset kinds for convenience. The Asset.kind field accepts any string. */
+export type BuiltinAssetKind = "video" | "image" | "audio";
+
+export type AssetKind = string;
 
 export type Asset = {
   id: string;

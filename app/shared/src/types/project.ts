@@ -21,9 +21,12 @@ export type Sequence = {
   tracks: Track[];
 };
 
+/** Built-in track kinds for convenience. The Track.kind field accepts any string. */
+export type BuiltinTrackKind = "video" | "audio" | "title";
+
 export type Track = {
   id: string;
-  kind: "video" | "audio" | "title";
+  kind: string;
   clips: Clip[];
 };
 
