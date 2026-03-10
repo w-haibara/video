@@ -105,7 +105,7 @@ describe("buildExportArgs", () => {
     expect(args).toContain("3");
   });
 
-  test("generates concat filter for multiple clips", () => {
+  test("generates overlay filter for multiple clips", () => {
     const project = makeProject({
       assets: [
         { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 5000, hasAudio: false },
@@ -126,9 +126,11 @@ describe("buildExportArgs", () => {
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
-    expect(filter).toContain("concat=n=2:v=1:a=0");
     expect(filter).toContain("[v0]");
     expect(filter).toContain("[v1]");
+    expect(filter).toContain("overlay=0:0");
+    expect(filter).toContain("enable='between(t,0,5)'");
+    expect(filter).toContain("enable='between(t,5,8)'");
   });
 
   test("generates drawtext filter for text clips", () => {
@@ -305,7 +307,8 @@ describe("buildExportArgs", () => {
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
     // Only 2 clips should be included (c3 starts at 6000 which equals durationMs)
-    expect(filter).toContain("concat=n=2:v=1:a=0");
+    const overlayMatches = filter.match(/overlay=0:0/g);
+    expect(overlayMatches?.length).toBe(2);
     // v3.mp4 should not appear as input
     expect(args).not.toContain("/assets/v3.mp4");
   });
@@ -332,8 +335,9 @@ describe("buildExportArgs", () => {
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
-    // Both clips included but c2 should be clamped to 3s (8000 - 5000 = 3000ms)
-    expect(filter).toContain("concat=n=2:v=1:a=0");
+    // Both clips included with overlay compositing
+    const overlayMatches = filter.match(/overlay=0:0/g);
+    expect(overlayMatches?.length).toBe(2);
     // c2 trim duration should be 3 seconds
     expect(filter).toContain("trim=start=0:duration=3,");
   });
@@ -369,7 +373,8 @@ describe("buildExportArgs", () => {
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
     // Only first 2 clips (0-3s, 3-6s) should be included
-    expect(filter).toContain("concat=n=2:v=1:a=0");
+    const overlayMatches = filter.match(/overlay=0:0/g);
+    expect(overlayMatches?.length).toBe(2);
   });
 
   test("clamps trim duration to source length to prevent freeze", () => {

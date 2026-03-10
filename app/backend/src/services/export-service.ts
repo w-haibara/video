@@ -1,12 +1,12 @@
 import type { Project, Clip, ExportPreset } from "@video/shared";
 import type { Job } from "@video/shared";
-import { inferTrackKind } from "@video/shared";
 import { mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
 import { assetsDir, exportDir } from "../utils/paths";
 import * as jobQueue from "./job-queue";
 import * as projectService from "./project-service";
 import { exportHandlerRegistry } from "../lib/export-handler-registry";
+import { exportCompositeStrategyRegistry } from "../lib/composite-strategy-registry";
 
 export function sanitizeColor(value: string): string {
   // Allow hex (#rgb, #rrggbb, #rrggbbaa), named colors, and color@opacity
@@ -72,13 +72,6 @@ export function buildExportArgs(
   assetsBase: string,
   outputPath: string,
 ): string[] {
-  const videoTrack = project.sequence.tracks.find((t) => inferTrackKind(t) === "video");
-  const audioTrack = project.sequence.tracks.find((t) => t.kind === "audio");
-
-  if (!videoTrack || videoTrack.clips.length === 0) {
-    throw new Error("No video clips to export");
-  }
-
   const canvasW = project.settings.canvasWidth;
   const canvasH = project.settings.canvasHeight;
 
@@ -93,21 +86,38 @@ export function buildExportArgs(
   // Project duration limit
   const projectDurationMs = project.settings?.durationMs;
 
-  // Sort clips by startMs, filter out clips beyond project duration, and clamp
-  const clips = [...videoTrack.clips]
-    .sort((a, b) => a.startMs - b.startMs)
-    .filter((c) => projectDurationMs == null || c.startMs < projectDurationMs)
-    .map((c) => {
-      if (projectDurationMs != null && c.startMs + c.durationMs > projectDurationMs) {
-        const clampedDuration = projectDurationMs - c.startMs;
-        return { ...c, durationMs: clampedDuration, outMs: c.inMs + clampedDuration };
+  // Collect all visual clips (video/image) from all tracks, with track index
+  const allVisualClips: { clip: Clip; trackIndex: number }[] = [];
+  project.sequence.tracks.forEach((track, trackIndex) => {
+    for (const clip of track.clips) {
+      if (clip.clipKind === "video" || clip.clipKind === "image") {
+        allVisualClips.push({ clip, trackIndex });
       }
-      return c;
-    });
+    }
+  });
 
-  if (clips.length === 0) {
+  if (allVisualClips.length === 0) {
     throw new Error("No video clips to export");
   }
+
+  // Filter by project duration and clamp
+  const clampedVisualClips = allVisualClips
+    .filter(({ clip }) => projectDurationMs == null || clip.startMs < projectDurationMs)
+    .map(({ clip, trackIndex }) => {
+      if (projectDurationMs != null && clip.startMs + clip.durationMs > projectDurationMs) {
+        const clampedDuration = projectDurationMs - clip.startMs;
+        return { clip: { ...clip, durationMs: clampedDuration, outMs: clip.inMs + clampedDuration }, trackIndex };
+      }
+      return { clip, trackIndex };
+    });
+
+  if (clampedVisualClips.length === 0) {
+    throw new Error("No video clips to export");
+  }
+
+  // Calculate total duration for the base canvas
+  const maxEndMs = Math.max(...clampedVisualClips.map(({ clip }) => clip.startMs + clip.durationMs));
+  const totalDurationSec = (projectDurationMs != null ? Math.min(maxEndMs, projectDurationMs) : maxEndMs) / 1000;
 
   const ctx = {
     project,
@@ -116,46 +126,84 @@ export function buildExportArgs(
     inputArgs: [] as string[],
     filterParts: [] as string[],
     inputIndex: 0,
+    clipInputIndices: new Map<string, number>(),
   };
 
-  // 1. Build inputs for each clip via clip handlers
-  clips.forEach((clip) => {
+  // 1. Build inputs for each visual clip via clip handlers, sorted by track then time
+  const clipInfos: { clip: Clip; trackIndex: number; inputLabel: string }[] = [];
+
+  const sortedClips = [...clampedVisualClips]
+    .sort((a, b) => a.trackIndex - b.trackIndex || a.clip.startMs - b.clip.startMs);
+
+  sortedClips.forEach(({ clip, trackIndex }) => {
     const asset = project.assets.find((a) => a.id === clip.assetId);
     if (!asset) throw new Error(`Asset not found: ${clip.assetId}`);
 
     const handler = exportHandlerRegistry.getClipHandler(asset.kind);
     if (handler) {
+      const label = `[v${ctx.inputIndex}]`;
       handler.buildInput(clip, asset, ctx);
+      clipInfos.push({ clip, trackIndex, inputLabel: label });
     }
   });
 
-  // 2. Concat all video streams
-  const concatInputs = clips.map((_, i) => `[v${i}]`).join("");
+  // 2. Create black base canvas for full duration
+  const fps = preset.fps ?? 30;
   ctx.filterParts.push(
-    `${concatInputs}concat=n=${clips.length}:v=1:a=0[outv]`,
+    `color=black:s=${preset.width}x${preset.height}:d=${totalDurationSec}:r=${fps},format=yuv420p[base]`,
   );
 
-  // 3. Apply overlay handlers
-  let videoOut = "[outv]";
+  // 3. Overlay all clips onto the base, ordered by track (bottom to top), then by time
+  let currentBase = "[base]";
+  let overlayIdx = 0;
+
+  for (const { clip, inputLabel } of clipInfos) {
+    const strategy = exportCompositeStrategyRegistry.get(clip.blendMode ?? "cover");
+    const startSec = clip.startMs / 1000;
+    const endSec = (clip.startMs + clip.durationMs) / 1000;
+    const enable = `between(t,${startSec},${endSec})`;
+    const outLabel = `[ov${overlayIdx}]`;
+
+    if (strategy) {
+      ctx.filterParts.push(
+        strategy.buildOverlayFilter(currentBase, inputLabel, enable) + outLabel,
+      );
+    } else {
+      ctx.filterParts.push(
+        `${currentBase}${inputLabel}overlay=0:0:enable='${enable}'${outLabel}`,
+      );
+    }
+
+    currentBase = outLabel;
+    overlayIdx++;
+  }
+
+  let videoOut = currentBase;
+
+  // 4. Apply overlay handlers (text) - collect clips by clipKind from all tracks
   for (const overlayHandler of exportHandlerRegistry.getOverlayHandlers()) {
-    const track = project.sequence.tracks.find((t) => inferTrackKind(t) === overlayHandler.trackKind);
-    if (track && track.clips.length > 0) {
-      videoOut = overlayHandler.buildOverlay(track.clips, ctx, videoOut);
+    const matchingClips = project.sequence.tracks.flatMap((t) =>
+      t.clips.filter((c) => c.clipKind === overlayHandler.clipKind),
+    );
+    if (matchingClips.length > 0) {
+      videoOut = overlayHandler.buildOverlay(matchingClips, ctx, videoOut);
     }
   }
 
-  // 4. Apply audio handlers
+  // 5. Apply audio handlers - collect clips by clipKind from all tracks
+  const allVideoClips = sortedClips.map(({ clip }) => clip);
   let audioFilter = "";
   for (const audioHandler of exportHandlerRegistry.getAudioHandlers()) {
-    const track = project.sequence.tracks.find((t) => inferTrackKind(t) === audioHandler.trackKind);
-    const audioClips = track ? track.clips : [];
-    const result = audioHandler.buildAudio(audioClips, ctx, clips);
+    const matchingClips = project.sequence.tracks.flatMap((t) =>
+      t.clips.filter((c) => c.clipKind === audioHandler.clipKind),
+    );
+    const result = audioHandler.buildAudio(matchingClips, ctx, allVideoClips);
     if (result) {
       audioFilter = result;
     }
   }
 
-  // 5. Build output args
+  // 6. Build output args
   const filterComplex = ctx.filterParts.join(";");
 
   const args = [
@@ -178,7 +226,7 @@ export function buildExportArgs(
     "-color_trc", "bt709",
     "-preset", "medium",
     "-crf", "20",
-    "-r", String(preset.fps ?? 30),
+    "-r", String(fps),
     "-movflags", "+faststart",
     "-progress", "pipe:1",
     "-nostats",
@@ -203,20 +251,19 @@ export async function startExport(
   const outputPath = path.join(expDir, path.basename(filename));
   const assetsBase = assetsDir(projectId);
 
-  // Validate
-  const videoTrack = project.sequence.tracks.find((t) => inferTrackKind(t) === "video");
-  if (!videoTrack || videoTrack.clips.length === 0) {
+  // Validate - check for visual clips across all tracks
+  const visualClips = project.sequence.tracks.flatMap((t) =>
+    t.clips.filter((c) => c.clipKind === "video" || c.clipKind === "image"),
+  );
+  if (visualClips.length === 0) {
     throw new Error("No video clips to export");
   }
 
   // Calculate total duration for progress (clamped to project settings)
-  const clipSumMs = videoTrack.clips.reduce(
-    (sum, c) => sum + c.durationMs,
-    0,
-  );
+  const maxEndMs = Math.max(...visualClips.map((c) => c.startMs + c.durationMs));
   const totalDurationMs = project.settings?.durationMs
-    ? Math.min(clipSumMs, project.settings.durationMs)
-    : clipSumMs;
+    ? Math.min(maxEndMs, project.settings.durationMs)
+    : maxEndMs;
 
   const job = jobQueue.enqueue(projectId, "export", async (job: Job) => {
     const args = buildExportArgs(project, assetsBase, outputPath);

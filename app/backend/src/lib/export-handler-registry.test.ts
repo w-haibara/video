@@ -49,29 +49,29 @@ describe("ExportHandlerRegistry", () => {
 
     test("registerOverlayHandler and getOverlayHandlers work", () => {
       const handler: ExportOverlayHandler = {
-        trackKind: "subtitle",
+        clipKind: "subtitle",
         buildOverlay: () => "out",
       };
       registry.registerOverlayHandler(handler);
       const handlers = registry.getOverlayHandlers();
       expect(handlers.length).toBe(1);
-      expect(handlers[0].trackKind).toBe("subtitle");
+      expect(handlers[0].clipKind).toBe("subtitle");
     });
 
     test("registerAudioHandler and getAudioHandlers work", () => {
       const handler: ExportAudioHandler = {
-        trackKind: "sfx",
+        clipKind: "sfx",
         buildAudio: () => "out",
       };
       registry.registerAudioHandler(handler);
       const handlers = registry.getAudioHandlers();
       expect(handlers.length).toBe(1);
-      expect(handlers[0].trackKind).toBe("sfx");
+      expect(handlers[0].clipKind).toBe("sfx");
     });
 
     test("getOverlayHandlers returns a copy", () => {
       registry.registerOverlayHandler({
-        trackKind: "t",
+        clipKind: "t",
         buildOverlay: () => "out",
       });
       const first = registry.getOverlayHandlers();
@@ -82,7 +82,7 @@ describe("ExportHandlerRegistry", () => {
 
     test("getAudioHandlers returns a copy", () => {
       registry.registerAudioHandler({
-        trackKind: "t",
+        clipKind: "t",
         buildAudio: () => "out",
       });
       const first = registry.getAudioHandlers();
@@ -117,6 +117,7 @@ describe("ExportHandlerRegistry", () => {
         inputArgs: [],
         filterParts: [],
         inputIndex: 0,
+        clipInputIndices: new Map(),
       };
 
       handler.buildInput({} as any, {} as any, ctx);

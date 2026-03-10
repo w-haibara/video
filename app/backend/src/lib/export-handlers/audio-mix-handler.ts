@@ -2,41 +2,66 @@ import type { ExportAudioHandler, ExportBuildContext } from "../export-handler-r
 import type { Clip } from "@video/shared";
 import path from "node:path";
 
-function buildVideoAudioConcat(videoClips: Clip[], ctx: ExportBuildContext): string {
-  const audioParts: string[] = [];
-  videoClips.forEach((clip, i) => {
-    const a = ctx.project.assets.find((a) => a.id === clip.assetId);
-    if (a?.kind === "video" && a.hasAudio) {
-      const trimStart = clip.inMs / 1000;
-      let dur = Math.min(clip.durationMs, clip.outMs - clip.inMs);
-      if (a.durationMs) dur = Math.min(dur, a.durationMs - clip.inMs);
-      ctx.filterParts.push(
-        `[${i}:a]atrim=start=${trimStart}:duration=${dur / 1000},asetpts=PTS-STARTPTS[at${i}]`,
-      );
-      audioParts.push(`[at${i}]`);
-    } else {
-      const dur = clip.durationMs / 1000;
-      ctx.filterParts.push(`anullsrc=r=48000:cl=stereo[sil${i}]`);
-      ctx.filterParts.push(`[sil${i}]atrim=duration=${dur}[sa${i}]`);
-      audioParts.push(`[sa${i}]`);
-    }
-  });
-  const audioConcat = audioParts.join("");
-  ctx.filterParts.push(
-    `${audioConcat}concat=n=${videoClips.length}:v=0:a=1[va]`,
-  );
-  return "[va]";
-}
-
 export const audioMixHandler: ExportAudioHandler = {
-  trackKind: "audio",
+  clipKind: "audio",
   buildAudio(clips: Clip[], ctx: ExportBuildContext, videoClips: Clip[]): string {
-    const hasVideoAudio = videoClips.some((clip) => {
-      const asset = ctx.project.assets.find((a) => a.id === clip.assetId);
-      return asset?.kind === "video" && asset.hasAudio;
-    });
+    // Collect audio streams from video clips using clipInputIndices
+    const audioStreams: { inputIdx: number; clip: Clip; asset: NonNullable<ReturnType<typeof ctx.project.assets.find>> }[] = [];
 
-    if (clips.length > 0) {
+    for (const clip of videoClips) {
+      const asset = ctx.project.assets.find((a) => a.id === clip.assetId);
+      const inputIdx = ctx.clipInputIndices.get(clip.id);
+      if (inputIdx == null || !asset) continue;
+      if (asset.kind === "video" && asset.hasAudio) {
+        audioStreams.push({ inputIdx, clip, asset });
+      }
+    }
+
+    const hasBgm = clips.length > 0 && !!ctx.project.assets.find((a) => a.id === clips[0].assetId);
+    const hasVideoAudio = audioStreams.length > 0;
+
+    if (!hasVideoAudio && !hasBgm) return "";
+
+    // Build video audio using adelay + amix for multi-track positioning
+    if (hasVideoAudio) {
+      const outLabel = hasBgm ? "[va]" : "[outa]";
+
+      if (audioStreams.length === 1) {
+        const { inputIdx, clip, asset } = audioStreams[0];
+        const trimStart = clip.inMs / 1000;
+        let dur = Math.min(clip.durationMs, clip.outMs - clip.inMs);
+        if (asset.durationMs) dur = Math.min(dur, asset.durationMs - clip.inMs);
+
+        let chain = `[${inputIdx}:a]atrim=start=${trimStart}:duration=${dur / 1000},asetpts=PTS-STARTPTS`;
+        if (clip.startMs > 0) {
+          const delayMs = Math.round(clip.startMs);
+          chain += `,adelay=${delayMs}|${delayMs}`;
+        }
+        ctx.filterParts.push(`${chain}${outLabel}`);
+      } else {
+        const labels: string[] = [];
+        audioStreams.forEach(({ inputIdx, clip, asset }, i) => {
+          const trimStart = clip.inMs / 1000;
+          let dur = Math.min(clip.durationMs, clip.outMs - clip.inMs);
+          if (asset.durationMs) dur = Math.min(dur, asset.durationMs - clip.inMs);
+          const label = `[atrk${i}]`;
+
+          let chain = `[${inputIdx}:a]atrim=start=${trimStart}:duration=${dur / 1000},asetpts=PTS-STARTPTS`;
+          if (clip.startMs > 0) {
+            const delayMs = Math.round(clip.startMs);
+            chain += `,adelay=${delayMs}|${delayMs}`;
+          }
+          ctx.filterParts.push(`${chain}${label}`);
+          labels.push(label);
+        });
+        ctx.filterParts.push(
+          `${labels.join("")}amix=inputs=${audioStreams.length}:duration=longest${outLabel}`,
+        );
+      }
+    }
+
+    // Handle BGM
+    if (hasBgm) {
       const bgmClip = clips[0];
       const bgmAsset = ctx.project.assets.find((a) => a.id === bgmClip.assetId);
       if (bgmAsset) {
@@ -49,7 +74,6 @@ export const audioMixHandler: ExportAudioHandler = {
         const bgmDuration = bgmClip.durationMs / 1000;
 
         if (hasVideoAudio) {
-          buildVideoAudioConcat(videoClips, ctx);
           ctx.filterParts.push(
             `[${bgmInputIdx}:a]atrim=start=0:duration=${bgmDuration},` +
               `adelay=${Math.round(bgmStart * 1000)}|${Math.round(bgmStart * 1000)},` +
@@ -66,32 +90,8 @@ export const audioMixHandler: ExportAudioHandler = {
           return "[outa]";
         }
       }
-    } else if (hasVideoAudio) {
-      const audioParts: string[] = [];
-      videoClips.forEach((clip, i) => {
-        const a = ctx.project.assets.find((a) => a.id === clip.assetId);
-        if (a?.kind === "video" && a.hasAudio) {
-          const trimStart = clip.inMs / 1000;
-          let dur = Math.min(clip.durationMs, clip.outMs - clip.inMs);
-          if (a.durationMs) dur = Math.min(dur, a.durationMs - clip.inMs);
-          ctx.filterParts.push(
-            `[${i}:a]atrim=start=${trimStart}:duration=${dur / 1000},asetpts=PTS-STARTPTS[at${i}]`,
-          );
-          audioParts.push(`[at${i}]`);
-        } else {
-          const dur = clip.durationMs / 1000;
-          ctx.filterParts.push(`anullsrc=r=48000:cl=stereo[sil${i}]`);
-          ctx.filterParts.push(`[sil${i}]atrim=duration=${dur}[sa${i}]`);
-          audioParts.push(`[sa${i}]`);
-        }
-      });
-      const audioConcat = audioParts.join("");
-      ctx.filterParts.push(
-        `${audioConcat}concat=n=${videoClips.length}:v=0:a=1[outa]`,
-      );
-      return "[outa]";
     }
 
-    return "";
+    return hasVideoAudio ? "[outa]" : "";
   },
 };

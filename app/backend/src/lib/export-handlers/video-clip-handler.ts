@@ -32,6 +32,7 @@ export const videoClipHandler: ExportClipHandler = {
       `crop=${ctx.preset.width}:${ctx.preset.height}:(iw-${ctx.preset.width})/2:(ih-${ctx.preset.height})/2`;
     chain += buildTransformFilter(clip, ctx.preset);
     ctx.filterParts.push(`${chain}[v${i}]`);
+    ctx.clipInputIndices.set(clip.id, i);
     ctx.inputIndex++;
   },
 };

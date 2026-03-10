@@ -7,6 +7,7 @@ export type ExportBuildContext = {
   inputArgs: string[];
   filterParts: string[];
   inputIndex: number;
+  clipInputIndices: Map<string, number>;
 };
 
 export type ExportClipHandler = {
@@ -15,12 +16,12 @@ export type ExportClipHandler = {
 };
 
 export type ExportOverlayHandler = {
-  trackKind: string;
+  clipKind: string;
   buildOverlay: (clips: Clip[], ctx: ExportBuildContext, videoOutLabel: string) => string;
 };
 
 export type ExportAudioHandler = {
-  trackKind: string;
+  clipKind: string;
   buildAudio: (clips: Clip[], ctx: ExportBuildContext, videoClips: Clip[]) => string;
 };
 

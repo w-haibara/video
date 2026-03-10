@@ -3,7 +3,7 @@ import type { Clip } from "@video/shared";
 import { sanitizeColor } from "../../services/export-service";
 
 export const textOverlayHandler: ExportOverlayHandler = {
-  trackKind: "title",
+  clipKind: "title",
   buildOverlay(clips: Clip[], ctx: ExportBuildContext, videoOutLabel: string): string {
     const projectDurationMs = ctx.project.settings?.durationMs;
 
