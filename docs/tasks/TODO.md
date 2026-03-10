@@ -111,7 +111,7 @@
 | 105 | シークバーの画面下端延長 + トラック下部空白クリックシーク | [x] Done | 09, 26 |
 | 106 | タスク 105 のテスト・Story 更新 | [x] Done | 105 |
 | 107 | 共有型の拡張 — Clip.clipKind・Clip.blendMode 追加 + Track.kind 廃止 | [x] Done | 02, 93 |
-| 108 | CompositeStrategy インターフェース設計 + CoverStrategy 実装 | [ ] TODO | 107 |
+| 108 | CompositeStrategy インターフェース設計 + CoverStrategy 実装 | [x] Done | 107 |
 | 109 | ClipKind レジストリの導入と TrackKind レジストリの廃止 | [ ] TODO | 107, 93 |
 | 110 | タイムライン UI の混在クリップ対応 | [ ] TODO | 109 |
 | 111 | sequence-ops の混在トラック対応 | [ ] TODO | 109 |
@@ -3239,46 +3239,46 @@ GoF デザインパターン（Registry / Strategy / Factory / Template Method�
 
 **A. 共有型定義: CompositeStrategy インターフェース**
 
-- [ ] `app/shared/src/types/composite.ts` に以下を定義する:
+- [x] `app/shared/src/types/composite.ts` に以下を定義する:
   - `CompositeStrategyDescriptor`: `{ id: string; label: string }` — Strategy のメタデータ
-- [ ] `app/shared/src/index.ts` で re-export する
+- [x] `app/shared/src/index.ts` で re-export する
 
 **B. フロントエンド: PreviewCompositeStrategy + レジストリ**
 
-- [ ] `PreviewCompositeStrategy` インターフェースを定義する:
+- [x] `PreviewCompositeStrategy` インターフェースを定義する:
   - `id: string` — blendMode と一致する識別子
   - `label: string` — UI 表示用ラベル
   - `containerStyle(ctx: { canvasW: number; canvasH: number }): CSSProperties` — 上レイヤーのコンテナに適用する CSS（opacity, mix-blend-mode 等）
-- [ ] `CompositeStrategyRegistry` クラスを作成する:
+- [x] `CompositeStrategyRegistry` クラスを作成する:
   - `register(strategy: PreviewCompositeStrategy): void`
   - `get(id: string): PreviewCompositeStrategy | undefined`
   - `all(): PreviewCompositeStrategy[]`
-- [ ] シングルトンインスタンス `compositeStrategyRegistry` をエクスポートする
+- [x] シングルトンインスタンス `compositeStrategyRegistry` をエクスポートする
 
 **C. フロントエンド: CoverPreviewStrategy の実装**
 
-- [ ] `cover-strategy.ts` に `CoverPreviewStrategy` を実装する:
+- [x] `cover-strategy.ts` に `CoverPreviewStrategy` を実装する:
   - `id: "cover"`, `label: "Cover (覆い隠す)"`
   - `containerStyle()`: `{ position: "relative" }` を返す（上レイヤーが下を完全に覆う = 特殊なスタイル不要）
 
 **D. バックエンド: ExportCompositeStrategy + レジストリ**
 
-- [ ] `ExportCompositeStrategy` インターフェースを定義する:
+- [x] `ExportCompositeStrategy` インターフェースを定義する:
   - `id: string` — blendMode と一致する識別子
   - `buildOverlayFilter(bottomLabel: string, topLabel: string, enable: string): string` — FFmpeg overlay フィルタ式を生成
-- [ ] `CompositeStrategyRegistry` クラスを作成する（フロントエンドと同様の構造）
-- [ ] シングルトンインスタンス `exportCompositeStrategyRegistry` をエクスポートする
+- [x] `CompositeStrategyRegistry` クラスを作成する（フロントエンドと同様の構造）
+- [x] シングルトンインスタンス `exportCompositeStrategyRegistry` をエクスポートする
 
 **E. バックエンド: CoverExportStrategy の実装**
 
-- [ ] `cover-strategy.ts` に `CoverExportStrategy` を実装する:
+- [x] `cover-strategy.ts` に `CoverExportStrategy` を実装する:
   - `id: "cover"`
   - `buildOverlayFilter(bottom, top, enable)`: `${bottom}${top}overlay=0:0:enable='${enable}'` を返す（上で下を完全に覆う）
 
 **F. builtin-plugin への登録**
 
-- [ ] フロントエンド `builtin-plugin.ts` に `registerCompositeStrategies(registry)` を追加し、CoverPreviewStrategy を登録する
-- [ ] バックエンド `builtin-plugin.ts` に `registerCompositeStrategies(registry)` を追加し、CoverExportStrategy を登録する
+- [x] フロントエンド `builtin-plugin.ts` に `registerCompositeStrategies(registry)` を追加し、CoverPreviewStrategy を登録する
+- [x] バックエンド `builtin-plugin.ts` に `registerCompositeStrategies(registry)` を追加し、CoverExportStrategy を登録する
 
 **確認方法:** レジストリに Strategy が登録され、`get("cover")` で取得できること。`bun run test` で既存テストが通ること。
 
