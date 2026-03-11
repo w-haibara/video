@@ -72,6 +72,7 @@ export function findNonOverlappingPosition(
   movingClipId: string,
   newStartMs: number,
   durationMs: number,
+  maxStartMs?: number,
 ): number {
   const others = clips
     .filter((c) => c.id !== movingClipId)
@@ -85,13 +86,20 @@ export function findNonOverlappingPosition(
     const otherEnd = other.startMs + other.durationMs;
     // Check overlap: [pos, pos+durationMs) intersects [other.startMs, otherEnd)
     if (pos < otherEnd && pos + durationMs > other.startMs) {
-      // Snap to whichever side is closer
       const snapAfter = otherEnd;
       const snapBefore = other.startMs - durationMs;
-      if (Math.abs(snapAfter - newStartMs) <= Math.abs(snapBefore - newStartMs)) {
+      const afterValid = maxStartMs == null || snapAfter <= maxStartMs;
+      const beforeValid = snapBefore >= 0;
+
+      if (afterValid && beforeValid) {
+        pos = Math.abs(snapBefore - newStartMs) < Math.abs(snapAfter - newStartMs) ? snapBefore : snapAfter;
+      } else if (afterValid) {
         pos = snapAfter;
-      } else {
+      } else if (beforeValid) {
         pos = snapBefore;
+      } else {
+        // Neither side fits within bounds — will be caught by verification below
+        pos = snapAfter;
       }
     }
   }
@@ -100,17 +108,22 @@ export function findNonOverlappingPosition(
   for (const other of others) {
     const otherEnd = other.startMs + other.durationMs;
     if (pos < otherEnd && pos + durationMs > other.startMs) {
-      // Still overlapping after snap — find a gap or place after last clip
+      // Still overlapping after snap — find a gap that fits within bounds
       for (let i = 0; i < others.length; i++) {
         const gapStart = i === 0 ? 0 : others[i - 1].startMs + others[i - 1].durationMs;
         const gapEnd = others[i].startMs;
-        if (gapEnd - gapStart >= durationMs) {
+        if (gapEnd - gapStart >= durationMs && (maxStartMs == null || gapStart <= maxStartMs)) {
           return gapStart;
         }
       }
-      // No gap found — place after the last clip
+      // Check gap after the last clip
       const last = others[others.length - 1];
-      return last.startMs + last.durationMs;
+      const afterLast = last.startMs + last.durationMs;
+      if (maxStartMs == null || afterLast <= maxStartMs) {
+        return afterLast;
+      }
+      // No valid position found — return original (caller should check for overlap)
+      return newStartMs;
     }
   }
 
@@ -149,12 +162,20 @@ export function moveClip(
     const targetTrack = sequence.tracks.find((t: Track) => t.id === targetTrackId);
     if (!targetTrack) return sequence;
 
-    // Apply overlap prevention on the target track
-    startMs = findNonOverlappingPosition(targetTrack.clips, clipId, startMs, movingClip.durationMs);
+    // Apply overlap prevention on the target track (with max boundary constraint)
+    const maxStartMs = maxDurationMs != null ? Math.max(0, maxDurationMs - movingClip.durationMs) : undefined;
+    startMs = findNonOverlappingPosition(targetTrack.clips, clipId, startMs, movingClip.durationMs, maxStartMs);
     startMs = Math.max(0, startMs);
-    if (maxDurationMs != null) {
-      startMs = Math.min(startMs, Math.max(0, maxDurationMs - movingClip.durationMs));
+    if (maxStartMs != null) {
+      startMs = Math.min(startMs, maxStartMs);
     }
+
+    // Reject move if overlap persists (no valid position within bounds)
+    const hasOverlap = targetTrack.clips.some((c: Clip) => {
+      const otherEnd = c.startMs + c.durationMs;
+      return startMs < otherEnd && startMs + movingClip.durationMs > c.startMs;
+    });
+    if (hasOverlap) return sequence;
 
     const movedClip = { ...movingClip, startMs };
     const tracks = sequence.tracks
@@ -174,7 +195,8 @@ export function moveClip(
   }
 
   // Same-track move
-  startMs = findNonOverlappingPosition(sourceTrack.clips, clipId, startMs, movingClip.durationMs);
+  const sameTrackMaxStartMs = maxDurationMs != null ? Math.max(0, maxDurationMs - movingClip.durationMs) : undefined;
+  startMs = findNonOverlappingPosition(sourceTrack.clips, clipId, startMs, movingClip.durationMs, sameTrackMaxStartMs);
   startMs = Math.max(0, startMs);
   if (maxDurationMs != null) {
     startMs = Math.min(startMs, Math.max(0, maxDurationMs - movingClip.durationMs));
