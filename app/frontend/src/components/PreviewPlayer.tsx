@@ -229,8 +229,12 @@ export function PreviewPlayer({
         }
       }
 
+      let newTime: number | null = null;
+
       if (activeMedia) {
+        const clipEndMs = activeMedia.clip.startMs + activeMedia.clip.durationMs;
         const strategy = previewRendererRegistry.getTickStrategy(activeMedia.asset.kind);
+
         if (strategy) {
           const tickCtx = {
             currentTimeMs: curTime,
@@ -239,24 +243,29 @@ export function PreviewPlayer({
             videoEnded: videoEndedRef.current,
             resetVideoEnded: () => { videoEndedRef.current = false; },
           };
-          const newTime = strategy.tick(activeMedia, deltaMs, tickCtx);
-          if (newTime !== null) {
-            onTimeUpdateRef.current(newTime);
-          }
+          newTime = strategy.tick(activeMedia, deltaMs, tickCtx);
         } else {
           // Unknown asset kind — advance like a static clip
-          const clipEndMs = activeMedia.clip.startMs + activeMedia.clip.durationMs;
-          onTimeUpdateRef.current(Math.min(curTime + deltaMs, clipEndMs));
+          newTime = Math.min(curTime + deltaMs, clipEndMs);
         }
       } else {
-        const newTime = curTime + deltaMs;
-        if (newTime < playEnd) {
-          onTimeUpdateRef.current(newTime);
-        } else {
+        // No active media — advance through gap between clips
+        newTime = curTime + deltaMs;
+      }
+
+      if (newTime !== null) {
+        // Stop at end of playback range
+        if (newTime >= playEnd) {
+          currentTimeMsRef.current = playEnd;
           onTimeUpdateRef.current(playEnd);
           onPlayPauseRef.current();
           return;
         }
+        // Update ref immediately so the next tick frame reads the correct
+        // time even before React re-renders (prevents stale-closure stalls
+        // at clip boundaries, especially for image/static clips).
+        currentTimeMsRef.current = newTime;
+        onTimeUpdateRef.current(newTime);
       }
 
       animFrameRef.current = requestAnimationFrame(tick);
