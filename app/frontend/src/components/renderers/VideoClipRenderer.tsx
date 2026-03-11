@@ -30,6 +30,7 @@ function ManagedVideoElement({
   const lastClipIdRef = useRef<string>("");
   const lastMediaUrlRef = useRef<string>("");
   const sourceChangingRef = useRef(false);
+  const sourceVersionRef = useRef(0);
 
   const assetW = activeClip.asset.width ?? canvasW;
   const assetH = activeClip.asset.height ?? canvasH;
@@ -49,16 +50,22 @@ function ManagedVideoElement({
       if (urlChanged || srcMissing) {
         lastMediaUrlRef.current = mediaUrl;
         sourceChangingRef.current = true;
+        const version = ++sourceVersionRef.current;
         video.src = mediaUrl;
         const seekTarget = activeClip.clipTimeMs / 1000;
-        const onLoadedData = () => {
-          video.removeEventListener("loadeddata", onLoadedData);
+        video.addEventListener("loadeddata", () => {
+          if (sourceVersionRef.current !== version) return;
           sourceChangingRef.current = false;
           video.currentTime = seekTarget;
-          if (isPlaying) video.play().catch(() => {});
-        };
-        video.addEventListener("loadeddata", onLoadedData);
-        return () => video.removeEventListener("loadeddata", onLoadedData);
+          const startPlay = () => {
+            if (isPlaying) video.play().catch(() => {});
+          };
+          if (video.seeking) {
+            video.addEventListener("seeked", startPlay, { once: true });
+          } else {
+            startPlay();
+          }
+        }, { once: true });
       } else {
         video.currentTime = activeClip.clipTimeMs / 1000;
         if (isPlaying) video.play().catch(() => {});

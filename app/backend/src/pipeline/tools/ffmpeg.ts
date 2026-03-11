@@ -144,6 +144,7 @@ export const ffmpegTool: FfmpegTool = {
       "-r", "30",
       "-c:a", "aac",
       "-b:a", "128k",
+      "-movflags", "+faststart",
       "-progress", "pipe:1",
       "-nostats",
       outputPath,

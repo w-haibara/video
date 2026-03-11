@@ -70,6 +70,7 @@ export function PreviewPlayer({
   const lastMediaUrlRef = useRef<string>("");
   const videoEndedRef = useRef(false);
   const sourceChangingRef = useRef(false);
+  const sourceVersionRef = useRef(0);
   const currentTimeMsRef = useRef(currentTimeMs);
   currentTimeMsRef.current = currentTimeMs;
 
@@ -141,18 +142,27 @@ export function PreviewPlayer({
       if (urlChanged || srcMissing) {
         lastMediaUrlRef.current = mediaUrl;
         sourceChangingRef.current = true;
+        const version = ++sourceVersionRef.current;
         video.src = mediaUrl;
         const seekTarget = videoContent.clipTimeMs / 1000;
-        const onLoadedData = () => {
-          video.removeEventListener("loadeddata", onLoadedData);
+        // Use { once: true } so the listener survives React StrictMode
+        // double-mount cleanup. The version counter guards against stale
+        // callbacks when the source changes again before loading completes.
+        video.addEventListener("loadeddata", () => {
+          if (sourceVersionRef.current !== version) return;
           sourceChangingRef.current = false;
           video.currentTime = seekTarget;
-          if (isPlayingRef.current) {
-            video.play().catch(() => {});
+          const startPlay = () => {
+            if (isPlayingRef.current) video.play().catch(() => {});
+          };
+          // Wait for the seek to complete before playing so the video
+          // doesn't start from position 0 while the seek is still pending.
+          if (video.seeking) {
+            video.addEventListener("seeked", startPlay, { once: true });
+          } else {
+            startPlay();
           }
-        };
-        video.addEventListener("loadeddata", onLoadedData);
-        return () => video.removeEventListener("loadeddata", onLoadedData);
+        }, { once: true });
       } else {
         video.currentTime = videoContent.clipTimeMs / 1000;
         if (isPlaying) {
