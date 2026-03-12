@@ -22,7 +22,11 @@ Additional scripts are defined in `app/frontend/package.json` and must be run fr
 
 Claude Code を `--dangerously-skip-permissions` で運用するための devcontainer。ファイアウォールで許可ドメイン以外への通信をブロックする。
 
+コンテナ内から `git push` するには、ホストで `GITHUB_TOKEN` 環境変数をセットしてから起動する:
+
 ```bash
+export GITHUB_TOKEN="$(gh auth token)"
+
 # ビルド & 起動
 devcontainer up --workspace-folder .
 

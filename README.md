@@ -63,7 +63,11 @@ app/
 
 A devcontainer is provided for running [Claude Code](https://claude.com/claude-code) in `--dangerously-skip-permissions` mode with a restrictive firewall.
 
+To enable `git push` from inside the container, set the `GITHUB_TOKEN` environment variable on the host before starting:
+
 ```sh
+export GITHUB_TOKEN="$(gh auth token)"
+
 # Build & start
 devcontainer up --workspace-folder .
 
