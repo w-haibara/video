@@ -58,3 +58,24 @@ app/
       pages/       # Page components (+ *.stories.tsx)
       stories/     # Theme catalog story
 ```
+
+## Devcontainer
+
+A devcontainer is provided for running [Claude Code](https://claude.com/claude-code) in `--dangerously-skip-permissions` mode with a restrictive firewall.
+
+```sh
+# Build & start
+devcontainer up --workspace-folder .
+
+# Run commands inside the container
+devcontainer exec --workspace-folder . claude --dangerously-skip-permissions
+
+# Stop
+docker stop $(docker ps -q --filter label=devcontainer.local_folder=$(pwd))
+```
+
+Browser tests inside the container require `xvfb-run`:
+
+```sh
+cd app/frontend && xvfb-run bun run test:browser
+```

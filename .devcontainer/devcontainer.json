@@ -1,0 +1,34 @@
+{
+  "name": "Video Editor Dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "TZ": "${localEnv:TZ:Asia/Tokyo}",
+      "CLAUDE_CODE_VERSION": "latest",
+      "GIT_DELTA_VERSION": "0.18.2",
+      "ZSH_IN_DOCKER_VERSION": "1.2.1"
+    }
+  },
+  "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "--security-opt=seccomp=unconfined"],
+  "remoteUser": "node",
+  "mounts": [
+    "source=video-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
+    "source=video-claude-config-${devcontainerId},target=/home/node/.claude,type=volume"
+  ],
+  "containerEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude",
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true"
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [5173, 3000, 6006],
+  "portsAttributes": {
+    "5173": { "label": "Frontend (Vite)" },
+    "3000": { "label": "Backend (Hono)" },
+    "6006": { "label": "Storybook" }
+  },
+  "postCreateCommand": "/usr/local/bin/setup-claude.sh",
+  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
+  "waitFor": "postStartCommand"
+}
