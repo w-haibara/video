@@ -2,76 +2,59 @@
 
 Browser-based video editor built with React, Hono, and Bun.
 
-## Getting Started
+## Prerequisites
 
-Development uses [Dev Containers](https://containers.dev/). No local setup is required.
+- [Bun](https://bun.sh/) v1.x
 
-### Prerequisites
+## Setup
 
-- [Docker](https://docs.docker.com/get-docker/)
-- [devcontainer CLI](https://github.com/devcontainers/cli)
-
-### Launch
-
-```sh
-devcontainer up --workspace-folder .
-devcontainer exec --workspace-folder . bash
-```
-
-On startup, firewall rules are automatically applied to restrict outbound traffic to an allowlist (GitHub, npm, Anthropic API, etc.).
-
-### Install Dependencies
-
-Inside the container:
 ```sh
 bun install
 ```
 
-## Development
+## Development Commands
+
+Scripts defined in the root `package.json`:
 
 | Command | Purpose |
 |---------|---------|
-| `bun run dev` | Start the dev server (backend + frontend) |
-| `bun run restart` | Restart the dev server |
+| `bun run dev` | Start the development server (backend + frontend) |
+| `bun run restart` | Restart the development server (kills both on failure) |
 | `bun run test` | Run all tests |
 
-| Port | Service |
-|------|---------|
-| 5173 | Frontend (Vite) |
-| 3000 | Backend (Hono) |
-| 6006 | Storybook |
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3000
 
-Run from `app/frontend/`:
+Additional scripts defined in `app/frontend/package.json` (must be run from `app/frontend/`):
 
 | Command | Purpose |
 |---------|---------|
-| `bun run storybook` | Start Storybook dev server |
+| `bun run storybook` | Start Storybook dev server on port 6006 |
 | `bun run build-storybook` | Build static Storybook |
-| `bun run test:browser` | Run browser tests (Vitest + Playwright) |
+| `bun run test:browser` | Run Vitest browser tests |
 
-### Storybook
-
-Interactive component catalog and test runner. Component tests are written as `.test()` calls in `*.stories.tsx` files and run in a real browser via Playwright.
-
-## Production Build
-
-Production builds run outside the devcontainer.
+### Production Build
 
 ```sh
 cd app/frontend && bun run build
 ```
 
+### Storybook
+
+Storybook provides an interactive component catalog and test runner for all UI components. Opens at http://localhost:6006. Test results are visible in the Interactions panel for each story.
+
+Component tests are written as `.test()` calls in `*.stories.tsx` files and run in a real browser via Playwright.
+
 ## Project Structure
 
 ```
-.devcontainer/       # Dev Container configuration
 app/
-  shared/            # Shared type definitions (Project, Asset, Job, Clip, etc.)
-  backend/           # Hono API server
-  frontend/          # React + Vite SPA
-    .storybook/      # Storybook configuration
+  shared/    # Shared types (Project, Asset, Job, Clip, etc.)
+  backend/   # Hono API server
+  frontend/  # React + Vite SPA
+    .storybook/   # Storybook configuration
     src/
-      components/    # UI components (+ *.stories.tsx)
-      pages/         # Page components (+ *.stories.tsx)
-      stories/       # Theme catalog
+      components/  # UI components (+ *.stories.tsx)
+      pages/       # Page components (+ *.stories.tsx)
+      stories/     # Theme catalog story
 ```
