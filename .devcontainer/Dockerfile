@@ -11,11 +11,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ffmpeg xauth \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Create alice user explicitly (remove any existing uid/gid 1000 first)
+RUN userdel -r "$(getent passwd 1000 | cut -d: -f1)" 2>/dev/null || true && \
+  groupdel "$(getent group 1000 | cut -d: -f1)" 2>/dev/null || true && \
+  groupadd --gid 1000 alice && \
+  useradd --uid 1000 --gid 1000 -m -s /bin/zsh alice
+
 # npm global directory
 RUN mkdir -p /usr/local/share/npm-global && \
-  chown -R node:node /usr/local/share
+  chown -R alice:alice /usr/local/share
 
-ARG USERNAME=node
+ARG USERNAME=alice
 
 # Bash history persistence
 RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
@@ -25,8 +31,8 @@ RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhisto
 
 ENV DEVCONTAINER=true
 
-RUN mkdir -p /workspace /home/node/.claude && \
-  chown -R node:node /workspace /home/node/.claude
+RUN mkdir -p /workspace /home/alice/.claude && \
+  chown -R alice:alice /workspace /home/alice/.claude
 
 WORKDIR /workspace
 
@@ -44,7 +50,7 @@ RUN npx playwright install --with-deps chromium && \
   mkdir -p /opt/google/chrome && \
   ln -sf "$PLAYWRIGHT_BROWSERS_PATH"/chromium-*/chrome-linux64/chrome /opt/google/chrome/chrome
 
-USER node
+USER alice
 
 ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
 ENV PATH=$PATH:/usr/local/share/npm-global/bin
@@ -54,7 +60,7 @@ ENV VISUAL=nano
 
 # Bun
 RUN curl -fsSL https://bun.sh/install | bash
-ENV BUN_INSTALL="/home/node/.bun"
+ENV BUN_INSTALL="/home/alice/.bun"
 ENV PATH="$BUN_INSTALL/bin:$PATH"
 
 # zsh
@@ -73,6 +79,7 @@ RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} @playwright/
 COPY init-firewall.sh setup-claude.sh /usr/local/bin/
 USER root
 RUN chmod +x /usr/local/bin/init-firewall.sh /usr/local/bin/setup-claude.sh && \
-  echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall && \
-  chmod 0440 /etc/sudoers.d/node-firewall
-USER node
+  echo "alice ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/alice-firewall && \
+  echo "alice ALL=(root) NOPASSWD: /usr/bin/git config --system *" >> /etc/sudoers.d/alice-firewall && \
+  chmod 0440 /etc/sudoers.d/alice-firewall
+USER alice

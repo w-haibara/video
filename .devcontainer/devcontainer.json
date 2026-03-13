@@ -10,14 +10,15 @@
     }
   },
   "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "--security-opt=seccomp=unconfined"],
-  "remoteUser": "node",
+  "remoteUser": "alice",
   "mounts": [
     "source=video-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
-    "source=video-claude-config-${devcontainerId},target=/home/node/.claude,type=volume"
+    "source=video-claude-config-${devcontainerId},target=/home/alice/.claude,type=volume",
+    "source=${localEnv:USERPROFILE}/.gitconfig,target=/home/alice/.gitconfig,type=bind,readonly"
   ],
   "containerEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
-    "CLAUDE_CONFIG_DIR": "/home/node/.claude",
+    "CLAUDE_CONFIG_DIR": "/home/alice/.claude",
     "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
     "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
   },
