@@ -1,44 +1,48 @@
 # CLAUDE.md
 
-## Development Commands
-
-Proactively use `bun run` scripts defined in the root `package.json` when performing development tasks. This includes starting, restarting, and managing the dev server.
+## Commands
 
 | Command | Purpose |
 |---------|---------|
-| `bun run dev` | Start the development server (backend + frontend) |
-| `bun run restart` | Restart the development server (kills both on failure) |
-| `bun run test` | Run all tests |
+| `bun run dev` | Start dev server (backend + frontend) |
+| `bun run restart` | Restart dev server (kills both on failure) |
+| `bun run test` | Run all tests (includes snapshot & regression) |
+| `bun run view:regression` | Start regression test viewer on port 3001 |
 
-Additional scripts are defined in `app/frontend/package.json` and must be run from that directory:
+Frontend-specific (run from `app/frontend/`):
 
 | Command | Purpose |
 |---------|---------|
-| `bun run storybook` | Start Storybook dev server on port 6006 |
+| `bun run storybook` | Start Storybook on port 6006 |
 | `bun run build-storybook` | Build static Storybook |
-| `bun run test:browser` | Run Vitest browser tests |
+| `bun run test:browser` | Run Vitest browser tests (needs `xvfb-run` in devcontainer) |
+
+## Regression testing workflow
+
+After modifying `sequence-ops` or export-related code, follow this workflow:
+
+1. Run `bun run test` — detect regressions
+2. If snapshot diff is intentional: `cd app/frontend && bun test sequence-ops.regression --update-snapshots`
+3. If export frames changed: `UPDATE_REFERENCES=1 bun test export-regression`
+4. Start `bun run view:regression` and verify visually with playwright-cli
+5. Run `bun run test` again to confirm all pass, then commit (include `.snap` and `references/`)
+
+### Adding new snapshot test cases
+
+- Add test to `sequence-ops.regression.test.ts` using `stabilize()` + `toMatchSnapshot()`
+- First run auto-generates the snapshot — verify it visually in the viewer
+- IMPORTANT: Do NOT use `--update-snapshots` while iterating on a new case. Delete the single new entry from `.snap` and re-run instead, to avoid overwriting existing correct snapshots.
+
+### Adding new export regression test cases
+
+- Add factory function to `app/backend/src/__fixtures__/export/make-fixture-project.ts`
+- Add test case to `export-regression.test.ts`
+- First run auto-generates reference frames
+- Add entry to `EXPORT_TESTS` in `tools/regression-viewer/index.ts`
+- Verify frames visually in viewer before committing
 
 ## Devcontainer
 
-Claude Code を `--dangerously-skip-permissions` で運用するための devcontainer。ファイアウォールで許可ドメイン以外への通信をブロックする。
-
-コンテナ内から `git push` するには、ホストで `GITHUB_TOKEN` 環境変数をセットしてから起動する:
-
-```bash
-export GITHUB_TOKEN="$(gh auth token)"
-
-# ビルド & 起動
-devcontainer up --workspace-folder .
-
-# コンテナ内でコマンド実行
-devcontainer exec --workspace-folder . claude --dangerously-skip-permissions
-
-# 停止
-docker stop $(docker ps -q --filter label=devcontainer.local_folder=$(pwd))
-```
-
-コンテナ内でブラウザテストを実行する場合は `xvfb-run` が必要:
-
-```bash
-cd app/frontend && xvfb-run bun run test:browser
-```
+See @.devcontainer/README.md for setup instructions. Key points:
+- Set `GITHUB_TOKEN` on host before `devcontainer up`
+- Browser tests need `xvfb-run` prefix inside container
