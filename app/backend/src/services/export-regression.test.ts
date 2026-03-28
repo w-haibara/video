@@ -15,6 +15,12 @@ import {
   makeMultiTrackProject,
   makeOverlayTransformProject,
   makeFadeTransitionProject,
+  makeFadeBlackTransitionProject,
+  makeFadeWhiteTransitionProject,
+  makeSlideLeftTransitionProject,
+  makeSlideRightTransitionProject,
+  makeSlideUpTransitionProject,
+  makeSlideDownTransitionProject,
   makeOpacityProject,
   makeMultiplyProject,
   makeScreenProject,
@@ -135,7 +141,31 @@ describe("export regression", () => {
   }, 30_000);
 
   test("fade transition between clips", async () => {
-    await runExportRegression("fade-transition", makeFadeTransitionProject());
+    await runExportRegression("transition-fade", makeFadeTransitionProject());
+  }, 30_000);
+
+  test("transition: fade-black", async () => {
+    await runExportRegression("transition-fade-black", makeFadeBlackTransitionProject());
+  }, 30_000);
+
+  test("transition: fade-white", async () => {
+    await runExportRegression("transition-fade-white", makeFadeWhiteTransitionProject());
+  }, 30_000);
+
+  test("transition: slide-left", async () => {
+    await runExportRegression("transition-slide-left", makeSlideLeftTransitionProject());
+  }, 30_000);
+
+  test("transition: slide-right", async () => {
+    await runExportRegression("transition-slide-right", makeSlideRightTransitionProject());
+  }, 30_000);
+
+  test("transition: slide-up", async () => {
+    await runExportRegression("transition-slide-up", makeSlideUpTransitionProject());
+  }, 30_000);
+
+  test("transition: slide-down", async () => {
+    await runExportRegression("transition-slide-down", makeSlideDownTransitionProject());
   }, 30_000);
 
   test("blend: opacity", async () => {

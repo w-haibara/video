@@ -125,7 +125,7 @@ export function TimelineTrack({
                 width={width}
                 colorA={colorA}
                 colorB={colorB}
-                clipId={clip.id}
+                transType={clip.transition.type}
                 onRemove={() => onSetTransition(clip.id, undefined)}
               />
             );
@@ -186,19 +186,29 @@ function TransitionAddButton({ left, onClick }: { left: number; onClick: () => v
   );
 }
 
+const TRANSITION_LABELS: Record<string, string> = {
+  fade: "FADE",
+  "fade-black": "F.BLK",
+  "fade-white": "F.WHT",
+  "slide-left": "SL ←",
+  "slide-right": "SL →",
+  "slide-up": "SL ↑",
+  "slide-down": "SL ↓",
+};
+
 function TransitionIndicator({
   left,
   width,
   colorA,
   colorB,
-  clipId,
+  transType,
   onRemove,
 }: {
   left: number;
   width: number;
   colorA: string;
   colorB: string;
-  clipId: string;
+  transType: string;
   onRemove: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -238,7 +248,7 @@ function TransitionIndicator({
           pointerEvents: "none",
         }}
       >
-        {width > 30 ? "FADE" : ""}
+        {width > 30 ? (TRANSITION_LABELS[transType] ?? transType.toUpperCase()) : ""}
       </span>
     </div>
   );

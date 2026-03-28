@@ -115,50 +115,101 @@ export function findAllActiveClips(
   return result;
 }
 
-/**
- * Compute transition opacity for a clip at a given time.
- * Returns 1.0 when no transition is active, 0.0-1.0 during a transition.
- */
-export function computeTransitionOpacity(
-  clip: Clip,
-  project: Project,
-  currentTimeMs: number,
-): number {
-  let opacity = 1.0;
-  const clipStart = clip.startMs;
+/** Find the next clip on the same track that has a transition overlapping this clip. */
+function findNextTransitionClip(clip: Clip, project: Project): Clip | null {
   const clipEnd = clip.startMs + clip.durationMs;
-
-  // Fade-in: this clip has a transition
-  if (clip.transition?.type === "fade") {
-    const fadeDur = clip.transition.durationMs;
-    const elapsed = currentTimeMs - clipStart;
-    if (elapsed < fadeDur) {
-      opacity *= Math.max(0, Math.min(1, elapsed / fadeDur));
-    }
-  }
-
-  // Fade-out: find the next clip on the same track that has a transition targeting this clip
   for (const track of project.sequence.tracks) {
     const idx = track.clips.findIndex((c) => c.id === clip.id);
     if (idx < 0) continue;
-    // Look for a later clip on the same track with a transition that overlaps this clip
     for (let i = idx + 1; i < track.clips.length; i++) {
       const next = track.clips[i];
       if (!next.transition) continue;
-      if (next.startMs < clipEnd && next.startMs > clipStart) {
-        const fadeOutStart = next.startMs;
-        const fadeOutDur = next.transition.durationMs;
-        if (currentTimeMs >= fadeOutStart) {
-          const progress = (currentTimeMs - fadeOutStart) / fadeOutDur;
-          opacity *= Math.max(0, 1 - Math.min(1, progress));
-        }
-        break;
-      }
+      if (next.startMs < clipEnd && next.startMs > clip.startMs) return next;
     }
     break;
   }
+  return null;
+}
 
-  return opacity;
+/** Compute transition progress (0..1) for a clip's fade-in. Returns -1 if not in transition. */
+function incomingProgress(clip: Clip, currentTimeMs: number): number {
+  if (!clip.transition) return -1;
+  const elapsed = currentTimeMs - clip.startMs;
+  if (elapsed >= clip.transition.durationMs) return -1;
+  return Math.max(0, Math.min(1, elapsed / clip.transition.durationMs));
+}
+
+/** Compute transition progress (0..1) for a clip's fade-out. Returns -1 if not in transition. */
+function outgoingProgress(clip: Clip, project: Project, currentTimeMs: number): number {
+  const next = findNextTransitionClip(clip, project);
+  if (!next) return -1;
+  const fadeOutStart = next.startMs;
+  if (currentTimeMs < fadeOutStart) return -1;
+  return Math.max(0, Math.min(1, (currentTimeMs - fadeOutStart) / next.transition!.durationMs));
+}
+
+const FADE_TYPES = new Set(["fade", "fade-black", "fade-white"]);
+
+/**
+ * Compute transition CSS styles for a clip at a given time.
+ * Returns {} when no transition is active.
+ */
+export function computeTransitionStyle(
+  clip: Clip,
+  project: Project,
+  currentTimeMs: number,
+): CSSProperties {
+  const style: CSSProperties = {};
+  const transType = clip.transition?.type;
+
+  // ── Incoming transition (this clip fades/slides in) ──
+  const inProg = incomingProgress(clip, currentTimeMs);
+  if (inProg >= 0 && transType) {
+    if (transType === "fade") {
+      style.opacity = inProg;
+    } else if (transType === "fade-black") {
+      // Fade in only in second half (0..0.5 = invisible, 0.5..1 = 0→1)
+      style.opacity = inProg < 0.5 ? 0 : (inProg - 0.5) * 2;
+    } else if (transType === "fade-white") {
+      style.opacity = inProg < 0.5 ? 0 : (inProg - 0.5) * 2;
+      if (inProg < 0.5) {
+        style.filter = "brightness(5)";
+      }
+    } else if (transType === "slide-left") {
+      style.transform = `translateX(${(1 - inProg) * 100}%)`;
+    } else if (transType === "slide-right") {
+      style.transform = `translateX(${-(1 - inProg) * 100}%)`;
+    } else if (transType === "slide-up") {
+      style.transform = `translateY(${(1 - inProg) * 100}%)`;
+    } else if (transType === "slide-down") {
+      style.transform = `translateY(${-(1 - inProg) * 100}%)`;
+    }
+  }
+
+  // ── Outgoing transition (this clip fades/slides out for the NEXT clip's transition) ──
+  const outProg = outgoingProgress(clip, project, currentTimeMs);
+  if (outProg >= 0) {
+    const next = findNextTransitionClip(clip, project);
+    const nextType = next?.transition?.type;
+    if (!nextType) return style;
+
+    if (nextType === "fade") {
+      style.opacity = ((style.opacity as number) ?? 1) * (1 - outProg);
+    } else if (nextType === "fade-black") {
+      // Fade out in first half only (0..0.5 = 1→0, 0.5..1 = invisible)
+      const outOpacity = outProg < 0.5 ? 1 - outProg * 2 : 0;
+      style.opacity = ((style.opacity as number) ?? 1) * outOpacity;
+    } else if (nextType === "fade-white") {
+      const outOpacity = outProg < 0.5 ? 1 - outProg * 2 : 0;
+      style.opacity = ((style.opacity as number) ?? 1) * outOpacity;
+      if (outProg < 0.5) {
+        style.filter = "brightness(5)";
+      }
+    }
+    // slide-*: outgoing clip stays fully visible (incoming slides on top)
+  }
+
+  return style;
 }
 
 /** Compute inner media element styles (handles crop offset). */

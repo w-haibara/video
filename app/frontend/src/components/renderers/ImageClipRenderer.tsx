@@ -1,5 +1,5 @@
 import type { ActiveClip, PreviewRenderContext, PreviewLayerRenderer } from "../../lib/preview-renderer-registry";
-import { findAllActiveClips, computeMediaContainerStyle, mediaStyle, computeTransitionOpacity } from "../../lib/preview-renderer-registry";
+import { findAllActiveClips, computeMediaContainerStyle, mediaStyle, computeTransitionStyle } from "../../lib/preview-renderer-registry";
 import { compositeStrategyRegistry } from "../../lib/composite-strategy-registry";
 
 function ImageClipComponent({ content, ctx }: { content: unknown; ctx: PreviewRenderContext }) {
@@ -18,12 +18,12 @@ function ImageClipComponent({ content, ctx }: { content: unknown; ctx: PreviewRe
           ? `/media/projects/${ctx.project.id}/thumbnails/${thumb.split("/").pop()}`
           : "";
 
-        const transitionOpacity = computeTransitionOpacity(activeClip.clip, ctx.project, ctx.currentTimeMs);
+        const transStyle = computeTransitionStyle(activeClip.clip, ctx.project, ctx.currentTimeMs);
         const containerStyle = {
           ...computeMediaContainerStyle(activeClip, ctx.canvasW, ctx.canvasH),
           zIndex: activeClip.trackIndex,
           ...(strategy?.containerStyle({ canvasW: ctx.canvasW, canvasH: ctx.canvasH }) ?? {}),
-          ...(transitionOpacity < 1 ? { opacity: transitionOpacity } : {}),
+          ...transStyle,
           position: "absolute" as const,
         };
 

@@ -347,9 +347,9 @@ export function makeDifferenceProject(): Project {
   });
 }
 
-/** Video (red) then image (blue) with a 300ms fade transition at the join point.
- *  Clip 1 (video): 0–1000ms, Clip 2 (image): 700–1700ms (300ms overlap with fade). */
-export function makeFadeTransitionProject(): Project {
+/** Helper: Video (red) → Image (blue) with a 300ms transition of the given type.
+ *  Clip 1 (video): 0–1000ms, Clip 2 (image): 700–1700ms (300ms overlap). */
+function makeTransitionProject(transitionType: string): Project {
   return baseProject({
     assets: [videoAsset, imageAsset],
     settings: { durationMs: 2000, canvasWidth: CANVAS_W, canvasHeight: CANVAS_H },
@@ -365,13 +365,21 @@ export function makeFadeTransitionProject(): Project {
             durationMs: 1000,
             inMs: 0,
             outMs: 1000,
-            transition: { type: "fade", durationMs: 300 },
+            transition: { type: transitionType, durationMs: 300 },
           }),
         ]),
       ],
     },
   });
 }
+
+export function makeFadeTransitionProject(): Project { return makeTransitionProject("fade"); }
+export function makeFadeBlackTransitionProject(): Project { return makeTransitionProject("fade-black"); }
+export function makeFadeWhiteTransitionProject(): Project { return makeTransitionProject("fade-white"); }
+export function makeSlideLeftTransitionProject(): Project { return makeTransitionProject("slide-left"); }
+export function makeSlideRightTransitionProject(): Project { return makeTransitionProject("slide-right"); }
+export function makeSlideUpTransitionProject(): Project { return makeTransitionProject("slide-up"); }
+export function makeSlideDownTransitionProject(): Project { return makeTransitionProject("slide-down"); }
 
 /** Two tracks — top clip with crop + scale + position + rotation to reveal bottom clip.
  *  Verifies transparency compositing with all transform properties combined. */
