@@ -4,10 +4,19 @@ export function getWorkspaceRoot(): string {
   return path.resolve(process.env.WORKSPACE_DIR ?? "workspace");
 }
 
+/**
+ * Resolve path segments under a base directory. Returns null if the result escapes the base.
+ */
+export function resolveUnder(base: string, ...parts: string[]): string | null {
+  const resolved = path.resolve(base, ...parts);
+  if (resolved === base || resolved.startsWith(base + path.sep)) return resolved;
+  return null;
+}
+
 export function resolveWorkspacePath(...segments: string[]): string {
   const root = getWorkspaceRoot();
-  const resolved = path.resolve(root, ...segments);
-  if (!resolved.startsWith(root + path.sep) && resolved !== root) {
+  const resolved = resolveUnder(root, ...segments);
+  if (resolved === null) {
     throw new Error(`Path traversal detected: ${segments.join("/")}`);
   }
   return resolved;

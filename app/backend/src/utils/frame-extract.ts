@@ -1,5 +1,6 @@
-import { mkdir, readdir } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import path from "node:path";
+import { listFrames } from "./frame-compare";
 
 export type FrameExtractOptions = {
   inputPath: string;
@@ -43,9 +44,6 @@ export async function extractFrames(
     throw new Error(`Frame extraction failed (exit ${exitCode}): ${stderr}`);
   }
 
-  const entries = await readdir(opts.outputDir);
-  return entries
-    .filter((f) => f.startsWith("frame_") && f.endsWith(".png"))
-    .sort()
-    .map((f) => path.join(opts.outputDir, f));
+  const frames = await listFrames(opts.outputDir);
+  return frames.map((f) => path.join(opts.outputDir, f));
 }

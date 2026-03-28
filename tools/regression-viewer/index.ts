@@ -1,7 +1,9 @@
-import { readdir, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import path from "node:path";
 import type { Clip, Sequence } from "../../app/shared/src/types/project";
 import { theme } from "../../app/frontend/src/theme";
+import { listFrames } from "../../app/backend/src/utils/frame-compare";
+import { resolveUnder } from "../../app/backend/src/utils/paths";
 import {
   makeSingleVideoProject,
   makeTwoClipProject,
@@ -95,10 +97,8 @@ function parseSnapshots(text: string): Snapshot[] {
 // ── Reference frame scanner ──
 
 async function countFrames(testName: string): Promise<number> {
-  const dir = path.join(REFS_DIR, testName);
   try {
-    const entries = await readdir(dir);
-    return entries.filter((f) => f.startsWith("frame_") && f.endsWith(".png")).length;
+    return (await listFrames(path.join(REFS_DIR, testName))).length;
   } catch {
     return 0;
   }
@@ -718,10 +718,6 @@ async function loadExportTests(): Promise<ExportTestCase[]> {
   return data;
 }
 
-function guardedResolve(base: string, ...parts: string[]): string | null {
-  const resolved = path.resolve(base, ...parts);
-  return resolved.startsWith(base + path.sep) ? resolved : null;
-}
 
 function htmlResponse(body: string): Response {
   return new Response(body, {
@@ -783,7 +779,7 @@ Bun.serve({
     // ── Static: /assets/:file ──
     if (url.pathname.startsWith("/assets/")) {
       const fileName = url.pathname.slice("/assets/".length);
-      const resolved = guardedResolve(ASSETS_DIR, fileName);
+      const resolved = resolveUnder(ASSETS_DIR, fileName);
       if (!resolved) return new Response("Forbidden", { status: 403 });
       try {
         const file = Bun.file(resolved);
@@ -802,7 +798,7 @@ Bun.serve({
       if (slashIdx === -1) return new Response("Not Found", { status: 404 });
       const testName = rest.slice(0, slashIdx);
       const fileName = rest.slice(slashIdx + 1);
-      const resolved = guardedResolve(REFS_DIR, testName, fileName);
+      const resolved = resolveUnder(REFS_DIR, testName, fileName);
       if (!resolved) return new Response("Forbidden", { status: 403 });
       try {
         return new Response(Bun.file(resolved), {

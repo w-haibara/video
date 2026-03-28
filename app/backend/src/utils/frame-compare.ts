@@ -22,7 +22,7 @@ export type FrameCompareOptions = {
   threshold?: number;
 };
 
-async function listFrames(dir: string): Promise<string[]> {
+export async function listFrames(dir: string): Promise<string[]> {
   const entries = await readdir(dir);
   return entries
     .filter((f) => f.startsWith("frame_") && f.endsWith(".png"))
