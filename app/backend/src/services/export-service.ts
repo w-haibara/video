@@ -172,7 +172,13 @@ export function buildExportArgs(
 
     if (strategy) {
       ctx.filterParts.push(
-        strategy.buildOverlayFilter(currentBase, inputLabel, enable, position) + outLabel,
+        strategy.buildOverlayFilter(currentBase, inputLabel, enable, position, {
+          overlayIdx,
+          canvasW: preset.width,
+          canvasH: preset.height,
+          totalDurationSec,
+          fps,
+        }) + outLabel,
       );
     } else {
       ctx.filterParts.push(

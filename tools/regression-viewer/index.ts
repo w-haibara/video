@@ -12,6 +12,12 @@ import {
   makeCropTransformProject,
   makeMultiTrackProject,
   makeOverlayTransformProject,
+  makeOpacityProject,
+  makeMultiplyProject,
+  makeScreenProject,
+  makeOverlayBlendProject,
+  makeAddProject,
+  makeDifferenceProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -73,6 +79,12 @@ const EXPORT_TESTS: Array<{
   { name: "crop-transform", description: "Video with crop and transform", factory: makeCropTransformProject },
   { name: "multi-track", description: "Two-track composite (video + image)", factory: makeMultiTrackProject },
   { name: "overlay-transform", description: "Scaled top clip with transparent bottom clip exposure", factory: makeOverlayTransformProject },
+  { name: "blend-opacity", description: "Opacity blend (50% alpha overlay)", factory: makeOpacityProject },
+  { name: "blend-multiply", description: "Multiply blend (darkens)", factory: makeMultiplyProject },
+  { name: "blend-screen", description: "Screen blend (lightens)", factory: makeScreenProject },
+  { name: "blend-overlay", description: "Overlay blend (contrast)", factory: makeOverlayBlendProject },
+  { name: "blend-add", description: "Add blend (additive light)", factory: makeAddProject },
+  { name: "blend-difference", description: "Difference blend (absolute diff)", factory: makeDifferenceProject },
 ];
 
 // ── Snap parser ──

@@ -16,6 +16,14 @@ import { imageClipRenderer } from "../components/renderers/ImageClipRenderer";
 import { textOverlayRenderer } from "../components/renderers/TextOverlayRenderer";
 import type { ActiveClip, TickContext } from "./preview-renderer-registry";
 import { coverPreviewStrategy } from "./composite-strategies/cover-strategy";
+import { opacityPreviewStrategy } from "./composite-strategies/opacity-strategy";
+import {
+  multiplyPreviewStrategy,
+  screenPreviewStrategy,
+  overlayPreviewStrategy,
+  addPreviewStrategy,
+  differencePreviewStrategy,
+} from "./composite-strategies/blend-strategies";
 
 export const builtinPlugin: FrontendPlugin = {
   id: "builtin",
@@ -167,5 +175,11 @@ export const builtinPlugin: FrontendPlugin = {
 
   registerCompositeStrategies(registry: CompositeStrategyRegistry) {
     registry.register(coverPreviewStrategy);
+    registry.register(opacityPreviewStrategy);
+    registry.register(multiplyPreviewStrategy);
+    registry.register(screenPreviewStrategy);
+    registry.register(overlayPreviewStrategy);
+    registry.register(addPreviewStrategy);
+    registry.register(differencePreviewStrategy);
   },
 };

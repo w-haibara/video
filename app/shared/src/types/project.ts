@@ -53,7 +53,7 @@ export type ClipCrop = {
 export type BuiltinClipKind = "video" | "audio" | "title" | "image";
 
 /** Built-in blend modes. The Clip.blendMode field accepts any string. */
-export type BuiltinBlendMode = "cover";
+export type BuiltinBlendMode = "cover" | "opacity" | "multiply" | "screen" | "overlay" | "add" | "difference";
 
 export type Clip = {
   id: string;

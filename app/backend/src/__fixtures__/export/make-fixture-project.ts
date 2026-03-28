@@ -185,6 +185,168 @@ export function makeMultiTrackProject(): Project {
   });
 }
 
+/** Two tracks — image overlaid with opacity blend mode */
+export function makeOpacityProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([makeClip()]),
+        makeTrack(
+          [
+            makeClip({
+              id: "c2",
+              clipKind: "image",
+              assetId: "img1",
+              startMs: 0,
+              durationMs: 1000,
+              inMs: 0,
+              outMs: 1000,
+              blendMode: "opacity",
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
+/** Two tracks — image overlaid with multiply blend mode */
+export function makeMultiplyProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([makeClip()]),
+        makeTrack(
+          [
+            makeClip({
+              id: "c2",
+              clipKind: "image",
+              assetId: "img1",
+              startMs: 0,
+              durationMs: 1000,
+              inMs: 0,
+              outMs: 1000,
+              blendMode: "multiply",
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
+/** Two tracks — image overlaid with screen blend mode */
+export function makeScreenProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([makeClip()]),
+        makeTrack(
+          [
+            makeClip({
+              id: "c2",
+              clipKind: "image",
+              assetId: "img1",
+              startMs: 0,
+              durationMs: 1000,
+              inMs: 0,
+              outMs: 1000,
+              blendMode: "screen",
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
+/** Two tracks — image overlaid with overlay blend mode */
+export function makeOverlayBlendProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([makeClip()]),
+        makeTrack(
+          [
+            makeClip({
+              id: "c2",
+              clipKind: "image",
+              assetId: "img1",
+              startMs: 0,
+              durationMs: 1000,
+              inMs: 0,
+              outMs: 1000,
+              blendMode: "overlay",
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
+/** Two tracks — image overlaid with add blend mode */
+export function makeAddProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([makeClip()]),
+        makeTrack(
+          [
+            makeClip({
+              id: "c2",
+              clipKind: "image",
+              assetId: "img1",
+              startMs: 0,
+              durationMs: 1000,
+              inMs: 0,
+              outMs: 1000,
+              blendMode: "add",
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
+/** Two tracks — image overlaid with difference blend mode */
+export function makeDifferenceProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([makeClip()]),
+        makeTrack(
+          [
+            makeClip({
+              id: "c2",
+              clipKind: "image",
+              assetId: "img1",
+              startMs: 0,
+              durationMs: 1000,
+              inMs: 0,
+              outMs: 1000,
+              blendMode: "difference",
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
 /** Two tracks — top clip with crop + scale + position + rotation to reveal bottom clip.
  *  Verifies transparency compositing with all transform properties combined. */
 export function makeOverlayTransformProject(): Project {

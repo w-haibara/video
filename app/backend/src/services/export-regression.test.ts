@@ -14,6 +14,12 @@ import {
   makeCropTransformProject,
   makeMultiTrackProject,
   makeOverlayTransformProject,
+  makeOpacityProject,
+  makeMultiplyProject,
+  makeScreenProject,
+  makeOverlayBlendProject,
+  makeAddProject,
+  makeDifferenceProject,
   CANVAS_W,
   CANVAS_H,
   FPS,
@@ -125,5 +131,29 @@ describe("export regression", () => {
 
   test("overlay with transform (bottom clip visibility)", async () => {
     await runExportRegression("overlay-transform", makeOverlayTransformProject());
+  }, 30_000);
+
+  test("blend: opacity", async () => {
+    await runExportRegression("blend-opacity", makeOpacityProject());
+  }, 30_000);
+
+  test("blend: multiply", async () => {
+    await runExportRegression("blend-multiply", makeMultiplyProject());
+  }, 30_000);
+
+  test("blend: screen", async () => {
+    await runExportRegression("blend-screen", makeScreenProject());
+  }, 30_000);
+
+  test("blend: overlay", async () => {
+    await runExportRegression("blend-overlay", makeOverlayBlendProject());
+  }, 30_000);
+
+  test("blend: add", async () => {
+    await runExportRegression("blend-add", makeAddProject());
+  }, 30_000);
+
+  test("blend: difference", async () => {
+    await runExportRegression("blend-difference", makeDifferenceProject());
   }, 30_000);
 });

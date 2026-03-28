@@ -12,6 +12,14 @@ import { thumbnailStep } from "../pipeline/steps/thumbnail";
 import { proxyStep } from "../pipeline/steps/proxy";
 import { imageConvertStep } from "../pipeline/steps/image-convert";
 import { coverExportStrategy } from "./composite-strategies/cover-strategy";
+import { opacityExportStrategy } from "./composite-strategies/opacity-strategy";
+import {
+  multiplyExportStrategy,
+  screenExportStrategy,
+  overlayExportStrategy,
+  addExportStrategy,
+  differenceExportStrategy,
+} from "./composite-strategies/blend-strategies";
 
 export const builtinPlugin: BackendPlugin = {
   id: "builtin",
@@ -43,5 +51,11 @@ export const builtinPlugin: BackendPlugin = {
 
   registerCompositeStrategies(registry: CompositeStrategyRegistry) {
     registry.register(coverExportStrategy);
+    registry.register(opacityExportStrategy);
+    registry.register(multiplyExportStrategy);
+    registry.register(screenExportStrategy);
+    registry.register(overlayExportStrategy);
+    registry.register(addExportStrategy);
+    registry.register(differenceExportStrategy);
   },
 };

@@ -1,6 +1,14 @@
+export type CompositeContext = {
+  overlayIdx: number;
+  canvasW: number;
+  canvasH: number;
+  totalDurationSec: number;
+  fps: number;
+};
+
 export type ExportCompositeStrategy = {
   id: string;
-  buildOverlayFilter(bottomLabel: string, topLabel: string, enable: string, position?: string): string;
+  buildOverlayFilter(bottomLabel: string, topLabel: string, enable: string, position?: string, ctx?: CompositeContext): string;
 };
 
 export class CompositeStrategyRegistry {
