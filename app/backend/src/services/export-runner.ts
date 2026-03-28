@@ -24,9 +24,7 @@ export async function exportProject(
 
   const exitCode = await proc.exited;
   if (exitCode !== 0) {
-    const rawStderr = proc.stderr
-      ? await new Response(proc.stderr).text()
-      : "";
+    const rawStderr = await new Response(proc.stderr).text();
     const stderr = rawStderr
       .split("\n")
       .filter((line) => !line.includes("Skipping NAL unit"))

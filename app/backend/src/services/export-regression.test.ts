@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
-import { mkdtemp, rm, mkdir, cp, readdir, access } from "node:fs/promises";
+import { mkdtemp, rm, mkdir, cp, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { Project } from "@video/shared";
@@ -13,6 +13,9 @@ import {
   makeTextOverlayProject,
   makeCropTransformProject,
   makeMultiTrackProject,
+  CANVAS_W,
+  CANVAS_H,
+  FPS,
 } from "../__fixtures__/export/make-fixture-project";
 
 const FIXTURES_DIR = path.resolve(__dirname, "../__fixtures__/export");
@@ -29,9 +32,8 @@ afterAll(async () => {
   await rm(tmpDir, { recursive: true, force: true });
 });
 
-async function dirExists(dir: string): Promise<boolean> {
+async function hasReferenceFrames(dir: string): Promise<boolean> {
   try {
-    await access(dir);
     const entries = await readdir(dir);
     return entries.some((f) => f.endsWith(".png"));
   } catch {
@@ -54,9 +56,9 @@ async function runExportRegression(
   const frames = await extractFrames({
     inputPath: outputPath,
     outputDir: actualFramesDir,
-    fps: 10,
-    width: 160,
-    height: 90,
+    fps: FPS,
+    width: CANVAS_W,
+    height: CANVAS_H,
   });
   expect(frames.length).toBeGreaterThan(0);
 
@@ -64,13 +66,13 @@ async function runExportRegression(
   const refDir = path.join(REFERENCES_DIR, testName);
   const updateRefs = process.env.UPDATE_REFERENCES === "1";
 
-  if (updateRefs || !(await dirExists(refDir))) {
+  if (updateRefs || !(await hasReferenceFrames(refDir))) {
     // Generate reference frames
     await rm(refDir, { recursive: true, force: true });
     await mkdir(refDir, { recursive: true });
-    for (const frame of frames) {
-      await cp(frame, path.join(refDir, path.basename(frame)));
-    }
+    await Promise.all(frames.map((frame) =>
+      cp(frame, path.join(refDir, path.basename(frame)))
+    ));
     console.log(`[regression] Generated reference frames for "${testName}" (${frames.length} frames)`);
     return;
   }

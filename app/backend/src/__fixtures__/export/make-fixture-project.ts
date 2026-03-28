@@ -1,8 +1,8 @@
 import type { Project, Clip, Track, Asset } from "@video/shared";
 
-const CANVAS_W = 160;
-const CANVAS_H = 90;
-const FPS = 10;
+export const CANVAS_W = 160;
+export const CANVAS_H = 90;
+export const FPS = 10;
 
 const videoAsset: Asset = {
   id: "v1",

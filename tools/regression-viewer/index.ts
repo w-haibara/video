@@ -636,17 +636,8 @@ Bun.serve({
       if (!(await file.exists())) {
         return new Response("Not Found", { status: 404 });
       }
-      const ext = path.extname(fileName).toLowerCase();
-      const mimeTypes: Record<string, string> = {
-        ".mp4": "video/mp4",
-        ".mp3": "audio/mpeg",
-        ".png": "image/png",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".wav": "audio/wav",
-      };
       return new Response(file, {
-        headers: { "content-type": mimeTypes[ext] ?? "application/octet-stream" },
+        headers: { "content-type": file.type || "application/octet-stream" },
       });
     }
 

@@ -39,9 +39,7 @@ export async function extractFrames(
 
   const exitCode = await proc.exited;
   if (exitCode !== 0) {
-    const stderr = proc.stderr
-      ? await new Response(proc.stderr).text()
-      : "";
+    const stderr = await new Response(proc.stderr).text();
     throw new Error(`Frame extraction failed (exit ${exitCode}): ${stderr}`);
   }
 
