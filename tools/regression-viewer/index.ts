@@ -704,13 +704,14 @@ async function loadSnapshots(): Promise<Snapshot[]> {
 let exportCache: { mtimeMs: number; data: ExportTestCase[] } | null = null;
 
 async function loadExportTests(): Promise<ExportTestCase[]> {
-  // Refs dir mtime changes when test dirs are added/removed; avoids per-file stat on every request
-  let mtimeMs: number;
-  try {
-    mtimeMs = (await stat(REFS_DIR)).mtimeMs;
-  } catch {
-    mtimeMs = 0;
-  }
+  // Use max mtime across all per-test subdirectories so frame additions invalidate the cache
+  const mtimes = await Promise.all(
+    EXPORT_TESTS.map(async (def) => {
+      try { return (await stat(path.join(REFS_DIR, def.name))).mtimeMs; }
+      catch { return 0; }
+    }),
+  );
+  const mtimeMs = Math.max(0, ...mtimes);
   if (exportCache && exportCache.mtimeMs === mtimeMs) return exportCache.data;
   const data = await buildAllExportTestCases();
   exportCache = { mtimeMs, data };
@@ -750,7 +751,8 @@ Bun.serve({
     const exportMatch = url.pathname.match(/^\/exports\/([^/]+)$/);
     if (exportMatch) {
       const name = decodeURIComponent(exportMatch[1]);
-      const tc = await buildSingleExportTestCase(name);
+      const exportTests = await loadExportTests();
+      const tc = exportTests.find((t) => t.name === name);
       if (!tc) return new Response("Not Found", { status: 404 });
       return htmlResponse(renderExportPage(tc));
     }

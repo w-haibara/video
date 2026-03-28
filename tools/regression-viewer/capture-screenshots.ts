@@ -16,10 +16,17 @@ import path from "node:path";
 const BASE_URL = `http://localhost:${process.env.PORT || "3001"}`;
 const OUT_DIR = path.resolve(import.meta.dir, "screenshots");
 
+const MEDIA_LOAD_TIMEOUT = 10_000;
+
 async function main() {
-  // Verify viewer is reachable
+  // Fetch test case lists (also serves as liveness check)
+  let exports: { name: string }[];
+  let snapshots: { name: string }[];
   try {
-    await fetch(`${BASE_URL}/api/exports`);
+    [exports, snapshots] = await Promise.all([
+      fetch(`${BASE_URL}/api/exports`).then((r) => r.json()) as Promise<{ name: string }[]>,
+      fetch(`${BASE_URL}/api/snapshots`).then((r) => r.json()) as Promise<{ name: string }[]>,
+    ]);
   } catch {
     console.error("Regression viewer is not running. Start it first: bun run view:regression");
     process.exit(1);
@@ -34,9 +41,9 @@ async function main() {
   async function captureFullPage(url: string, outPath: string) {
     await page.goto(url, { waitUntil: "networkidle" });
 
-    // Force all lazy-loaded images and videos to load by removing loading="lazy"
-    // and setting eager src, then wait for them to complete.
-    await page.evaluate(async () => {
+    // Force lazy-loaded media to load, with a timeout to avoid hanging on broken resources
+    await Promise.race([
+      page.evaluate(async () => {
       const mediaElements = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>(
         'img[loading="lazy"], video[loading="lazy"]',
       );
@@ -75,16 +82,12 @@ async function main() {
             }),
         ),
       );
-    });
+    }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("media load timeout")), MEDIA_LOAD_TIMEOUT)),
+    ]).catch(() => {}); // proceed with screenshot even on timeout
 
     await page.screenshot({ path: outPath, fullPage: true });
   }
-
-  // Fetch test case lists from API
-  const [exports, snapshots] = await Promise.all([
-    fetch(`${BASE_URL}/api/exports`).then((r) => r.json()) as Promise<{ name: string }[]>,
-    fetch(`${BASE_URL}/api/snapshots`).then((r) => r.json()) as Promise<{ name: string }[]>,
-  ]);
 
   // Capture export pages
   const exportsDir = path.join(OUT_DIR, "exports");
