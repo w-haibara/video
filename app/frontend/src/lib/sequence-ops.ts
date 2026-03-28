@@ -1,4 +1,4 @@
-import type { Asset, Clip, ClipText, Sequence, Track } from "@video/shared";
+import type { Asset, Clip, ClipText, ClipTransition, Sequence, Track } from "@video/shared";
 import { generateId, DEFAULT_IMAGE_DURATION_MS } from "@video/shared";
 import { assetKindRegistry } from "./asset-kind-registry";
 
@@ -293,6 +293,90 @@ export function updateClip(
     ...track,
     clips: track.clips.map((c: Clip) =>
       c.id === clipId ? { ...c, ...updates } : c,
+    ),
+  }));
+  return { ...sequence, tracks };
+}
+
+/**
+ * Set a transition on a clip. Moves the clip's startMs backward to create
+ * an overlap with the previous clip on the same track.
+ * Returns the original sequence unchanged if there is no previous clip.
+ */
+export function setTransition(
+  sequence: Sequence,
+  clipId: string,
+  transition: ClipTransition,
+): Sequence {
+  // Find the clip and its track
+  let targetTrack: Track | undefined;
+  let clipIdx = -1;
+  for (const track of sequence.tracks) {
+    const idx = track.clips.findIndex((c) => c.id === clipId);
+    if (idx >= 0) {
+      targetTrack = track;
+      clipIdx = idx;
+      break;
+    }
+  }
+  if (!targetTrack || clipIdx <= 0) return sequence; // No previous clip → no transition
+
+  const clip = targetTrack.clips[clipIdx];
+  const prevClip = targetTrack.clips[clipIdx - 1];
+  const prevEnd = prevClip.startMs + prevClip.durationMs;
+
+  // The overlap amount is the transition duration, but capped so the clip
+  // doesn't move before the previous clip's start
+  const maxOverlap = Math.min(
+    transition.durationMs,
+    prevClip.durationMs / 2,
+    clip.durationMs / 2,
+  );
+  const overlapMs = Math.max(0, maxOverlap);
+
+  // Already has a transition? Undo the old overlap first
+  const oldOverlap = clip.transition ? clip.transition.durationMs : 0;
+  const currentGapStart = clip.startMs + oldOverlap; // where clip would be without old transition
+  const newStartMs = currentGapStart - overlapMs;
+
+  const tracks = sequence.tracks.map((track: Track) => ({
+    ...track,
+    clips: track.clips.map((c: Clip) =>
+      c.id === clipId
+        ? { ...c, startMs: Math.max(prevClip.startMs, newStartMs), transition: { ...transition, durationMs: overlapMs } }
+        : c,
+    ),
+  }));
+  return { ...sequence, tracks };
+}
+
+/**
+ * Remove a transition from a clip. Moves the clip forward to close the overlap.
+ */
+export function removeTransition(
+  sequence: Sequence,
+  clipId: string,
+): Sequence {
+  let targetTrack: Track | undefined;
+  for (const track of sequence.tracks) {
+    if (track.clips.some((c) => c.id === clipId)) {
+      targetTrack = track;
+      break;
+    }
+  }
+  if (!targetTrack) return sequence;
+
+  const clip = targetTrack.clips.find((c) => c.id === clipId);
+  if (!clip?.transition) return sequence;
+
+  const overlapMs = clip.transition.durationMs;
+
+  const tracks = sequence.tracks.map((track: Track) => ({
+    ...track,
+    clips: track.clips.map((c: Clip) =>
+      c.id === clipId
+        ? { ...c, startMs: c.startMs + overlapMs, transition: undefined }
+        : c,
     ),
   }));
   return { ...sequence, tracks };

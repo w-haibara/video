@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { Project, Asset, Clip, ClipText, Sequence } from "@video/shared";
+import type { Project, Asset, Clip, ClipText, ClipTransition, Sequence } from "@video/shared";
 import * as SeqOps from "../lib/sequence-ops";
 
 export function useProjectEditor(
@@ -64,6 +64,17 @@ export function useProjectEditor(
     [sequence, pushState],
   );
 
+  const setTransition = useCallback(
+    (clipId: string, transition: ClipTransition | undefined) => {
+      if (transition) {
+        pushState(SeqOps.setTransition(sequence, clipId, transition));
+      } else {
+        pushState(SeqOps.removeTransition(sequence, clipId));
+      }
+    },
+    [sequence, pushState],
+  );
+
   return {
     addClipFromAsset,
     removeClip,
@@ -71,5 +82,6 @@ export function useProjectEditor(
     trimClip,
     addTextClip,
     updateClip,
+    setTransition,
   };
 }

@@ -115,6 +115,52 @@ export function findAllActiveClips(
   return result;
 }
 
+/**
+ * Compute transition opacity for a clip at a given time.
+ * Returns 1.0 when no transition is active, 0.0-1.0 during a transition.
+ */
+export function computeTransitionOpacity(
+  clip: Clip,
+  project: Project,
+  currentTimeMs: number,
+): number {
+  let opacity = 1.0;
+  const clipStart = clip.startMs;
+  const clipEnd = clip.startMs + clip.durationMs;
+
+  // Fade-in: this clip has a transition
+  if (clip.transition?.type === "fade") {
+    const fadeDur = clip.transition.durationMs;
+    const elapsed = currentTimeMs - clipStart;
+    if (elapsed < fadeDur) {
+      opacity *= Math.max(0, Math.min(1, elapsed / fadeDur));
+    }
+  }
+
+  // Fade-out: find the next clip on the same track that has a transition targeting this clip
+  for (const track of project.sequence.tracks) {
+    const idx = track.clips.findIndex((c) => c.id === clip.id);
+    if (idx < 0) continue;
+    // Look for a later clip on the same track with a transition that overlaps this clip
+    for (let i = idx + 1; i < track.clips.length; i++) {
+      const next = track.clips[i];
+      if (!next.transition) continue;
+      if (next.startMs < clipEnd && next.startMs > clipStart) {
+        const fadeOutStart = next.startMs;
+        const fadeOutDur = next.transition.durationMs;
+        if (currentTimeMs >= fadeOutStart) {
+          const progress = (currentTimeMs - fadeOutStart) / fadeOutDur;
+          opacity *= Math.max(0, 1 - Math.min(1, progress));
+        }
+        break;
+      }
+    }
+    break;
+  }
+
+  return opacity;
+}
+
 /** Compute inner media element styles (handles crop offset). */
 export function mediaStyle(crop: ClipCrop | undefined, assetW: number, assetH: number): CSSProperties {
   if (!crop) {

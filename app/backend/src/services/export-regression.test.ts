@@ -14,6 +14,7 @@ import {
   makeCropTransformProject,
   makeMultiTrackProject,
   makeOverlayTransformProject,
+  makeFadeTransitionProject,
   makeOpacityProject,
   makeMultiplyProject,
   makeScreenProject,
@@ -131,6 +132,10 @@ describe("export regression", () => {
 
   test("overlay with transform (bottom clip visibility)", async () => {
     await runExportRegression("overlay-transform", makeOverlayTransformProject());
+  }, 30_000);
+
+  test("fade transition between clips", async () => {
+    await runExportRegression("fade-transition", makeFadeTransitionProject());
   }, 30_000);
 
   test("blend: opacity", async () => {

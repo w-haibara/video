@@ -347,6 +347,32 @@ export function makeDifferenceProject(): Project {
   });
 }
 
+/** Video (red) then image (blue) with a 300ms fade transition at the join point.
+ *  Clip 1 (video): 0–1000ms, Clip 2 (image): 700–1700ms (300ms overlap with fade). */
+export function makeFadeTransitionProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    settings: { durationMs: 2000, canvasWidth: CANVAS_W, canvasHeight: CANVAS_H },
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", startMs: 0, durationMs: 1000, outMs: 1000 }),
+          makeClip({
+            id: "c2",
+            clipKind: "image",
+            assetId: "img1",
+            startMs: 700,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+            transition: { type: "fade", durationMs: 300 },
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
 /** Two tracks — top clip with crop + scale + position + rotation to reveal bottom clip.
  *  Verifies transparency compositing with all transform properties combined. */
 export function makeOverlayTransformProject(): Project {

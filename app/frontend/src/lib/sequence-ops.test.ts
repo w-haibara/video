@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
 import { inferTrackKind } from "@video/shared";
-import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack } from "./sequence-ops";
+import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -733,5 +733,109 @@ describe("clampClipsToDuration", () => {
     const original = seq;
     clampClipsToDuration(seq, 3000);
     expect(original.tracks[0].clips[0].durationMs).toBe(5000);
+  });
+});
+
+describe("setTransition", () => {
+  function twoClipSeq(): Sequence {
+    return {
+      tracks: [{
+        id: "t1",
+        clips: [
+          { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 },
+          { id: "c2", clipKind: "video", assetId: "v1", startMs: 2000, durationMs: 2000, inMs: 0, outMs: 2000 },
+        ],
+      }],
+    };
+  }
+
+  test("sets transition and moves clip backward to create overlap", () => {
+    const seq = setTransition(twoClipSeq(), "c2", { type: "fade", durationMs: 500 });
+    const clip = seq.tracks[0].clips.find(c => c.id === "c2")!;
+    expect(clip.transition).toEqual({ type: "fade", durationMs: 500 });
+    expect(clip.startMs).toBe(1500); // 2000 - 500 = 1500
+  });
+
+  test("caps overlap at half of shorter clip duration", () => {
+    const seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [
+          { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 400, inMs: 0, outMs: 400 },
+          { id: "c2", clipKind: "video", assetId: "v1", startMs: 400, durationMs: 2000, inMs: 0, outMs: 2000 },
+        ],
+      }],
+    };
+    const result = setTransition(seq, "c2", { type: "fade", durationMs: 500 });
+    const clip = result.tracks[0].clips.find(c => c.id === "c2")!;
+    // 500ms requested but capped at 400/2 = 200ms (half of shorter clip)
+    expect(clip.transition!.durationMs).toBe(200);
+    expect(clip.startMs).toBe(200); // 400 - 200 = 200
+  });
+
+  test("no-op when clip is first on track (no previous clip)", () => {
+    const seq = setTransition(twoClipSeq(), "c1", { type: "fade", durationMs: 500 });
+    const clip = seq.tracks[0].clips.find(c => c.id === "c1")!;
+    expect(clip.transition).toBeUndefined();
+    expect(clip.startMs).toBe(0);
+  });
+
+  test("no-op for non-existent clip", () => {
+    const seq = twoClipSeq();
+    const result = setTransition(seq, "nonexistent", { type: "fade", durationMs: 500 });
+    expect(result).toBe(seq); // same reference = no change
+  });
+
+  test("project file structure with transition", () => {
+    const seq = setTransition(twoClipSeq(), "c2", { type: "fade", durationMs: 500 });
+    // Verify complete clip structure
+    const c2 = seq.tracks[0].clips.find(c => c.id === "c2")!;
+    expect(c2).toEqual({
+      id: "c2",
+      clipKind: "video",
+      assetId: "v1",
+      startMs: 1500,
+      durationMs: 2000,
+      inMs: 0,
+      outMs: 2000,
+      transition: { type: "fade", durationMs: 500 },
+    });
+    // c1 should be unchanged
+    const c1 = seq.tracks[0].clips.find(c => c.id === "c1")!;
+    expect(c1.startMs).toBe(0);
+    expect(c1.durationMs).toBe(2000);
+    expect(c1.transition).toBeUndefined();
+  });
+});
+
+describe("removeTransition", () => {
+  test("removes transition and moves clip forward", () => {
+    let seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [
+          { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 },
+          { id: "c2", clipKind: "video", assetId: "v1", startMs: 1500, durationMs: 2000, inMs: 0, outMs: 2000,
+            transition: { type: "fade", durationMs: 500 } },
+        ],
+      }],
+    };
+    seq = removeTransition(seq, "c2");
+    const clip = seq.tracks[0].clips.find(c => c.id === "c2")!;
+    expect(clip.transition).toBeUndefined();
+    expect(clip.startMs).toBe(2000); // 1500 + 500 = 2000
+  });
+
+  test("no-op when clip has no transition", () => {
+    const seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [
+          { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 },
+        ],
+      }],
+    };
+    const result = removeTransition(seq, "c1");
+    expect(result).toBe(seq);
   });
 });

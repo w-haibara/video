@@ -1,10 +1,11 @@
-import type { Clip, Asset } from "@video/shared";
+import type { Clip, Asset, ClipTransition } from "@video/shared";
 
 export type InspectorEditorContext = {
   clip: Clip;
   asset: Asset | undefined;
   clipKind: string;
   onUpdate: (updates: Partial<Clip>) => void;
+  onSetTransition?: (transition: ClipTransition | undefined) => void;
 };
 
 export type InspectorEditorPlugin = {

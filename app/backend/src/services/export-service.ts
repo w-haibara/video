@@ -158,11 +158,59 @@ export function buildExportArgs(
     `color=black:s=${preset.width}x${preset.height}:d=${totalDurationSec}:r=${fps},format=yuv420p[base]`,
   );
 
-  // 3. Overlay all clips onto the base, ordered by track (bottom to top), then by time
+  // 3. Pre-compute fade-out durations for clips that precede a transition
+  const fadeOutMap = new Map<string, { durationSec: number; clipDurationSec: number }>();
+  for (const { clip, trackIndex } of clipInfos) {
+    if (!clip.transition) continue;
+    // Find the previous clip on the same track (ends after this clip starts)
+    const prev = clipInfos.find(
+      (ci) =>
+        ci.trackIndex === trackIndex &&
+        ci.clip.id !== clip.id &&
+        ci.clip.startMs < clip.startMs &&
+        ci.clip.startMs + ci.clip.durationMs > clip.startMs,
+    );
+    if (prev) {
+      fadeOutMap.set(prev.clip.id, {
+        durationSec: clip.transition.durationMs / 1000,
+        clipDurationSec: prev.clip.durationMs / 1000,
+      });
+    }
+  }
+
+  // 4. Overlay all clips onto the base, ordered by track (bottom to top), then by time
   let currentBase = "[base]";
   let overlayIdx = 0;
 
   for (const { clip, inputLabel } of clipInfos) {
+    let effectiveLabel = inputLabel;
+
+    // Fade-in: this clip has an incoming transition
+    // NOTE: fade st uses stream PTS. The overlay `enable` consumes frames
+    // while disabled, so PTS advances to clip.startMs by the time the
+    // overlay activates. Offset the fade start accordingly.
+    if (clip.transition?.type === "fade") {
+      const fadeDur = clip.transition.durationMs / 1000;
+      const ptsOffset = clip.startMs / 1000;
+      const fadeInLabel = `[vfi${overlayIdx}]`;
+      ctx.filterParts.push(
+        `${inputLabel}fade=t=in:st=${ptsOffset}:d=${fadeDur}:alpha=1${fadeInLabel}`,
+      );
+      effectiveLabel = fadeInLabel;
+    }
+
+    // Fade-out: the next clip on the same track has a transition targeting this clip
+    const fadeOut = fadeOutMap.get(clip.id);
+    if (fadeOut) {
+      const ptsOffset = clip.startMs / 1000;
+      const fadeOutStart = ptsOffset + fadeOut.clipDurationSec - fadeOut.durationSec;
+      const fadeOutLabel = `[vfo${overlayIdx}]`;
+      ctx.filterParts.push(
+        `${effectiveLabel}fade=t=out:st=${fadeOutStart}:d=${fadeOut.durationSec}:alpha=1${fadeOutLabel}`,
+      );
+      effectiveLabel = fadeOutLabel;
+    }
+
     const strategy = exportCompositeStrategyRegistry.get(clip.blendMode ?? "cover");
     const startSec = clip.startMs / 1000;
     const endSec = (clip.startMs + clip.durationMs) / 1000;
@@ -172,7 +220,7 @@ export function buildExportArgs(
 
     if (strategy) {
       ctx.filterParts.push(
-        strategy.buildOverlayFilter(currentBase, inputLabel, enable, position, {
+        strategy.buildOverlayFilter(currentBase, effectiveLabel, enable, position, {
           overlayIdx,
           canvasW: preset.width,
           canvasH: preset.height,
@@ -182,7 +230,7 @@ export function buildExportArgs(
       );
     } else {
       ctx.filterParts.push(
-        `${currentBase}${inputLabel}overlay=${position}:enable='${enable}'${outLabel}`,
+        `${currentBase}${effectiveLabel}overlay=${position}:enable='${enable}'${outLabel}`,
       );
     }
 

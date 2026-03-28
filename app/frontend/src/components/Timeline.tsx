@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { Project, Track } from "@video/shared";
+import type { Project, Track, ClipTransition } from "@video/shared";
 import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTrack } from "./TimelineTrack";
 import { Playhead } from "./Playhead";
@@ -19,6 +19,7 @@ type Props = {
   onTrimClip?: (clipId: string, side: "left" | "right", deltaMs: number) => void;
   onAddTrack?: () => void;
   onDeleteTrack?: (trackId: string) => void;
+  onSetTransition?: (clipId: string, transition: ClipTransition | undefined) => void;
 };
 
 function getTimelineDuration(project: Project): number {
@@ -36,6 +37,7 @@ export function Timeline({
   onTrimClip,
   onAddTrack,
   onDeleteTrack,
+  onSetTransition,
 }: Props) {
   const { msToPx, pxToMs, zoomIn, zoomOut } = useTimelineZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -253,6 +255,7 @@ export function Timeline({
                   allTrackIds={allTrackIds}
                   isDropTarget={dragTargetTrackId === track.id}
                   onDragTrackChange={setDragTargetTrackId}
+                  onSetTransition={onSetTransition}
                 />
               ))
             )}

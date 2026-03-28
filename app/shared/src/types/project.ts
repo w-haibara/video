@@ -49,6 +49,11 @@ export type ClipCrop = {
   height: number;
 };
 
+export type ClipTransition = {
+  type: string; // "fade" etc.
+  durationMs: number;
+};
+
 /** Built-in clip kinds. The Clip.clipKind field accepts any string. */
 export type BuiltinClipKind = "video" | "audio" | "title" | "image";
 
@@ -68,6 +73,7 @@ export type Clip = {
   transform?: ClipTransform;
   crop?: ClipCrop;
   blendMode?: string; // 省略時は "cover" として扱う
+  transition?: ClipTransition; // このクリップの先頭に適用されるトランジション
 };
 
 export type ExportPreset = {

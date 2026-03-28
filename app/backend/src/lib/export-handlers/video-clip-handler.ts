@@ -26,18 +26,21 @@ export const videoClipHandler: ExportClipHandler = {
     const trimStart = clip.inMs / 1000;
     const duration = effectiveDurationMs / 1000;
     const transformed = hasClipTransform(clip);
+    // Shift PTS to match timeline position so the overlay filter doesn't
+    // consume frames during the disabled period before clip.startMs.
+    const ptsShift = clip.startMs > 0 ? `+${clip.startMs / 1000}/TB` : "";
 
     let chain: string;
     if (transformed) {
       // Transform present: output at natural size, position via overlay
       chain =
-        `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS` +
+        `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS${ptsShift}` +
         `${userCrop},format=yuva420p` +
         buildTransformFilter(clip, ctx.preset);
     } else {
       // No transform: pad+crop to canvas size (backward compatible)
       chain =
-        `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS` +
+        `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS${ptsShift}` +
         `${userCrop},` +
         `format=yuva420p,` +
         `pad=w='max(iw,${ctx.preset.width})':h='max(ih,${ctx.preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black@0,` +

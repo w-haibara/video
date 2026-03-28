@@ -108,7 +108,7 @@ function EditorPageLoaded({
     project.sequence,
   );
 
-  const { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip } =
+  const { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, setTransition } =
     useProjectEditor(project, sequence, pushState);
 
   const { saveStatus } = useAutoSave(project.id, sequence);
@@ -265,6 +265,7 @@ function EditorPageLoaded({
                 selectedClipId={selectedClipId}
                 onUpdateClip={updateClip}
                 onMoveClip={moveClip}
+                onSetTransition={setTransition}
               />
             }
             assetsContent={
@@ -357,6 +358,7 @@ function EditorPageLoaded({
           onTrimClip={trimClip}
           onAddTrack={handleAddTrack}
           onDeleteTrack={handleDeleteTrack}
+          onSetTransition={setTransition}
         />
       }
     />

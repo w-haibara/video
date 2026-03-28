@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Project, Clip, Asset } from "@video/shared";
+import type { Project, Clip, Asset, ClipTransition } from "@video/shared";
 import { theme, inputStyle, sectionHeadingStyle } from "../theme";
 import { clipKindRegistry } from "../lib/clip-kind-registry";
 import { inspectorEditorRegistry } from "../lib/inspector-editor-registry";
@@ -9,6 +9,7 @@ type Props = {
   selectedClipId: string | null;
   onUpdateClip?: (clipId: string, updates: Partial<Clip>) => void;
   onMoveClip?: (clipId: string, newStartMs: number) => void;
+  onSetTransition?: (clipId: string, transition: ClipTransition | undefined) => void;
 };
 
 function findClipAndAsset(
@@ -25,7 +26,7 @@ function findClipAndAsset(
   return null;
 }
 
-export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveClip }: Props) {
+export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveClip, onSetTransition }: Props) {
   if (!selectedClipId) {
     return (
       <div style={{ color: theme.textMuted, fontSize: "12px", padding: "8px" }}>
@@ -53,6 +54,9 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveCl
     asset,
     clipKind: clip.clipKind,
     onUpdate: (updates: Partial<Clip>) => onUpdateClip?.(clip.id, updates),
+    onSetTransition: onSetTransition
+      ? (transition: ClipTransition | undefined) => onSetTransition(clip.id, transition)
+      : undefined,
   };
   const editors = inspectorEditorRegistry.getEditorsFor(editorCtx);
 

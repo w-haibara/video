@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import type { ActiveClip, PreviewRenderContext, PreviewLayerRenderer } from "../../lib/preview-renderer-registry";
-import { findAllActiveClips, computeMediaContainerStyle, mediaStyle } from "../../lib/preview-renderer-registry";
+import { findAllActiveClips, computeMediaContainerStyle, mediaStyle, computeTransitionOpacity } from "../../lib/preview-renderer-registry";
 import { compositeStrategyRegistry } from "../../lib/composite-strategy-registry";
 import type { Asset } from "@video/shared";
 
@@ -114,10 +114,12 @@ function VideoClipComponent({ content, ctx }: { content: unknown; ctx: PreviewRe
         const blendMode = activeClip.clip.blendMode ?? "cover";
         const strategy = compositeStrategyRegistry.get(blendMode);
 
+        const transitionOpacity = computeTransitionOpacity(activeClip.clip, ctx.project, ctx.currentTimeMs);
         const containerStyle = {
           ...computeMediaContainerStyle(activeClip, ctx.canvasW, ctx.canvasH),
           zIndex: activeClip.trackIndex,
           ...(strategy?.containerStyle({ canvasW: ctx.canvasW, canvasH: ctx.canvasH }) ?? {}),
+          ...(transitionOpacity < 1 ? { opacity: transitionOpacity } : {}),
           position: "absolute" as const,
         };
 

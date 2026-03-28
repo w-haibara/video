@@ -11,6 +11,7 @@ import { TextEditor } from "../components/editors/TextEditor";
 import { TransformEditor } from "../components/editors/TransformEditor";
 import { AudioVolumeEditor } from "../components/editors/AudioVolumeEditor";
 import { BlendModeEditor } from "../components/editors/BlendModeEditor";
+import { TransitionEditor } from "../components/editors/TransitionEditor";
 import { videoClipRenderer } from "../components/renderers/VideoClipRenderer";
 import { imageClipRenderer } from "../components/renderers/ImageClipRenderer";
 import { textOverlayRenderer } from "../components/renderers/TextOverlayRenderer";
@@ -122,6 +123,13 @@ export const builtinPlugin: FrontendPlugin = {
       order: 25,
       canHandle: (ctx) => ctx.clipKind === "video" || ctx.clipKind === "image",
       Component: BlendModeEditor,
+    });
+    registry.register({
+      id: "transition",
+      label: "Transition",
+      order: 27,
+      canHandle: (ctx) => ctx.clipKind === "video" || ctx.clipKind === "image",
+      Component: TransitionEditor,
     });
     registry.register({
       id: "audio-volume",
