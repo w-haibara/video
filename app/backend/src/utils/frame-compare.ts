@@ -57,44 +57,43 @@ export async function compareFrames(
   const minLen = Math.min(refFrames.length, actFrames.length);
   const missingFrames = maxLen - minLen;
 
-  const perFrame: FrameCompareResult["perFrame"] = [];
-  let matchedFrames = 0;
-  let mismatchedFrames = 0;
+  const perFrame = await Promise.all(
+    Array.from({ length: minLen }, async (_, i) => {
+      const refPath = path.join(opts.referenceDir, refFrames[i]);
+      const actPath = path.join(opts.actualDir, actFrames[i]);
 
-  for (let i = 0; i < minLen; i++) {
-    const refPath = path.join(opts.referenceDir, refFrames[i]);
-    const actPath = path.join(opts.actualDir, actFrames[i]);
+      const [refData, actData] = await Promise.all([
+        decodeToRgba(refPath),
+        decodeToRgba(actPath),
+      ]);
 
-    const [refData, actData] = await Promise.all([
-      decodeToRgba(refPath),
-      decodeToRgba(actPath),
-    ]);
+      const pixelCount = Math.max(refData.length, actData.length) / 4;
+      let diffPixels = 0;
 
-    const pixelCount = Math.max(refData.length, actData.length) / 4;
-    let diffPixels = 0;
-
-    // Handle size mismatch
-    if (refData.length !== actData.length) {
-      diffPixels = pixelCount;
-    } else {
-      for (let p = 0; p < refData.length; p += 4) {
-        const dr = Math.abs(refData[p] - actData[p]);
-        const dg = Math.abs(refData[p + 1] - actData[p + 1]);
-        const db = Math.abs(refData[p + 2] - actData[p + 2]);
-        // Consider a pixel different if any channel differs by more than 2
-        if (dr > 2 || dg > 2 || db > 2) {
-          diffPixels++;
+      if (refData.length !== actData.length) {
+        diffPixels = pixelCount;
+      } else {
+        for (let p = 0; p < refData.length; p += 4) {
+          const dr = Math.abs(refData[p] - actData[p]);
+          const dg = Math.abs(refData[p + 1] - actData[p + 1]);
+          const db = Math.abs(refData[p + 2] - actData[p + 2]);
+          if (dr > 2 || dg > 2 || db > 2) {
+            diffPixels++;
+          }
         }
       }
-    }
 
-    const diffPercent = pixelCount > 0 ? (diffPixels / pixelCount) * 100 : 0;
-    const passed = diffPercent <= threshold;
+      const diffPercent = pixelCount > 0 ? (diffPixels / pixelCount) * 100 : 0;
+      const passed = diffPercent <= threshold;
+      return { index: i, diffPixels, diffPercent, passed };
+    }),
+  );
 
-    if (passed) matchedFrames++;
+  let matchedFrames = 0;
+  let mismatchedFrames = 0;
+  for (const f of perFrame) {
+    if (f.passed) matchedFrames++;
     else mismatchedFrames++;
-
-    perFrame.push({ index: i, diffPixels, diffPercent, passed });
   }
 
   // Count missing frames as mismatched

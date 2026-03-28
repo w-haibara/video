@@ -377,7 +377,7 @@ export async function startExport(
     ? Math.min(maxEndMs, project.settings.durationMs)
     : maxEndMs;
 
-  const job = jobQueue.enqueue(projectId, "export", async (job: Job) => {
+  const job = jobQueue.enqueue(projectId, "export", async (j: Job) => {
     const args = buildExportArgs(project, assetsBase, outputPath);
 
     const proc = Bun.spawn(["ffmpeg", ...args], {
@@ -402,8 +402,8 @@ export async function startExport(
             if (match) {
               const us = parseInt(match[1], 10);
               const ms = us / 1000;
-              job.progress = Math.min(ms / totalDurationMs, 0.99);
-              job.updatedAt = new Date().toISOString();
+              j.progress = Math.min(ms / totalDurationMs, 0.99);
+              j.updatedAt = new Date().toISOString();
             }
           }
         }

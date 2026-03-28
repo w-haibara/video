@@ -43,17 +43,12 @@ export async function listProjects(): Promise<Project[]> {
   const projectsRoot = resolveWorkspacePath("projects");
   await mkdir(projectsRoot, { recursive: true });
   const entries = await readdir(projectsRoot, { withFileTypes: true });
-  const projects: Project[] = [];
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    try {
-      const project = await getProject(entry.name);
-      projects.push(project);
-    } catch {
-      // skip directories without valid project.json
-    }
-  }
-  return projects;
+  const results = await Promise.allSettled(
+    entries.filter((e) => e.isDirectory()).map((e) => getProject(e.name)),
+  );
+  return results
+    .filter((r): r is PromiseFulfilledResult<Project> => r.status === "fulfilled")
+    .map((r) => r.value);
 }
 
 export async function updateProject(

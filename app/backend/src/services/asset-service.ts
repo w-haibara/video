@@ -99,9 +99,7 @@ export async function deleteAsset(
   if (asset.proxyPath) {
     filesToDelete.push(path.join(projDir, asset.proxyPath));
   }
-  for (const f of filesToDelete) {
-    await rm(f, { force: true }).catch(() => {});
-  }
+  await Promise.all(filesToDelete.map((f) => rm(f, { force: true }).catch(() => {})));
 
   // Remove asset from project
   project.assets = project.assets.filter((a) => a.id !== assetId);
