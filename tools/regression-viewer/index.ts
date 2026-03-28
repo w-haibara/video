@@ -1,4 +1,4 @@
-import { readdir } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import type { Clip, Sequence } from "../../app/shared/src/types/project";
 import { theme } from "../../app/frontend/src/theme";
@@ -64,13 +64,13 @@ const EXPORT_TESTS: Array<{
   description: string;
   factory: () => ReturnType<typeof makeSingleVideoProject>;
 }> = [
-  { name: "single-video", description: "1秒の動画クリップ1つ", factory: makeSingleVideoProject },
-  { name: "two-clips", description: "2つの連続動画クリップ (0-1s, 1-2s)", factory: makeTwoClipProject },
-  { name: "image-clip", description: "画像クリップ1枚を1秒間表示", factory: makeImageClipProject },
-  { name: "text-overlay", description: "動画上にテキストオーバーレイ", factory: makeTextOverlayProject },
-  { name: "crop-transform", description: "クロップ・トランスフォーム付き動画", factory: makeCropTransformProject },
-  { name: "multi-track", description: "2トラック合成 (動画+画像)", factory: makeMultiTrackProject },
-  { name: "overlay-transform", description: "上クリップ縮小+下クリップ透過露出", factory: makeOverlayTransformProject },
+  { name: "single-video", description: "Single 1s video clip", factory: makeSingleVideoProject },
+  { name: "two-clips", description: "Two sequential video clips (0-1s, 1-2s)", factory: makeTwoClipProject },
+  { name: "image-clip", description: "Single image clip displayed for 1s", factory: makeImageClipProject },
+  { name: "text-overlay", description: "Text overlay on video", factory: makeTextOverlayProject },
+  { name: "crop-transform", description: "Video with crop and transform", factory: makeCropTransformProject },
+  { name: "multi-track", description: "Two-track composite (video + image)", factory: makeMultiTrackProject },
+  { name: "overlay-transform", description: "Scaled top clip with transparent bottom clip exposure", factory: makeOverlayTransformProject },
 ];
 
 // ── Snap parser ──
@@ -104,26 +104,35 @@ async function countFrames(testName: string): Promise<number> {
   }
 }
 
-async function buildExportTestCases(): Promise<ExportTestCase[]> {
+function buildExportTestCase(def: (typeof EXPORT_TESTS)[number], frameCount: number): ExportTestCase {
+  const project = def.factory();
+  return {
+    name: def.name,
+    description: def.description,
+    sequence: project.sequence,
+    assets: project.assets.map((a) => ({
+      id: a.id,
+      kind: a.kind,
+      originalPath: a.originalPath,
+      durationMs: a.durationMs,
+    })),
+    settings: project.settings,
+    frameCount,
+  };
+}
+
+async function buildAllExportTestCases(): Promise<ExportTestCase[]> {
   const frameCounts = await Promise.all(
     EXPORT_TESTS.map((def) => countFrames(def.name)),
   );
-  return EXPORT_TESTS.map((def, i) => {
-    const project = def.factory();
-    return {
-      name: def.name,
-      description: def.description,
-      sequence: project.sequence,
-      assets: project.assets.map((a) => ({
-        id: a.id,
-        kind: a.kind,
-        originalPath: a.originalPath,
-        durationMs: a.durationMs,
-      })),
-      settings: project.settings,
-      frameCount: frameCounts[i],
-    };
-  });
+  return EXPORT_TESTS.map((def, i) => buildExportTestCase(def, frameCounts[i]));
+}
+
+async function buildSingleExportTestCase(name: string): Promise<ExportTestCase | undefined> {
+  const def = EXPORT_TESTS.find((d) => d.name === name);
+  if (!def) return undefined;
+  const frameCount = await countFrames(def.name);
+  return buildExportTestCase(def, frameCount);
 }
 
 // ── Clip property helpers ──
@@ -271,109 +280,9 @@ function renderClipTable(seq: Sequence): string {
   return html;
 }
 
-// ── Section renderers ──
+// ── Shared styles ──
 
-function renderSnapshotSection(snap: Snapshot): string {
-  return `<div class="card">
-    <h2>${esc(snap.name)}</h2>
-    ${renderTimelineHtml(snap.sequence)}
-    ${renderClipTable(snap.sequence)}
-  </div>`;
-}
-
-function frameSrc(testName: string, n: number): string {
-  return `/frames/${testName}/frame_${String(n).padStart(4, "0")}.png`;
-}
-
-function renderAssetPreview(a: ExportTestCase["assets"][number]): string {
-  const fileName = path.basename(a.originalPath);
-  const src = `/assets/${esc(fileName)}`;
-  if (a.kind === "video") {
-    return `<video src="${src}" controls muted class="asset-preview-video"></video>`;
-  }
-  if (a.kind === "image") {
-    return `<img src="${src}" alt="${esc(a.id)}" class="asset-preview-img">`;
-  }
-  if (a.kind === "audio") {
-    return `<audio src="${src}" controls class="asset-preview-audio"></audio>`;
-  }
-  return `<span class="asset-preview-unknown">${esc(fileName)}</span>`;
-}
-
-function renderExportSection(tc: ExportTestCase): string {
-  const assetRows = tc.assets.map((a) =>
-    `<span class="asset-tag"><span class="kind-dot" style="background:${clipColor(a.kind)}"></span>${esc(a.id)} (${esc(a.kind)}${a.durationMs != null ? `, ${a.durationMs}ms` : ""})</span>`
-  ).join(" ");
-
-  const assetPreviews = tc.assets.map((a) => {
-    const fileName = path.basename(a.originalPath);
-    return `<div class="asset-preview-item">
-      <div class="asset-preview-label"><span class="kind-dot" style="background:${clipColor(a.kind)}"></span>${esc(a.id)} <span class="asset-preview-file">${esc(fileName)}</span></div>
-      ${renderAssetPreview(a)}
-    </div>`;
-  }).join("");
-
-  let filmstripHtml = "";
-  if (tc.frameCount > 0) {
-    const thumbs = Array.from({ length: tc.frameCount }, (_, i) =>
-      `<img src="${frameSrc(tc.name, i + 1)}" class="thumb" data-index="${i + 1}" alt="frame ${i + 1}">`
-    ).join("");
-
-    filmstripHtml = `<div class="filmstrip-player" data-test-name="${esc(tc.name)}" data-frame-count="${tc.frameCount}">
-      <div class="player-display">
-        <img class="player-img" src="${frameSrc(tc.name, 1)}" alt="preview">
-        <div class="player-controls">
-          <button class="btn-step-back" title="Step back">\u23EE</button>
-          <button class="btn-play" title="Play">\u25B6</button>
-          <button class="btn-pause" title="Pause">\u23F8</button>
-          <button class="btn-step-fwd" title="Step forward">\u23ED</button>
-          <span class="frame-counter">1 / ${tc.frameCount}</span>
-        </div>
-      </div>
-      <div class="filmstrip-thumbs">${thumbs}</div>
-    </div>`;
-  } else {
-    filmstripHtml = '<p class="no-frames">\u53C2\u7167\u30D5\u30EC\u30FC\u30E0\u306A\u3057</p>';
-  }
-
-  return `<div class="card export-card">
-    <div class="export-header">
-      <h2>${esc(tc.name)}</h2>
-      <span class="export-desc">${esc(tc.description)}</span>
-    </div>
-    <div class="export-meta">
-      <span class="meta-item">Canvas: ${tc.settings.canvasWidth}x${tc.settings.canvasHeight}</span>
-      <span class="meta-item">Duration: ${tc.settings.durationMs}ms</span>
-      <span class="meta-item">Frames: ${tc.frameCount}</span>
-    </div>
-    <div class="export-assets">Assets: ${assetRows}</div>
-    ${renderTimelineHtml(tc.sequence)}
-    ${renderClipTable(tc.sequence)}
-    <div class="export-bottom">
-      <div class="asset-previews">${assetPreviews}</div>
-      <div class="export-preview">
-        ${filmstripHtml}
-      </div>
-    </div>
-  </div>`;
-}
-
-// ── Page ──
-
-function renderPage(
-  snapshots: Snapshot[],
-  exportTests: ExportTestCase[],
-): string {
-  const snapshotSections = snapshots.map(renderSnapshotSection).join("\n");
-  const exportSections = exportTests.map(renderExportSection).join("\n");
-
-  return `<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Regression Test Viewer</title>
-<style>
+const SHARED_STYLES = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -382,8 +291,11 @@ function renderPage(
   }
   h1 { font-size: 22px; margin-bottom: 8px; }
   h2 { font-size: 16px; margin-bottom: 8px; font-weight: 600; }
+  a { color: #3A94C5; text-decoration: none; }
+  a:hover { text-decoration: underline; }
 
   .page-desc { font-size: 13px; color: #939F91; margin-bottom: 24px; }
+  .breadcrumb { font-size: 13px; color: #939F91; margin-bottom: 16px; }
 
   .section-heading {
     font-size: 18px; font-weight: 700; margin: 32px 0 16px;
@@ -442,6 +354,17 @@ function renderPage(
     margin-right: 4px; vertical-align: middle;
   }
 
+  /* ── Index list ── */
+  .case-list { list-style: none; }
+  .case-list li {
+    border-bottom: 1px solid #EFE9D5; padding: 8px 0;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .case-list li:last-child { border-bottom: none; }
+  .case-name { font-weight: 600; font-size: 14px; }
+  .case-desc { font-size: 13px; color: #939F91; }
+  .case-meta { font-size: 12px; color: #939F91; margin-left: auto; white-space: nowrap; }
+
   /* ── Export section ── */
   .export-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
   .export-desc { font-size: 13px; color: #939F91; }
@@ -460,7 +383,6 @@ function renderPage(
     background: #F4F0D9; padding: 2px 8px; border-radius: 3px;
     display: inline-flex; align-items: center; gap: 4px;
   }
-  /* ── Export bottom (assets + frames side by side) ── */
   .export-bottom {
     display: flex; gap: 16px; margin-top: 12px;
     align-items: flex-start; flex-wrap: wrap;
@@ -477,9 +399,24 @@ function renderPage(
     display: flex; align-items: center; gap: 4px;
   }
   .asset-preview-file { color: #939F91; font-weight: 400; }
+  .video-wrap {
+    display: flex; flex-direction: column; gap: 4px; width: 160px;
+  }
   .asset-preview-video {
     width: 160px; height: 90px; background: #000; border-radius: 3px;
-    image-rendering: pixelated;
+    image-rendering: pixelated; display: block;
+  }
+  .video-controls {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .video-play-btn {
+    background: #3A94C5; color: #fff; border: none; border-radius: 3px;
+    padding: 2px 10px; cursor: pointer; font-size: 11px;
+  }
+  .video-play-btn:hover { background: #2E7BA3; }
+  .video-time {
+    font-size: 11px; color: #939F91; font-variant-numeric: tabular-nums;
+    margin-left: auto;
   }
   .asset-preview-img {
     width: 160px; height: 90px; object-fit: contain; background: #000;
@@ -516,21 +453,11 @@ function renderPage(
   }
   .thumb:hover { border-color: #3A94C5; }
   .thumb.active { border-color: #F85552; }
-</style>
-</head>
-<body>
-<h1>Regression Test Viewer</h1>
-<p class="page-desc">\u30A8\u30C7\u30A3\u30BF\u64CD\u4F5C\u306E\u30B9\u30CA\u30C3\u30D7\u30B7\u30E7\u30C3\u30C8\u30C6\u30B9\u30C8\u3068\u3001\u30A8\u30AF\u30B9\u30DD\u30FC\u30C8\u30EA\u30B0\u30EC\u30C3\u30B7\u30E7\u30F3\u30C6\u30B9\u30C8\u306E\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30FB\u53C2\u7167\u30D5\u30EC\u30FC\u30E0\u3092\u78BA\u8A8D\u3067\u304D\u307E\u3059\u3002</p>
+`;
 
-<div class="section-heading">Export Regression Tests</div>
-${exportSections}
-
-<div class="section-heading">Editor Operation Snapshots</div>
-${snapshotSections}
-
-<script>
+const FILMSTRIP_SCRIPT = `
 document.querySelectorAll('.filmstrip-player').forEach(player => {
-  const testName = player.dataset.testName;
+  const frameBase = player.dataset.frameBase;
   const frameCount = parseInt(player.dataset.frameCount);
   let current = 1;
   let intervalId = null;
@@ -540,7 +467,7 @@ document.querySelectorAll('.filmstrip-player').forEach(player => {
   const thumbs = player.querySelectorAll('.thumb');
 
   function frameSrc(n) {
-    return '/frames/' + testName + '/frame_' + String(n).padStart(4, '0') + '.png';
+    return frameBase + String(n).padStart(4, '0') + '.png';
   }
 
   function show(n) {
@@ -581,78 +508,300 @@ document.querySelectorAll('.filmstrip-player').forEach(player => {
 
   show(1);
 });
-</script>
+
+document.querySelectorAll('.video-wrap').forEach(wrap => {
+  const video = wrap.querySelector('video');
+  const btn = wrap.querySelector('.video-play-btn');
+  const time = wrap.querySelector('.video-time');
+  if (!video || !btn || !time) return;
+
+  function fmt(s) { return isFinite(s) ? s.toFixed(1) : '\u2013'; }
+  function updateTime() { time.textContent = fmt(video.currentTime) + ' / ' + fmt(video.duration); }
+
+  video.onloadedmetadata = updateTime;
+  video.ontimeupdate = updateTime;
+  btn.onclick = () => {
+    if (video.paused) {
+      video.play();
+      btn.textContent = '\u23F8';
+    } else {
+      video.pause();
+      btn.textContent = '\u25B6';
+    }
+  };
+  video.onended = () => { btn.textContent = '\u25B6'; };
+});
+`;
+
+// ── Section renderers ──
+
+function frameSrc(testName: string, n: number): string {
+  return `/frames/${testName}/frame_${String(n).padStart(4, "0")}.png`;
+}
+
+function renderAssetPreview(a: ExportTestCase["assets"][number]): string {
+  const fileName = path.basename(a.originalPath);
+  const src = `/assets/${esc(fileName)}`;
+  if (a.kind === "video") {
+    return `<div class="video-wrap"><video src="${src}" muted preload="auto" class="asset-preview-video"></video><div class="video-controls"><button class="video-play-btn" data-testid="video-play-btn">\u25B6</button><span class="video-time" data-testid="video-time">0.0 / –</span></div></div>`;
+  }
+  if (a.kind === "image") {
+    return `<img src="${src}" alt="${esc(a.id)}" class="asset-preview-img" loading="lazy">`;
+  }
+  if (a.kind === "audio") {
+    return `<audio src="${src}" controls class="asset-preview-audio"></audio>`;
+  }
+  return `<span class="asset-preview-unknown">${esc(fileName)}</span>`;
+}
+
+function renderExportDetail(tc: ExportTestCase): string {
+  const assetRows = tc.assets.map((a) =>
+    `<span class="asset-tag" data-testid="asset-tag"><span class="kind-dot" style="background:${clipColor(a.kind)}"></span>${esc(a.id)} (${esc(a.kind)}${a.durationMs != null ? `, ${a.durationMs}ms` : ""})</span>`
+  ).join(" ");
+
+  const assetPreviews = tc.assets.map((a) => {
+    const fileName = path.basename(a.originalPath);
+    return `<div class="asset-preview-item" data-testid="asset-preview" data-asset-id="${esc(a.id)}">
+      <div class="asset-preview-label"><span class="kind-dot" style="background:${clipColor(a.kind)}"></span>${esc(a.id)} <span class="asset-preview-file">${esc(fileName)}</span></div>
+      ${renderAssetPreview(a)}
+    </div>`;
+  }).join("");
+
+  let filmstripHtml = "";
+  if (tc.frameCount > 0) {
+    const thumbs = Array.from({ length: tc.frameCount }, (_, i) =>
+      `<img src="${frameSrc(tc.name, i + 1)}" class="thumb" data-testid="frame-thumb" data-index="${i + 1}" alt="frame ${i + 1}" loading="lazy">`
+    ).join("");
+
+    filmstripHtml = `<div class="filmstrip-player" data-testid="filmstrip-player" data-test-name="${esc(tc.name)}" data-frame-base="/frames/${esc(tc.name)}/frame_" data-frame-count="${tc.frameCount}">
+      <div class="player-display">
+        <img class="player-img" data-testid="player-frame" src="${frameSrc(tc.name, 1)}" alt="preview">
+        <div class="player-controls">
+          <button class="btn-step-back" data-testid="btn-step-back" title="Step back">\u23EE</button>
+          <button class="btn-play" data-testid="btn-play" title="Play">\u25B6</button>
+          <button class="btn-pause" data-testid="btn-pause" title="Pause">\u23F8</button>
+          <button class="btn-step-fwd" data-testid="btn-step-fwd" title="Step forward">\u23ED</button>
+          <span class="frame-counter" data-testid="frame-counter">1 / ${tc.frameCount}</span>
+        </div>
+      </div>
+      <div class="filmstrip-thumbs" data-testid="filmstrip-thumbs">${thumbs}</div>
+    </div>`;
+  } else {
+    filmstripHtml = '<p class="no-frames" data-testid="no-frames">No reference frames</p>';
+  }
+
+  return `<div class="card export-card" data-testid="export-card" data-test-name="${esc(tc.name)}">
+    <div class="export-header">
+      <h2>${esc(tc.name)}</h2>
+      <span class="export-desc">${esc(tc.description)}</span>
+    </div>
+    <div class="export-meta" data-testid="export-meta">
+      <span class="meta-item">Canvas: ${tc.settings.canvasWidth}x${tc.settings.canvasHeight}</span>
+      <span class="meta-item">Duration: ${tc.settings.durationMs}ms</span>
+      <span class="meta-item">Frames: ${tc.frameCount}</span>
+    </div>
+    <div class="export-assets" data-testid="export-assets">Assets: ${assetRows}</div>
+    ${renderTimelineHtml(tc.sequence)}
+    ${renderClipTable(tc.sequence)}
+    <div class="export-bottom">
+      <div class="asset-previews">${assetPreviews}</div>
+      <div class="export-preview">
+        ${filmstripHtml}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderSnapshotDetail(snap: Snapshot): string {
+  return `<div class="card" data-testid="snapshot-card" data-test-name="${esc(snap.name)}">
+    <h2>${esc(snap.name)}</h2>
+    ${renderTimelineHtml(snap.sequence)}
+    ${renderClipTable(snap.sequence)}
+  </div>`;
+}
+
+// ── Page renderers ──
+
+function wrapPage(title: string, body: string, { script = "" } = {}): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)} - Regression Viewer</title>
+<style>${SHARED_STYLES}</style>
+</head>
+<body>
+${body}
+${script ? `<script>${script}</script>` : ""}
 </body>
 </html>`;
+}
+
+function renderIndexPage(
+  snapshots: Snapshot[],
+  exportTests: ExportTestCase[],
+): string {
+  const exportRows = exportTests.map((tc) =>
+    `<li data-testid="export-item" data-test-name="${esc(tc.name)}">
+      <a href="/exports/${esc(tc.name)}" class="case-name">${esc(tc.name)}</a>
+      <span class="case-desc">${esc(tc.description)}</span>
+      <span class="case-meta">${tc.frameCount} frames</span>
+    </li>`
+  ).join("\n");
+
+  const snapRows = snapshots.map((s, i) =>
+    `<li data-testid="snapshot-item" data-test-name="${esc(s.name)}">
+      <a href="/snapshots/${i}" class="case-name">${esc(s.name)}</a>
+    </li>`
+  ).join("\n");
+
+  return wrapPage("Index", `
+<h1>Regression Test Viewer</h1>
+<p class="page-desc">View editor operation snapshots and export regression test projects with reference frames.</p>
+
+<div class="section-heading" data-testid="section-exports">Export Regression Tests (${exportTests.length})</div>
+<div class="card">
+  <ul class="case-list" data-testid="export-list">${exportRows}</ul>
+</div>
+
+<div class="section-heading" data-testid="section-snapshots">Editor Operation Snapshots (${snapshots.length})</div>
+<div class="card">
+  <ul class="case-list" data-testid="snapshot-list">${snapRows}</ul>
+</div>
+  `);
+}
+
+function renderExportPage(tc: ExportTestCase): string {
+  return wrapPage(tc.name, `
+<div class="breadcrumb"><a href="/">\u2190 Index</a></div>
+<h1>Export: ${esc(tc.name)}</h1>
+${renderExportDetail(tc)}
+  `, { script: FILMSTRIP_SCRIPT });
+}
+
+function renderSnapshotPage(snap: Snapshot): string {
+  return wrapPage(snap.name, `
+<div class="breadcrumb"><a href="/">\u2190 Index</a></div>
+<h1>Snapshot: ${esc(snap.name)}</h1>
+${renderSnapshotDetail(snap)}
+  `);
+}
+
+// ── Data loaders with mtime cache ──
+
+let snapCache: { mtimeMs: number; data: Snapshot[] } | null = null;
+
+async function loadSnapshots(): Promise<Snapshot[]> {
+  const { mtimeMs } = await stat(SNAP_PATH);
+  if (snapCache && snapCache.mtimeMs === mtimeMs) return snapCache.data;
+  const snapText = await Bun.file(SNAP_PATH).text();
+  const data = parseSnapshots(snapText);
+  snapCache = { mtimeMs, data };
+  return data;
+}
+
+let exportCache: { mtimeMs: number; data: ExportTestCase[] } | null = null;
+
+async function loadExportTests(): Promise<ExportTestCase[]> {
+  // Refs dir mtime changes when test dirs are added/removed; avoids per-file stat on every request
+  let mtimeMs: number;
+  try {
+    mtimeMs = (await stat(REFS_DIR)).mtimeMs;
+  } catch {
+    mtimeMs = 0;
+  }
+  if (exportCache && exportCache.mtimeMs === mtimeMs) return exportCache.data;
+  const data = await buildAllExportTestCases();
+  exportCache = { mtimeMs, data };
+  return data;
+}
+
+function guardedResolve(base: string, ...parts: string[]): string | null {
+  const resolved = path.resolve(base, ...parts);
+  return resolved.startsWith(base + path.sep) ? resolved : null;
+}
+
+function htmlResponse(body: string): Response {
+  return new Response(body, {
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
 }
 
 // ── Server ──
 
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
-const snapText = await Bun.file(SNAP_PATH).text();
-const snapshots = parseSnapshots(snapText);
-const exportTests = await buildExportTestCases();
-
-console.log(`Parsed ${snapshots.length} snapshots, ${exportTests.length} export test cases`);
-
-const html = renderPage(snapshots, exportTests);
-
 Bun.serve({
   port: PORT,
   async fetch(req) {
     const url = new URL(req.url);
 
+    // ── Index ──
     if (url.pathname === "/") {
-      return new Response(html, {
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      const [snapshots, exportTests] = await Promise.all([
+        loadSnapshots(),
+        loadExportTests(),
+      ]);
+      return htmlResponse(renderIndexPage(snapshots, exportTests));
     }
 
+    // ── Export detail: /exports/:name ──
+    const exportMatch = url.pathname.match(/^\/exports\/([^/]+)$/);
+    if (exportMatch) {
+      const name = decodeURIComponent(exportMatch[1]);
+      const tc = await buildSingleExportTestCase(name);
+      if (!tc) return new Response("Not Found", { status: 404 });
+      return htmlResponse(renderExportPage(tc));
+    }
+
+    // ── Snapshot detail: /snapshots/:index ──
+    const snapMatch = url.pathname.match(/^\/snapshots\/(\d+)$/);
+    if (snapMatch) {
+      const index = parseInt(snapMatch[1], 10);
+      const snapshots = await loadSnapshots();
+      const snap = snapshots[index];
+      if (!snap) return new Response("Not Found", { status: 404 });
+      return htmlResponse(renderSnapshotPage(snap));
+    }
+
+    // ── API (JSON) ──
     if (url.pathname === "/api/snapshots") {
+      const snapshots = await loadSnapshots();
       return Response.json(
         snapshots.map((s) => ({ name: s.name, sequence: s.sequence })),
       );
     }
 
     if (url.pathname === "/api/exports") {
-      return Response.json(
-        exportTests.map((t) => ({
-          name: t.name,
-          description: t.description,
-          sequence: t.sequence,
-          assets: t.assets,
-          settings: t.settings,
-          frameCount: t.frameCount,
-        })),
-      );
+      const exportTests = await loadExportTests();
+      return Response.json(exportTests);
     }
 
+    // ── Static: /assets/:file ──
     if (url.pathname.startsWith("/assets/")) {
       const fileName = url.pathname.slice("/assets/".length);
-      const resolved = path.resolve(ASSETS_DIR, fileName);
-      if (!resolved.startsWith(ASSETS_DIR + path.sep)) {
-        return new Response("Forbidden", { status: 403 });
-      }
-      const file = Bun.file(resolved);
-      if (!(await file.exists())) {
+      const resolved = guardedResolve(ASSETS_DIR, fileName);
+      if (!resolved) return new Response("Forbidden", { status: 403 });
+      try {
+        const file = Bun.file(resolved);
+        return new Response(file, {
+          headers: { "content-type": file.type || "application/octet-stream" },
+        });
+      } catch {
         return new Response("Not Found", { status: 404 });
       }
-      return new Response(file, {
-        headers: { "content-type": file.type || "application/octet-stream" },
-      });
     }
 
+    // ── Static: /frames/:testName/:file ──
     if (url.pathname.startsWith("/frames/")) {
       const rest = url.pathname.slice("/frames/".length);
       const slashIdx = rest.indexOf("/");
       if (slashIdx === -1) return new Response("Not Found", { status: 404 });
       const testName = rest.slice(0, slashIdx);
       const fileName = rest.slice(slashIdx + 1);
-      const resolved = path.resolve(REFS_DIR, testName, fileName);
-      if (!resolved.startsWith(REFS_DIR + path.sep)) {
-        return new Response("Forbidden", { status: 403 });
-      }
+      const resolved = guardedResolve(REFS_DIR, testName, fileName);
+      if (!resolved) return new Response("Forbidden", { status: 403 });
       try {
         return new Response(Bun.file(resolved), {
           headers: { "content-type": "image/png" },

@@ -5,6 +5,7 @@ workspace/
 .playwright-mcp/
 .playwright-cli/
 screenshots/
+!tools/regression-viewer/screenshots/
 storybook-static/
 coverage/
 debug-storybook.log
