@@ -1,5 +1,7 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, beforeAll } from "bun:test";
 import type { Asset, Sequence } from "@video/shared";
+import { assetKindRegistry } from "./asset-kind-registry";
+import { builtinPlugin } from "./builtin-plugin";
 import {
   addClipFromAsset,
   moveClip,
@@ -30,6 +32,10 @@ const audioAsset: Asset = {
   originalPath: "assets/bgm.mp3",
   durationMs: 60000,
 };
+
+beforeAll(() => {
+  builtinPlugin.registerAssetKinds!(assetKindRegistry);
+});
 
 /**
  * Strip random IDs from a sequence so snapshots are stable.
