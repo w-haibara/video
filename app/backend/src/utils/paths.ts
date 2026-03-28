@@ -45,6 +45,3 @@ export function thumbnailDir(projectId: string): string {
 export function exportDir(projectId: string): string {
   return resolveWorkspacePath("projects", projectId, "exports");
 }
-
-/** @deprecated Use getWorkspaceRoot() instead */
-export const WORKSPACE_ROOT = getWorkspaceRoot();

@@ -62,8 +62,8 @@ async function main() {
       await Promise.all(
         images.map(
           (img) =>
-            img.complete ||
             new Promise<void>((resolve) => {
+              if (img.complete) { resolve(); return; }
               img.addEventListener("load", () => resolve(), { once: true });
               img.addEventListener("error", () => resolve(), { once: true });
             }),
@@ -75,8 +75,8 @@ async function main() {
       await Promise.all(
         videos.map(
           (v) =>
-            v.readyState >= 2 ||
             new Promise<void>((resolve) => {
+              if (v.readyState >= 2) { resolve(); return; }
               v.addEventListener("loadeddata", () => resolve(), { once: true });
               v.addEventListener("error", () => resolve(), { once: true });
             }),

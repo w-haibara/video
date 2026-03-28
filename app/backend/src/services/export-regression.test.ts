@@ -5,7 +5,7 @@ import path from "node:path";
 import type { Project } from "@video/shared";
 import { exportProject } from "./export-runner";
 import { extractFrames } from "../utils/frame-extract";
-import { compareFrames } from "../utils/frame-compare";
+import { compareFrames, listFrames } from "../utils/frame-compare";
 import {
   makeSingleVideoProject,
   makeTwoClipProject,
@@ -35,8 +35,7 @@ afterAll(async () => {
 
 async function hasReferenceFrames(dir: string): Promise<boolean> {
   try {
-    const entries = await readdir(dir);
-    return entries.some((f) => f.endsWith(".png"));
+    return (await listFrames(dir)).length > 0;
   } catch {
     return false;
   }

@@ -128,13 +128,6 @@ async function buildAllExportTestCases(): Promise<ExportTestCase[]> {
   return EXPORT_TESTS.map((def, i) => buildExportTestCase(def, frameCounts[i]));
 }
 
-async function buildSingleExportTestCase(name: string): Promise<ExportTestCase | undefined> {
-  const def = EXPORT_TESTS.find((d) => d.name === name);
-  if (!def) return undefined;
-  const frameCount = await countFrames(def.name);
-  return buildExportTestCase(def, frameCount);
-}
-
 // ── Clip property helpers ──
 
 const esc = Bun.escapeHTML;
