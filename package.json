@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "concurrently \"bun run --hot app/backend/src/index.ts\" \"cd app/frontend && bunx vite\"",
     "restart": "concurrently --kill-others-on-fail --restart-tries 0 \"bun run --hot app/backend/src/index.ts\" \"cd app/frontend && bunx vite\"",
-    "test": "bun test"
+    "test": "bun test",
+    "view:regression": "bun run tools/regression-viewer/index.ts"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
