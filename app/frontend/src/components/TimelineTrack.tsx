@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { Track, Asset, Clip, ClipTransition } from "@video/shared";
 import { TimelineClip } from "./TimelineClip";
 import { clipKindRegistry } from "../lib/clip-kind-registry";
@@ -44,7 +44,10 @@ export function TimelineTrack({
   onSetTransition,
 }: Props) {
   const assetMap = new Map(assets.map((a) => [a.id, a]));
-  const sortedClips = [...track.clips].sort((a, b) => a.startMs - b.startMs);
+  const sortedClips = useMemo(
+    () => [...track.clips].sort((a, b) => a.startMs - b.startMs),
+    [track.clips],
+  );
 
   return (
     <div style={{ display: "flex", height: "40px" }}>

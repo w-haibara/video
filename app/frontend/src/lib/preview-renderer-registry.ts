@@ -1,5 +1,6 @@
 import type { CSSProperties, RefObject } from "react";
 import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
+import { FADE_TRANSITION_TYPES } from "@video/shared";
 
 export type ActiveClip = {
   clip: Clip;
@@ -139,16 +140,19 @@ function incomingProgress(clip: Clip, currentTimeMs: number): number {
   return Math.max(0, Math.min(1, elapsed / clip.transition.durationMs));
 }
 
-/** Compute transition progress (0..1) for a clip's fade-out. Returns -1 if not in transition. */
-function outgoingProgress(clip: Clip, project: Project, currentTimeMs: number): number {
+/** Compute outgoing transition info. Returns null if not in transition. */
+function outgoingTransition(
+  clip: Clip,
+  project: Project,
+  currentTimeMs: number,
+): { progress: number; next: Clip } | null {
   const next = findNextTransitionClip(clip, project);
-  if (!next) return -1;
+  if (!next) return null;
   const fadeOutStart = next.startMs;
-  if (currentTimeMs < fadeOutStart) return -1;
-  return Math.max(0, Math.min(1, (currentTimeMs - fadeOutStart) / next.transition!.durationMs));
+  if (currentTimeMs < fadeOutStart) return null;
+  const progress = Math.max(0, Math.min(1, (currentTimeMs - fadeOutStart) / next.transition!.durationMs));
+  return { progress, next };
 }
-
-const FADE_TYPES = new Set(["fade", "fade-black", "fade-white"]);
 
 /**
  * Compute transition CSS styles for a clip at a given time.
@@ -168,7 +172,6 @@ export function computeTransitionStyle(
     if (transType === "fade") {
       style.opacity = inProg;
     } else if (transType === "fade-black") {
-      // Fade in only in second half (0..0.5 = invisible, 0.5..1 = 0→1)
       style.opacity = inProg < 0.5 ? 0 : (inProg - 0.5) * 2;
     } else if (transType === "fade-white") {
       style.opacity = inProg < 0.5 ? 0 : (inProg - 0.5) * 2;
@@ -187,22 +190,19 @@ export function computeTransitionStyle(
   }
 
   // ── Outgoing transition (this clip fades/slides out for the NEXT clip's transition) ──
-  const outProg = outgoingProgress(clip, project, currentTimeMs);
-  if (outProg >= 0) {
-    const next = findNextTransitionClip(clip, project);
-    const nextType = next?.transition?.type;
-    if (!nextType) return style;
+  const out = outgoingTransition(clip, project, currentTimeMs);
+  if (out) {
+    const nextType = out.next.transition?.type;
 
     if (nextType === "fade") {
-      style.opacity = ((style.opacity as number) ?? 1) * (1 - outProg);
+      style.opacity = ((style.opacity as number) ?? 1) * (1 - out.progress);
     } else if (nextType === "fade-black") {
-      // Fade out in first half only (0..0.5 = 1→0, 0.5..1 = invisible)
-      const outOpacity = outProg < 0.5 ? 1 - outProg * 2 : 0;
+      const outOpacity = out.progress < 0.5 ? 1 - out.progress * 2 : 0;
       style.opacity = ((style.opacity as number) ?? 1) * outOpacity;
     } else if (nextType === "fade-white") {
-      const outOpacity = outProg < 0.5 ? 1 - outProg * 2 : 0;
+      const outOpacity = out.progress < 0.5 ? 1 - out.progress * 2 : 0;
       style.opacity = ((style.opacity as number) ?? 1) * outOpacity;
-      if (outProg < 0.5) {
+      if (out.progress < 0.5) {
         style.filter = "brightness(5)";
       }
     }

@@ -1,4 +1,5 @@
 import type { Project, Clip, ExportPreset } from "@video/shared";
+import { FADE_TRANSITION_TYPES, SLIDE_TRANSITION_TYPES } from "@video/shared";
 import type { Job } from "@video/shared";
 import { mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -158,8 +159,8 @@ export function buildExportArgs(
     `color=black:s=${preset.width}x${preset.height}:d=${totalDurationSec}:r=${fps},format=yuv420p[base]`,
   );
 
-  const FADE_TYPES = new Set(["fade", "fade-black", "fade-white"]);
-  const SLIDE_TYPES = new Set(["slide-left", "slide-right", "slide-up", "slide-down"]);
+  const FADE_TYPES = FADE_TRANSITION_TYPES;
+  const SLIDE_TYPES = SLIDE_TRANSITION_TYPES;
 
   // 3. Pre-compute fade-out info for clips that precede a fade-type transition
   const fadeOutMap = new Map<string, { durationSec: number; clipDurationSec: number; transType: string }>();

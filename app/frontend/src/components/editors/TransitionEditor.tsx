@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { theme, inputStyle } from "../../theme";
 import type { InspectorEditorContext } from "../../lib/inspector-editor-registry";
 
@@ -15,30 +14,23 @@ const TRANSITION_TYPES = [
 
 export function TransitionEditor({ clip, onSetTransition }: InspectorEditorContext) {
   const currentType = clip.transition?.type ?? "";
-  const [durationMs, setDurationMs] = useState(clip.transition?.durationMs ?? 500);
+  const durationMs = clip.transition?.durationMs ?? 500;
 
-  useEffect(() => {
-    if (clip.transition) {
-      setDurationMs(clip.transition.durationMs);
-    }
-  }, [clip.transition?.durationMs]);
+  if (!onSetTransition) return null;
 
   const handleTypeChange = (type: string) => {
     if (!type) {
-      onSetTransition?.(undefined);
-    } else if (!clip.transition) {
-      onSetTransition?.({ type, durationMs });
+      onSetTransition(undefined);
+    } else {
+      onSetTransition({ type, durationMs });
     }
   };
 
   const handleDurationChange = (newDurationMs: number) => {
-    setDurationMs(newDurationMs);
     if (clip.transition) {
-      onSetTransition?.({ type: clip.transition.type, durationMs: newDurationMs });
+      onSetTransition({ type: clip.transition.type, durationMs: newDurationMs });
     }
   };
-
-  if (!onSetTransition) return null;
 
   return (
     <div style={{ marginTop: "8px" }}>
