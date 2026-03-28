@@ -16,51 +16,55 @@ export function sanitizeColor(value: string): string {
 }
 
 /**
- * Build FFmpeg filter segment for clip position/scale transform.
- * Returns empty string or ",filter1,filter2" to append to existing chain.
+ * Check whether a clip has any non-identity transform.
  */
-export function buildTransformFilter(
-  clip: Clip,
-  preset: { width: number; height: number },
-): string {
+export function hasClipTransform(clip: Clip): boolean {
   const tx = clip.transform?.x ?? 0;
   const ty = clip.transform?.y ?? 0;
   const scale = clip.transform?.scale ?? 1;
   const rotation = clip.transform?.rotation ?? 0;
+  return tx !== 0 || ty !== 0 || scale !== 1 || rotation !== 0;
+}
 
-  if (tx === 0 && ty === 0 && scale === 1 && rotation === 0) return "";
+/**
+ * Build FFmpeg filter segment for clip rotation/scale.
+ * Position (x/y) is handled by the overlay filter, not here.
+ * Returns comma-prefixed filter chain or empty string.
+ */
+export function buildTransformFilter(
+  clip: Clip,
+  _preset: { width: number; height: number },
+): string {
+  const scale = clip.transform?.scale ?? 1;
+  const rotation = clip.transform?.rotation ?? 0;
 
   const parts: string[] = [];
 
   if (rotation !== 0) {
     const rad = (rotation * Math.PI) / 180;
-    parts.push(`rotate=${rad}:ow=iw:oh=ih:c=black`);
+    parts.push(`rotate=${rad}:ow=rotw(${rad}):oh=roth(${rad}):c=black@0`);
   }
 
   if (scale !== 1) {
-    // Scale relative to center, then pad+crop to exact output size.
-    // pad uses max() so it never shrinks below scaled input (fixes scale > 1).
-    parts.push(
-      `scale=iw*${scale}:ih*${scale}`,
-      `pad=w='max(iw,${preset.width})':h='max(ih,${preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black`,
-      `crop=${preset.width}:${preset.height}:(iw-${preset.width})/2:(ih-${preset.height})/2`,
-    );
+    parts.push(`scale=iw*${scale}:ih*${scale}`);
   }
 
-  if (tx !== 0 || ty !== 0) {
-    // Crop to simulate translate: shift the visible area
-    // We first pad with extra space, then crop to the output size at offset
-    const padW = preset.width + Math.abs(tx) * 2;
-    const padH = preset.height + Math.abs(ty) * 2;
-    const cropX = Math.abs(tx) - tx; // if tx>0, shift right -> crop from left
-    const cropY = Math.abs(ty) - ty;
-    parts.push(
-      `pad=${padW}:${padH}:(ow-iw)/2:(oh-ih)/2:color=black`,
-      `crop=${preset.width}:${preset.height}:${cropX}:${cropY}`,
-    );
-  }
-
+  if (parts.length === 0) return "";
   return "," + parts.join(",");
+}
+
+/**
+ * Build overlay position expression for a clip.
+ * Clips with transforms are centered then offset by x/y.
+ * Clips without transforms use 0:0 (they are already canvas-sized).
+ */
+export function buildOverlayPosition(clip: Clip): string {
+  if (!hasClipTransform(clip)) return "0:0";
+  const tx = clip.transform?.x ?? 0;
+  const ty = clip.transform?.y ?? 0;
+  const xExpr = tx === 0 ? "(W-w)/2" : `(W-w)/2+${tx}`;
+  const yExpr = ty === 0 ? "(H-h)/2" : `(H-h)/2+${ty}`;
+  return `${xExpr}:${yExpr}`;
 }
 
 /**
@@ -127,6 +131,7 @@ export function buildExportArgs(
     filterParts: [] as string[],
     inputIndex: 0,
     clipInputIndices: new Map<string, number>(),
+    clipHasTransform: new Map<string, boolean>(),
   };
 
   // 1. Build inputs for each visual clip via clip handlers, sorted by track then time
@@ -163,14 +168,15 @@ export function buildExportArgs(
     const endSec = (clip.startMs + clip.durationMs) / 1000;
     const enable = `between(t,${startSec},${endSec})`;
     const outLabel = `[ov${overlayIdx}]`;
+    const position = buildOverlayPosition(clip);
 
     if (strategy) {
       ctx.filterParts.push(
-        strategy.buildOverlayFilter(currentBase, inputLabel, enable) + outLabel,
+        strategy.buildOverlayFilter(currentBase, inputLabel, enable, position) + outLabel,
       );
     } else {
       ctx.filterParts.push(
-        `${currentBase}${inputLabel}overlay=0:0:enable='${enable}'${outLabel}`,
+        `${currentBase}${inputLabel}overlay=${position}:enable='${enable}'${outLabel}`,
       );
     }
 

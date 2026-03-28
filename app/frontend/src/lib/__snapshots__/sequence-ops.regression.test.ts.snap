@@ -218,3 +218,218 @@ exports[`editor operation regression workflow: add and remove clips 1`] = `
   ],
 }
 `;
+
+exports[`editor operation regression workflow: left trim adjusts startMs and inMs 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 4000,
+          "id": "clip-0",
+          "inMs": 1000,
+          "outMs": 5000,
+          "startMs": 1000,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: left and right trim combined 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 3000,
+          "id": "clip-0",
+          "inMs": 500,
+          "outMs": 3500,
+          "startMs": 500,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: update blendMode 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "blendMode": "cover",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: overlap snap on same-track move 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 5000,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: remove track 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: text with fontFamily and align 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "",
+          "clipKind": "title",
+          "durationMs": 3000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 0,
+          "text": {
+            "align": "right",
+            "backgroundColor": "#000000@0.8",
+            "color": "#ff0000",
+            "fontFamily": "Noto Sans JP",
+            "fontSize": 32,
+            "value": "Styled Title",
+          },
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: add clip to specific target track 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 5000,
+        },
+      ],
+      "id": "track-0",
+    },
+    {
+      "clips": [
+        {
+          "assetId": "",
+          "clipKind": "title",
+          "durationMs": 2000,
+          "id": "clip-2",
+          "inMs": 0,
+          "outMs": 2000,
+          "startMs": 0,
+          "text": {
+            "color": "white",
+            "fontSize": 16,
+            "value": "T",
+          },
+        },
+      ],
+      "id": "track-1",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: audio clip with volume 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "a1",
+          "clipKind": "audio",
+          "durationMs": 10000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 10000,
+          "startMs": 0,
+          "volume": 0.3,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;

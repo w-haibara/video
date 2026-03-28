@@ -8,6 +8,7 @@ export type ExportBuildContext = {
   filterParts: string[];
   inputIndex: number;
   clipInputIndices: Map<string, number>;
+  clipHasTransform: Map<string, boolean>;
 };
 
 export type ExportClipHandler = {

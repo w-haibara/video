@@ -166,4 +166,111 @@ describe("editor operation regression", () => {
 
     expect(stabilize(seq)).toMatchSnapshot();
   });
+
+  test("workflow: left trim adjusts startMs and inMs", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+
+    const clipId = seq.tracks[0].clips[0].id;
+    // Left trim by 1000ms — startMs shifts right, inMs increases
+    seq = trimClip(seq, clipId, "left", 1000, 5000, 10000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: left and right trim combined", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+
+    const clipId = seq.tracks[0].clips[0].id;
+    // Left trim +500ms, then right trim -1500ms
+    seq = trimClip(seq, clipId, "left", 500, 5000, 10000);
+    seq = trimClip(seq, clipId, "right", -1500, 5000, 10000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: update blendMode", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+
+    seq = updateClip(seq, clipId, { blendMode: "cover" });
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: overlap snap on same-track move", () => {
+    let seq: Sequence = { tracks: [] };
+
+    // video at 0-5000, image at 5000-8000
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+
+    // Move image to 2000 — overlaps video, should snap
+    const imageClipId = seq.tracks[0].clips[1].id;
+    seq = moveClip(seq, imageClipId, 2000, 10000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: remove track", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addTextClip(seq, 0, 2000, {
+      value: "Overlay",
+      fontSize: 20,
+      color: "white",
+    }, 10000);
+
+    // Remove the text track
+    const textTrackId = seq.tracks[1].id;
+    seq = removeTrack(seq, textTrackId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: text with fontFamily and align", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addTextClip(seq, 0, 3000, {
+      value: "Styled Title",
+      fontFamily: "Noto Sans JP",
+      fontSize: 32,
+      align: "right",
+      color: "#ff0000",
+      backgroundColor: "#000000@0.8",
+    }, 10000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: add clip to specific target track", () => {
+    let seq: Sequence = { tracks: [] };
+
+    // Create two tracks
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addTextClip(seq, 0, 2000, { value: "T", fontSize: 16, color: "white" }, 10000);
+
+    // Add image to the first (video) track explicitly
+    const videoTrackId = seq.tracks[0].id;
+    seq = addClipFromAsset(seq, imageAsset, 10000, videoTrackId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: audio clip with volume", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, audioAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+
+    seq = updateClip(seq, clipId, { volume: 0.3 });
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
 });

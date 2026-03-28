@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import type { Project, Clip } from "@video/shared";
-import { buildExportArgs, buildTransformFilter } from "./export-service";
+import { buildExportArgs, buildTransformFilter, buildOverlayPosition, hasClipTransform } from "./export-service";
 
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {
@@ -497,9 +497,9 @@ describe("buildExportArgs", () => {
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
-    // User crop should appear after setpts and before pad
+    // User crop should appear after setpts, no transform so pad+crop to canvas
     expect(filter).toContain("crop=800:600:100:50");
-    expect(filter).toContain("setpts=PTS-STARTPTS,crop=800:600:100:50,pad=");
+    expect(filter).toContain("setpts=PTS-STARTPTS,crop=800:600:100:50,format=yuva420p,pad=");
   });
 
   test("does not add extra crop for clip without crop settings", () => {
@@ -540,8 +540,8 @@ describe("buildExportArgs", () => {
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
-    // User crop should appear before pad for images
-    expect(filter).toContain("crop=640:480:10:20,pad=");
+    // User crop should appear before format/pad for images
+    expect(filter).toContain("crop=640:480:10:20,format=yuva420p,pad=");
   });
 
   test("applies crop and transform together in correct order", () => {
@@ -570,16 +570,16 @@ describe("buildExportArgs", () => {
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
-    // Crop should come before canvas pad/crop, transform should come after
+    // With transform: crop then format then scale (no pad+crop to canvas)
     const userCropIdx = filter.indexOf("crop=500:400:100:100");
-    const padIdx = filter.indexOf("pad=w='max(iw,");
     const scaleIdx = filter.indexOf("scale=iw*1.5");
     expect(userCropIdx).toBeGreaterThan(-1);
-    expect(padIdx).toBeGreaterThan(userCropIdx);
-    expect(scaleIdx).toBeGreaterThan(padIdx);
+    expect(scaleIdx).toBeGreaterThan(userCropIdx);
+    // No canvas pad+crop — position handled by overlay expression
+    expect(filter).toContain("overlay=(W-w)/2+10:(H-h)/2+20");
   });
 
-  test("handles scale > 1 with pad+crop pattern (no pad error)", () => {
+  test("handles scale > 1 without pad+crop (overlay handles position)", () => {
     const project = makeProject({
       sequence: {
         tracks: [
@@ -604,10 +604,9 @@ describe("buildExportArgs", () => {
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
-    // Transform should use scale then pad(max)+crop pattern
+    // Transform clip: scale only, no pad+crop — overlay centers it
     expect(filter).toContain("scale=iw*2:ih*2");
-    expect(filter).toContain("pad=w='max(iw,1920)':h='max(ih,1080)'");
-    expect(filter).toContain("crop=1920:1080:");
+    expect(filter).toContain("overlay=(W-w)/2:(H-h)/2");
   });
 
   test("handles scale > 1 combined with user crop", () => {
@@ -636,14 +635,14 @@ describe("buildExportArgs", () => {
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
-    // User crop, canvas pad+crop, then transform scale with pad+crop
+    // User crop then scale (no canvas pad+crop)
     const userCropIdx = filter.indexOf("crop=800:600:100:50");
     const scaleIdx = filter.indexOf("scale=iw*2:ih*2");
     expect(userCropIdx).toBeGreaterThan(-1);
     expect(scaleIdx).toBeGreaterThan(userCropIdx);
   });
 
-  test("handles scale < 1 with pad+crop pattern", () => {
+  test("handles scale < 1 with overlay centering", () => {
     const project = makeProject({
       sequence: {
         tracks: [
@@ -668,9 +667,9 @@ describe("buildExportArgs", () => {
     const args = buildExportArgs(project, "/assets", "/out.mp4");
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
-    // Scale down should also use pad(max)+crop pattern
+    // Scale down: no pad+crop, overlay centers
     expect(filter).toContain("scale=iw*0.5:ih*0.5");
-    expect(filter).toContain("pad=w='max(iw,1920)':h='max(ih,1080)'");
+    expect(filter).toContain("overlay=(W-w)/2:(H-h)/2");
   });
 
   test("adds -ignore_unknown for video inputs", () => {
@@ -702,7 +701,7 @@ describe("buildExportArgs", () => {
     expect(args).not.toContain("-ignore_unknown");
   });
 
-  test("applies rotation filter for 90 degrees", () => {
+  test("applies rotation filter for 90 degrees with overlay centering", () => {
     const project = makeProject({
       sequence: {
         tracks: [
@@ -728,10 +727,11 @@ describe("buildExportArgs", () => {
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
     const expectedRad = (90 * Math.PI) / 180;
-    expect(filter).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+    expect(filter).toContain(`rotate=${expectedRad}:ow=rotw(${expectedRad}):oh=roth(${expectedRad}):c=black`);
+    expect(filter).toContain("overlay=(W-w)/2:(H-h)/2");
   });
 
-  test("applies rotation filter for 180 degrees", () => {
+  test("applies rotation filter for 180 degrees with overlay centering", () => {
     const project = makeProject({
       sequence: {
         tracks: [
@@ -757,7 +757,8 @@ describe("buildExportArgs", () => {
     const filterIdx = args.indexOf("-filter_complex");
     const filter = args[filterIdx + 1];
     const expectedRad = (180 * Math.PI) / 180;
-    expect(filter).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+    expect(filter).toContain(`rotate=${expectedRad}:ow=rotw(${expectedRad}):oh=roth(${expectedRad}):c=black`);
+    expect(filter).toContain("overlay=(W-w)/2:(H-h)/2");
   });
 
   test("generates overlay filters for multi-track layer compositing", () => {
@@ -984,31 +985,31 @@ describe("buildTransformFilter", () => {
   test("generates rotate filter for 90 degrees", () => {
     const result = buildTransformFilter(makeClip({ rotation: 90 }), preset);
     const expectedRad = (90 * Math.PI) / 180;
-    expect(result).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+    expect(result).toContain(`rotate=${expectedRad}:ow=rotw(${expectedRad}):oh=roth(${expectedRad}):c=black`);
   });
 
   test("generates rotate filter for 180 degrees", () => {
     const result = buildTransformFilter(makeClip({ rotation: 180 }), preset);
     const expectedRad = (180 * Math.PI) / 180;
-    expect(result).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+    expect(result).toContain(`rotate=${expectedRad}:ow=rotw(${expectedRad}):oh=roth(${expectedRad}):c=black`);
   });
 
   test("generates rotate filter for 45 degrees", () => {
     const result = buildTransformFilter(makeClip({ rotation: 45 }), preset);
     const expectedRad = (45 * Math.PI) / 180;
-    expect(result).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+    expect(result).toContain(`rotate=${expectedRad}:ow=rotw(${expectedRad}):oh=roth(${expectedRad}):c=black`);
   });
 
   test("generates rotate filter for negative angle (-90)", () => {
     const result = buildTransformFilter(makeClip({ rotation: -90 }), preset);
     const expectedRad = (-90 * Math.PI) / 180;
-    expect(result).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+    expect(result).toContain(`rotate=${expectedRad}:ow=rotw(${expectedRad}):oh=roth(${expectedRad}):c=black`);
   });
 
   test("combines rotation with scale", () => {
     const result = buildTransformFilter(makeClip({ rotation: 90, scale: 1.5 }), preset);
     const expectedRad = (90 * Math.PI) / 180;
-    expect(result).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
+    expect(result).toContain(`rotate=${expectedRad}:ow=rotw(${expectedRad}):oh=roth(${expectedRad}):c=black`);
     expect(result).toContain("scale=iw*1.5:ih*1.5");
     // Rotation should come before scale
     const rotIdx = result.indexOf("rotate=");
@@ -1016,12 +1017,59 @@ describe("buildTransformFilter", () => {
     expect(rotIdx).toBeLessThan(scaleIdx);
   });
 
-  test("combines rotation with translate", () => {
+  test("does not include translate — x/y handled by overlay", () => {
     const result = buildTransformFilter(makeClip({ rotation: 45, x: 10, y: 20 }), preset);
     const expectedRad = (45 * Math.PI) / 180;
-    expect(result).toContain(`rotate=${expectedRad}:ow=iw:oh=ih:c=black`);
-    // Should also have pad+crop for translate
-    expect(result).toContain("pad=");
-    expect(result).toContain("crop=");
+    expect(result).toContain(`rotate=${expectedRad}:ow=rotw(${expectedRad}):oh=roth(${expectedRad}):c=black`);
+    // x/y no longer in buildTransformFilter — handled by overlay position
+    expect(result).not.toContain("pad=");
+    expect(result).not.toContain("crop=");
+  });
+
+  test("returns empty for x/y only (no rotation/scale)", () => {
+    // x/y alone doesn't produce filters — position handled by overlay
+    const result = buildTransformFilter(makeClip({ x: 10, y: 20 }), preset);
+    expect(result).toBe("");
+  });
+});
+
+describe("buildOverlayPosition", () => {
+  function makeClip(transform?: Clip["transform"]): Clip {
+    return { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000, transform };
+  }
+
+  test("returns 0:0 for no transform", () => {
+    expect(buildOverlayPosition(makeClip())).toBe("0:0");
+    expect(buildOverlayPosition(makeClip({}))).toBe("0:0");
+  });
+
+  test("centers for scale only", () => {
+    expect(buildOverlayPosition(makeClip({ scale: 0.5 }))).toBe("(W-w)/2:(H-h)/2");
+  });
+
+  test("centers with offset for scale + x/y", () => {
+    expect(buildOverlayPosition(makeClip({ scale: 0.5, x: 100, y: -50 }))).toBe("(W-w)/2+100:(H-h)/2+-50");
+  });
+
+  test("centers for x/y only (position-only transform)", () => {
+    expect(buildOverlayPosition(makeClip({ x: 10, y: 20 }))).toBe("(W-w)/2+10:(H-h)/2+20");
+  });
+});
+
+describe("hasClipTransform", () => {
+  function makeClip(transform?: Clip["transform"]): Clip {
+    return { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000, transform };
+  }
+
+  test("returns false for no transform", () => {
+    expect(hasClipTransform(makeClip())).toBe(false);
+    expect(hasClipTransform(makeClip({}))).toBe(false);
+    expect(hasClipTransform(makeClip({ x: 0, y: 0, scale: 1, rotation: 0 }))).toBe(false);
+  });
+
+  test("returns true for any non-identity value", () => {
+    expect(hasClipTransform(makeClip({ x: 10 }))).toBe(true);
+    expect(hasClipTransform(makeClip({ scale: 0.5 }))).toBe(true);
+    expect(hasClipTransform(makeClip({ rotation: 45 }))).toBe(true);
   });
 });

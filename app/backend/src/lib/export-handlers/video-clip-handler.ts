@@ -1,7 +1,7 @@
 import type { ExportClipHandler, ExportBuildContext } from "../export-handler-registry";
 import type { Clip, Asset } from "@video/shared";
 import path from "node:path";
-import { buildTransformFilter } from "../../services/export-service";
+import { buildTransformFilter, hasClipTransform } from "../../services/export-service";
 
 export const videoClipHandler: ExportClipHandler = {
   assetKind: "video",
@@ -25,14 +25,28 @@ export const videoClipHandler: ExportClipHandler = {
 
     const trimStart = clip.inMs / 1000;
     const duration = effectiveDurationMs / 1000;
-    let chain =
-      `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS` +
-      `${userCrop},` +
-      `pad=w='max(iw,${ctx.preset.width})':h='max(ih,${ctx.preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black,` +
-      `crop=${ctx.preset.width}:${ctx.preset.height}:(iw-${ctx.preset.width})/2:(ih-${ctx.preset.height})/2`;
-    chain += buildTransformFilter(clip, ctx.preset);
+    const transformed = hasClipTransform(clip);
+
+    let chain: string;
+    if (transformed) {
+      // Transform present: output at natural size, position via overlay
+      chain =
+        `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS` +
+        `${userCrop},format=yuva420p` +
+        buildTransformFilter(clip, ctx.preset);
+    } else {
+      // No transform: pad+crop to canvas size (backward compatible)
+      chain =
+        `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS` +
+        `${userCrop},` +
+        `format=yuva420p,` +
+        `pad=w='max(iw,${ctx.preset.width})':h='max(ih,${ctx.preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black@0,` +
+        `crop=${ctx.preset.width}:${ctx.preset.height}:(iw-${ctx.preset.width})/2:(ih-${ctx.preset.height})/2`;
+    }
+
     ctx.filterParts.push(`${chain}[v${i}]`);
     ctx.clipInputIndices.set(clip.id, i);
+    ctx.clipHasTransform.set(clip.id, transformed);
     ctx.inputIndex++;
   },
 };

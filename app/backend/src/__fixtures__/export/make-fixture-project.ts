@@ -184,3 +184,45 @@ export function makeMultiTrackProject(): Project {
     },
   });
 }
+
+/** Two tracks — top clip with crop + scale + position + rotation to reveal bottom clip.
+ *  Verifies transparency compositing with all transform properties combined. */
+export function makeOverlayTransformProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        // Bottom: image (full frame, visible in exposed areas)
+        makeTrack([
+          makeClip({
+            id: "c1",
+            clipKind: "image",
+            assetId: "img1",
+            startMs: 0,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+          }),
+        ]),
+        // Top: video cropped to 120x60 region, scaled to 0.5, offset from center, rotated 15°
+        makeTrack(
+          [
+            makeClip({
+              id: "c2",
+              clipKind: "video",
+              assetId: "v1",
+              startMs: 0,
+              durationMs: 1000,
+              inMs: 0,
+              outMs: 1000,
+              crop: { x: 20, y: 15, width: 120, height: 60 },
+              transform: { x: 20, y: -10, scale: 0.5, rotation: 45 },
+              blendMode: "cover",
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}

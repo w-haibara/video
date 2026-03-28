@@ -1,6 +1,6 @@
 export type ExportCompositeStrategy = {
   id: string;
-  buildOverlayFilter(bottomLabel: string, topLabel: string, enable: string): string;
+  buildOverlayFilter(bottomLabel: string, topLabel: string, enable: string, position?: string): string;
 };
 
 export class CompositeStrategyRegistry {

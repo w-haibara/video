@@ -13,6 +13,7 @@ import {
   makeTextOverlayProject,
   makeCropTransformProject,
   makeMultiTrackProject,
+  makeOverlayTransformProject,
   CANVAS_W,
   CANVAS_H,
   FPS,
@@ -121,5 +122,9 @@ describe("export regression", () => {
 
   test("multi-track overlay", async () => {
     await runExportRegression("multi-track", makeMultiTrackProject());
+  }, 30_000);
+
+  test("overlay with transform (bottom clip visibility)", async () => {
+    await runExportRegression("overlay-transform", makeOverlayTransformProject());
   }, 30_000);
 });

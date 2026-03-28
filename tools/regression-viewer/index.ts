@@ -9,6 +9,7 @@ import {
   makeTextOverlayProject,
   makeCropTransformProject,
   makeMultiTrackProject,
+  makeOverlayTransformProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -69,6 +70,7 @@ const EXPORT_TESTS: Array<{
   { name: "text-overlay", description: "動画上にテキストオーバーレイ", factory: makeTextOverlayProject },
   { name: "crop-transform", description: "クロップ・トランスフォーム付き動画", factory: makeCropTransformProject },
   { name: "multi-track", description: "2トラック合成 (動画+画像)", factory: makeMultiTrackProject },
+  { name: "overlay-transform", description: "上クリップ縮小+下クリップ透過露出", factory: makeOverlayTransformProject },
 ];
 
 // ── Snap parser ──
