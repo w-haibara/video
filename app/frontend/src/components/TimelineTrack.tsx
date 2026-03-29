@@ -22,6 +22,7 @@ type Props = {
   isDropTarget?: boolean;
   onDragTrackChange?: (targetTrackId: string | null) => void;
   onSetTransition?: (clipId: string, transition: ClipTransition | undefined) => void;
+  onTrackDoubleClick?: (trackId: string, timeMs: number, position: { x: number; y: number }) => void;
 };
 
 export function TimelineTrack({
@@ -42,6 +43,7 @@ export function TimelineTrack({
   isDropTarget,
   onDragTrackChange,
   onSetTransition,
+  onTrackDoubleClick,
 }: Props) {
   const assetMap = new Map(assets.map((a) => [a.id, a]));
   const sortedClips = useMemo(
@@ -74,6 +76,19 @@ export function TimelineTrack({
         {trackIndex + 1}
       </div>
       <div
+        onMouseDown={(e) => {
+          // Prevent seek handler from firing when interacting with track content
+          if (e.detail >= 2) e.stopPropagation();
+        }}
+        onDoubleClick={(e) => {
+          // Only trigger when clicking empty area (not a clip)
+          if (e.target !== e.currentTarget) return;
+          e.stopPropagation();
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const timeMs = pxToMs(x);
+          onTrackDoubleClick?.(track.id, timeMs, { x: e.clientX, y: e.clientY });
+        }}
         style={{
           position: "relative",
           flex: 1,

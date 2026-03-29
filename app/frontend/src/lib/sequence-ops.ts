@@ -261,6 +261,61 @@ export function addTextClip(
   return { ...sequence, tracks };
 }
 
+export function addEmptyClip(
+  sequence: Sequence,
+  clipKind: string,
+  startMs: number,
+  durationMs: number,
+  maxDurationMs?: number,
+  targetTrackId?: string,
+  text?: ClipText,
+): Sequence {
+  // Reject if start is beyond the limit
+  if (maxDurationMs != null && startMs >= maxDurationMs) {
+    return sequence;
+  }
+
+  // Clamp duration
+  let clampedDuration = durationMs;
+  if (maxDurationMs != null && startMs + clampedDuration > maxDurationMs) {
+    clampedDuration = maxDurationMs - startMs;
+  }
+
+  const tracks = sequence.tracks.map((t: Track) => ({ ...t, clips: [...t.clips] }));
+  let track: Track | undefined;
+  if (targetTrackId) {
+    track = tracks.find((t: Track) => t.id === targetTrackId);
+  }
+  if (!track) {
+    track = { id: generateId(), clips: [] };
+    tracks.push(track);
+  }
+
+  // Check for overlap with existing clips on this track
+  const hasOverlap = track.clips.some((c: Clip) => {
+    const cEnd = c.startMs + c.durationMs;
+    return startMs < cEnd && startMs + clampedDuration > c.startMs;
+  });
+  if (hasOverlap) {
+    return sequence;
+  }
+
+  const clip: Clip = {
+    id: generateId(),
+    clipKind,
+    assetId: "",
+    startMs,
+    durationMs: clampedDuration,
+    inMs: 0,
+    outMs: clampedDuration,
+    ...(text ? { text } : {}),
+  };
+
+  track.clips.push(clip);
+  track.clips.sort((a: Clip, b: Clip) => a.startMs - b.startMs);
+  return { ...sequence, tracks };
+}
+
 export function clampClipsToDuration(
   sequence: Sequence,
   maxDurationMs: number,
