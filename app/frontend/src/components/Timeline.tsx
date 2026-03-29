@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import type { Project, Track, ClipTransition } from "@video/shared";
 import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTrack } from "./TimelineTrack";
@@ -8,7 +8,11 @@ import type { MenuItem } from "./ContextMenu";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { ClipKindPopup } from "./ClipKindPopup";
 import { useTimelineZoom } from "../hooks/useTimelineZoom";
+import { snapClipPosition } from "../lib/snap-utils";
 import { theme } from "../theme";
+
+/** Snap threshold in pixels. Converted to ms using pxToMs at runtime. */
+const SNAP_THRESHOLD_PX = 10;
 
 type Props = {
   project: Project;
@@ -32,6 +36,8 @@ type Props = {
   onDuplicateClip?: () => void;
   onPasteAttributes?: () => void;
   hasClipboard?: boolean;
+  snapEnabled?: boolean;
+  onToggleSnap?: () => void;
 };
 
 function getTimelineDuration(project: Project): number {
@@ -60,6 +66,8 @@ export function Timeline({
   onDuplicateClip,
   onPasteAttributes,
   hasClipboard,
+  snapEnabled = true,
+  onToggleSnap,
 }: Props) {
   const { msToPx, pxToMs, zoomIn, zoomOut } = useTimelineZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -69,7 +77,12 @@ export function Timeline({
     x: number;
     y: number;
   } | null>(null);
-  const [dragTargetTrackId, setDragTargetTrackId] = useState<string | null>(null);
+  const [dragTargetTrackId, setDragTargetTrackIdRaw] = useState<string | null>(null);
+  const setDragTargetTrackId = useCallback((trackId: string | null) => {
+    setDragTargetTrackIdRaw(trackId);
+    // Clear snap line when drag ends (trackId goes to null from mouseup)
+    if (trackId === null) setSnapLineMs(undefined);
+  }, []);
   const [trackContextMenu, setTrackContextMenu] = useState<{
     trackId: string;
     x: number;
@@ -83,6 +96,23 @@ export function Timeline({
     y: number;
   } | null>(null);
   const allTrackIds = project.sequence.tracks.map((t: Track) => t.id);
+  const [snapLineMs, setSnapLineMs] = useState<number | undefined>(undefined);
+
+  /** Collect all snap target points (clip edges, playhead, time 0) excluding a given clip */
+  const getSnapTargets = useCallback(
+    (excludeClipId: string): number[] => {
+      const targets: number[] = [0, currentTimeMs];
+      for (const track of project.sequence.tracks) {
+        for (const clip of track.clips) {
+          if (clip.id === excludeClipId) continue;
+          targets.push(clip.startMs);
+          targets.push(clip.startMs + clip.durationMs);
+        }
+      }
+      return targets;
+    },
+    [project.sequence.tracks, currentTimeMs],
+  );
 
   const handleClipContextMenu = useCallback(
     (clipId: string, position: { x: number; y: number }) => {
@@ -138,9 +168,27 @@ export function Timeline({
 
   const handleMove = useCallback(
     (clipId: string, newStartMs: number, targetTrackId?: string) => {
-      onMoveClip?.(clipId, newStartMs, targetTrackId);
+      if (snapEnabled && !targetTrackId) {
+        // Find the clip's duration to check both edges
+        let clipDurationMs = 0;
+        for (const track of project.sequence.tracks) {
+          const clip = track.clips.find((c) => c.id === clipId);
+          if (clip) {
+            clipDurationMs = clip.durationMs;
+            break;
+          }
+        }
+        const thresholdMs = pxToMs(SNAP_THRESHOLD_PX);
+        const targets = getSnapTargets(clipId);
+        const snap = snapClipPosition(newStartMs, clipDurationMs, targets, thresholdMs);
+        setSnapLineMs(snap.snapLineMs);
+        onMoveClip?.(clipId, snap.snappedMs, targetTrackId);
+      } else {
+        setSnapLineMs(undefined);
+        onMoveClip?.(clipId, newStartMs, targetTrackId);
+      }
     },
-    [onMoveClip],
+    [onMoveClip, snapEnabled, pxToMs, getSnapTargets, project.sequence.tracks],
   );
 
   const handleTrim = useCallback(
@@ -205,6 +253,25 @@ export function Timeline({
         >
           +
         </button>
+        {onToggleSnap && (
+          <button
+            onClick={onToggleSnap}
+            title={`Snapping ${snapEnabled ? "ON" : "OFF"} (N)`}
+            style={{
+              background: snapEnabled ? theme.bgHover : "none",
+              border: `1px solid ${snapEnabled ? theme.primary : theme.border}`,
+              color: snapEnabled ? theme.primary : theme.textMuted,
+              padding: "2px 8px",
+              cursor: "pointer",
+              borderRadius: "3px",
+              fontSize: "12px",
+              fontWeight: snapEnabled ? "bold" : "normal",
+              marginLeft: "4px",
+            }}
+          >
+            Snap
+          </button>
+        )}
         <span style={{ color: theme.textMuted, fontSize: "11px", marginLeft: "8px" }}>
           {formatTime(currentTimeMs)}
         </span>
@@ -335,6 +402,22 @@ export function Timeline({
                 zIndex: 1,
               }}
             />
+
+            {/* Snap line indicator */}
+            {snapLineMs !== undefined && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: `${msToPx(snapLineMs) + 32}px`,
+                  top: 0,
+                  bottom: 0,
+                  width: "1px",
+                  background: theme.warning,
+                  pointerEvents: "none",
+                  zIndex: 12,
+                }}
+              />
+            )}
 
             {/* Playhead (spans seek bar + tracks) */}
             <Playhead positionPx={playheadPx + 32} />
