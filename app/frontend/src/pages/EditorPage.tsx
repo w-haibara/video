@@ -16,10 +16,12 @@ import { usePreviewPopout } from "../hooks/usePreviewPopout";
 import { SaveIndicator } from "../components/SaveIndicator";
 import { JobProgress } from "../components/JobProgress";
 import { ProjectSettingsPanel } from "../components/ProjectSettingsPanel";
+import { KeyboardShortcutsPanel } from "../components/KeyboardShortcutsPanel";
 import { useProjectEditor } from "../hooks/useProjectEditor";
 import { clampClipsToDuration, removeTrack } from "../lib/sequence-ops";
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { useAutoSave } from "../hooks/useAutoSave";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { theme, buttonStyle, inputStyle } from "../theme";
 
 function EditorPageInner({ projectId }: { projectId: string }) {
@@ -204,34 +206,52 @@ function EditorPageLoaded({
     handleSelectClip(null);
   }, [rippleDelete, handleSelectClip]);
 
-  // Keyboard shortcuts for undo/redo and tool modes
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
 
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-      } else if (
-        (e.ctrlKey || e.metaKey) &&
-        ((e.key === "z" && e.shiftKey) || e.key === "y")
-      ) {
-        e.preventDefault();
-        redo();
-      } else if (e.key === "v" || e.key === "V") {
-        setToolMode("select");
-      } else if (e.key === "c" || e.key === "C") {
-        if (!e.ctrlKey && !e.metaKey) {
-          setToolMode("razor");
+  // Compute frame time from export preset fps (default 30)
+  const fps = currentProject.exportPreset?.fps ?? 30;
+  const frameTimeMs = 1000 / fps;
+  const durationMs = currentProject.settings.durationMs;
+
+  // Compute sequence end (last clip end) for End key
+  const sequenceEndMs = sequence.tracks.reduce((maxEnd, track) => {
+    return track.clips.reduce((m, clip) => Math.max(m, clip.startMs + clip.durationMs), maxEnd);
+  }, 0);
+
+  // Find clip at playhead for split-at-playhead (S key)
+  const handleSplitAtPlayhead = useCallback(() => {
+    for (const track of sequence.tracks) {
+      for (const clip of track.clips) {
+        if (currentTimeMs > clip.startMs && currentTimeMs < clip.startMs + clip.durationMs) {
+          splitClip(clip.id, currentTimeMs);
+          return;
         }
       }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo]);
+    }
+  }, [sequence, currentTimeMs, splitClip]);
+
+  // Centralized keyboard shortcuts
+  useKeyboardShortcuts({
+    isPlaying,
+    onPlayPause,
+    onPlay: () => { if (!isPlaying) onPlayPause(); },
+    onPause: () => { if (isPlaying) onPlayPause(); },
+    onUndo: undo,
+    onRedo: redo,
+    onSetToolSelect: () => setToolMode("select"),
+    onSetToolRazor: () => setToolMode("razor"),
+    onDeleteClip: () => { if (selectedClipId) handleDeleteClip(selectedClipId); },
+    onRippleDeleteClip: () => { if (selectedClipId) handleRippleDeleteClip(selectedClipId); },
+    onJumpToStart: () => onSeek(0),
+    onJumpToEnd: () => onSeek(Math.min(durationMs, sequenceEndMs)),
+    onStepForward: () => onSeek(Math.min(durationMs, currentTimeMs + frameTimeMs)),
+    onStepBackward: () => onSeek(Math.max(0, currentTimeMs - frameTimeMs)),
+    onSplitAtPlayhead: handleSplitAtPlayhead,
+    onToggleShortcutsHelp: () => setShowShortcutsHelp((v) => !v),
+  });
 
   return (
+    <>
     <EditorLayout
       toolbar={
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -445,6 +465,10 @@ function EditorPageLoaded({
         />
       }
     />
+    {showShortcutsHelp && (
+      <KeyboardShortcutsPanel onClose={() => setShowShortcutsHelp(false)} />
+    )}
+    </>
   );
 }
 

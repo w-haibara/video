@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import type { Project, Track, ClipTransition } from "@video/shared";
 import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTrack } from "./TimelineTrack";
@@ -147,27 +147,6 @@ export function Timeline({
     [onAddEmptyClip],
   );
 
-  // Handle Delete key (Shift+Delete = ripple delete)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        (e.key === "Delete" || e.key === "Backspace") &&
-        selectedClipId
-      ) {
-        // Don't delete if user is typing in an input
-        const target = e.target as HTMLElement;
-        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
-        e.preventDefault();
-        if (e.shiftKey && onRippleDeleteClip) {
-          onRippleDeleteClip(selectedClipId);
-        } else if (onDeleteClip) {
-          onDeleteClip(selectedClipId);
-        }
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [selectedClipId, onDeleteClip, onRippleDeleteClip]);
 
   return (
     <div
