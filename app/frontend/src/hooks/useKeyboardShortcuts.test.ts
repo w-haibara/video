@@ -36,8 +36,6 @@ describe("keyboard dispatch logic", () => {
   function createActions() {
     return {
       onPlayPause: mock(() => {}),
-      onPlay: mock(() => {}),
-      onPause: mock(() => {}),
       onUndo: mock(() => {}),
       onRedo: mock(() => {}),
       onSetToolSelect: mock(() => {}),
@@ -81,7 +79,7 @@ describe("keyboard dispatch logic", () => {
       return;
     }
 
-    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable)) {
       return;
     }
 
@@ -242,6 +240,13 @@ describe("keyboard dispatch logic", () => {
     (e.target as { isContentEditable: boolean }).isContentEditable = true;
     dispatch(e, actions);
     expect(actions.onSetToolRazor).toHaveBeenCalledTimes(0);
+  });
+
+  test("shortcuts are blocked when target is SELECT", () => {
+    const e = fakeEvent(" ");
+    (e.target as { tagName: string }).tagName = "SELECT";
+    dispatch(e, actions);
+    expect(actions.onPlayPause).toHaveBeenCalledTimes(0);
   });
 
   test("Ctrl+Z still works in INPUT (undo always allowed)", () => {

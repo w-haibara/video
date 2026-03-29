@@ -2,8 +2,6 @@ import { useEffect, useCallback, useRef } from "react";
 
 export type KeyboardShortcutActions = {
   onPlayPause: () => void;
-  onPlay: () => void;
-  onPause: () => void;
   onUndo: () => void;
   onRedo: () => void;
   onSetToolSelect: () => void;
@@ -24,7 +22,7 @@ function isEditableTarget(e: KeyboardEvent): boolean {
   const target = e.target as HTMLElement;
   if (!target) return false;
   const tag = target.tagName;
-  if (tag === "INPUT" || tag === "TEXTAREA") return true;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
   if (target.isContentEditable) return true;
   return false;
 }

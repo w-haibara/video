@@ -234,8 +234,6 @@ function EditorPageLoaded({
   useKeyboardShortcuts({
     isPlaying,
     onPlayPause,
-    onPlay: () => { if (!isPlaying) onPlayPause(); },
-    onPause: () => { if (isPlaying) onPlayPause(); },
     onUndo: undo,
     onRedo: redo,
     onSetToolSelect: () => setToolMode("select"),
@@ -243,7 +241,7 @@ function EditorPageLoaded({
     onDeleteClip: () => { if (selectedClipId) handleDeleteClip(selectedClipId); },
     onRippleDeleteClip: () => { if (selectedClipId) handleRippleDeleteClip(selectedClipId); },
     onJumpToStart: () => onSeek(0),
-    onJumpToEnd: () => onSeek(Math.min(durationMs, sequenceEndMs)),
+    onJumpToEnd: () => onSeek(sequenceEndMs > 0 ? Math.min(durationMs, sequenceEndMs) : durationMs),
     onStepForward: () => onSeek(Math.min(durationMs, currentTimeMs + frameTimeMs)),
     onStepBackward: () => onSeek(Math.max(0, currentTimeMs - frameTimeMs)),
     onSplitAtPlayhead: handleSplitAtPlayhead,
