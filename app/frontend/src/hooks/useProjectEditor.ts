@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { Project, Asset, Clip, ClipText, ClipTransition, Sequence } from "@video/shared";
+import { theme } from "../theme";
 import * as SeqOps from "../lib/sequence-ops";
 
 export function useProjectEditor(
@@ -57,6 +58,16 @@ export function useProjectEditor(
     [sequence, pushState, maxDurationMs],
   );
 
+  const addEmptyClip = useCallback(
+    (clipKind: string, startMs: number, targetTrackId?: string) => {
+      const text = clipKind === "title"
+        ? { value: "Text", fontSize: 48, color: theme.white, backgroundColor: theme.black } as ClipText
+        : undefined;
+      pushState(SeqOps.addEmptyClip(sequence, clipKind, startMs, 3000, maxDurationMs, targetTrackId, text));
+    },
+    [sequence, pushState, maxDurationMs],
+  );
+
   const updateClip = useCallback(
     (clipId: string, updates: Partial<Clip>) => {
       pushState(SeqOps.updateClip(sequence, clipId, updates));
@@ -81,6 +92,7 @@ export function useProjectEditor(
     moveClip,
     trimClip,
     addTextClip,
+    addEmptyClip,
     updateClip,
     setTransition,
   };

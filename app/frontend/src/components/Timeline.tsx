@@ -5,6 +5,7 @@ import { TimelineTrack } from "./TimelineTrack";
 import { Playhead } from "./Playhead";
 import { ContextMenu } from "./ContextMenu";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { ClipKindPopup } from "./ClipKindPopup";
 import { useTimelineZoom } from "../hooks/useTimelineZoom";
 import { theme } from "../theme";
 
@@ -20,6 +21,7 @@ type Props = {
   onAddTrack?: () => void;
   onDeleteTrack?: (trackId: string) => void;
   onSetTransition?: (clipId: string, transition: ClipTransition | undefined) => void;
+  onAddEmptyClip?: (clipKind: string, startMs: number, trackId: string) => void;
 };
 
 function getTimelineDuration(project: Project): number {
@@ -38,6 +40,7 @@ export function Timeline({
   onAddTrack,
   onDeleteTrack,
   onSetTransition,
+  onAddEmptyClip,
 }: Props) {
   const { msToPx, pxToMs, zoomIn, zoomOut } = useTimelineZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -54,6 +57,12 @@ export function Timeline({
     y: number;
   } | null>(null);
   const [confirmDeleteTrackId, setConfirmDeleteTrackId] = useState<string | null>(null);
+  const [clipKindPopup, setClipKindPopup] = useState<{
+    trackId: string;
+    timeMs: number;
+    x: number;
+    y: number;
+  } | null>(null);
   const allTrackIds = project.sequence.tracks.map((t: Track) => t.id);
 
   const handleClipContextMenu = useCallback(
@@ -120,6 +129,14 @@ export function Timeline({
       onTrimClip?.(clipId, side, deltaMs);
     },
     [onTrimClip],
+  );
+
+  const handleTrackDoubleClick = useCallback(
+    (trackId: string, timeMs: number, position: { x: number; y: number }) => {
+      if (!onAddEmptyClip) return;
+      setClipKindPopup({ trackId, timeMs, x: position.x, y: position.y });
+    },
+    [onAddEmptyClip],
   );
 
   // Handle Delete key
@@ -256,6 +273,7 @@ export function Timeline({
                   isDropTarget={dragTargetTrackId === track.id}
                   onDragTrackChange={setDragTargetTrackId}
                   onSetTransition={onSetTransition}
+                  onTrackDoubleClick={handleTrackDoubleClick}
                 />
               ))
             )}
@@ -360,6 +378,17 @@ export function Timeline({
             setConfirmDeleteTrackId(null);
           }}
           onCancel={() => setConfirmDeleteTrackId(null)}
+        />
+      )}
+
+      {clipKindPopup && onAddEmptyClip && (
+        <ClipKindPopup
+          position={{ x: clipKindPopup.x, y: clipKindPopup.y }}
+          onSelect={(clipKind) => {
+            onAddEmptyClip(clipKind, Math.max(0, Math.round(clipKindPopup.timeMs)), clipKindPopup.trackId);
+            setClipKindPopup(null);
+          }}
+          onClose={() => setClipKindPopup(null)}
         />
       )}
     </div>

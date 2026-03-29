@@ -108,7 +108,7 @@ function EditorPageLoaded({
     project.sequence,
   );
 
-  const { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, setTransition } =
+  const { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, addEmptyClip, updateClip, setTransition } =
     useProjectEditor(project, sequence, pushState);
 
   const { saveStatus } = useAutoSave(project.id, sequence);
@@ -146,6 +146,34 @@ function EditorPageLoaded({
       addTextClip(startMs, durationMs, text, selectedTrackId ?? undefined);
     },
     [addTextClip, selectedTrackId],
+  );
+
+  const pendingAutoSelectRef = useRef(false);
+  const prevClipIdsRef = useRef(new Set<string>());
+
+  // Track clip IDs for auto-selection of newly added empty clips
+  useEffect(() => {
+    const currentIds = new Set(
+      sequence.tracks.flatMap((t) => t.clips.map((c) => c.id)),
+    );
+    if (pendingAutoSelectRef.current && prevClipIdsRef.current.size > 0) {
+      for (const id of currentIds) {
+        if (!prevClipIdsRef.current.has(id)) {
+          onSelectClip(id);
+          break;
+        }
+      }
+      pendingAutoSelectRef.current = false;
+    }
+    prevClipIdsRef.current = currentIds;
+  }, [sequence, onSelectClip]);
+
+  const handleAddEmptyClip = useCallback(
+    (clipKind: string, startMs: number, trackId: string) => {
+      pendingAutoSelectRef.current = true;
+      addEmptyClip(clipKind, startMs, trackId);
+    },
+    [addEmptyClip],
   );
 
   const currentProject: Project = { ...project, sequence };
@@ -359,6 +387,7 @@ function EditorPageLoaded({
           onAddTrack={handleAddTrack}
           onDeleteTrack={handleDeleteTrack}
           onSetTransition={setTransition}
+          onAddEmptyClip={handleAddEmptyClip}
         />
       }
     />

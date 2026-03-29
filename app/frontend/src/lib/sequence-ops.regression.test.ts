@@ -4,6 +4,7 @@ import { assetKindRegistry } from "./asset-kind-registry";
 import { builtinPlugin } from "./builtin-plugin";
 import {
   addClipFromAsset,
+  addEmptyClip,
   moveClip,
   trimClip,
   addTextClip,
@@ -427,6 +428,92 @@ describe("editor operation regression", () => {
     };
 
     seq = clampClipsToDuration(seq, 3000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: addEmptyClip to existing track", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+
+    // Add empty video clip at 6000ms on the same track
+    const trackId = seq.tracks[0].id;
+    seq = addEmptyClip(seq, "video", 6000, 3000, 10000, trackId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: addEmptyClip creates new track when no target", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addEmptyClip(seq, "image", 1000, 3000, 10000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: addEmptyClip with title sets text", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addEmptyClip(seq, "title", 0, 3000, 10000, undefined, {
+      value: "Text",
+      fontSize: 48,
+      color: "white",
+      backgroundColor: "black",
+    });
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: addEmptyClip clamped by maxDuration", () => {
+    let seq: Sequence = { tracks: [] };
+
+    // Start at 9000ms with 3000ms duration, should clamp to 1000ms
+    seq = addEmptyClip(seq, "video", 9000, 3000, 10000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: addEmptyClip rejected when overlapping", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+
+    // Try to add empty clip overlapping with existing video clip (0-5000)
+    const trackId = seq.tracks[0].id;
+    const before = stabilize(seq);
+    seq = addEmptyClip(seq, "image", 2000, 3000, 10000, trackId);
+
+    // Should be unchanged because of overlap
+    expect(stabilize(seq)).toEqual(before);
+  });
+
+  test("workflow: addEmptyClip rejected when beyond maxDuration", () => {
+    let seq: Sequence = { tracks: [] };
+
+    const before = stabilize(seq);
+    seq = addEmptyClip(seq, "video", 10000, 3000, 10000);
+
+    // startMs >= maxDurationMs, should be rejected (no tracks created)
+    expect(seq.tracks.length).toBe(0);
+  });
+
+  test("workflow: addEmptyClip then move", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addEmptyClip(seq, "video", 0, 3000, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = moveClip(seq, clipId, 5000, 10000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: addEmptyClip multiple kinds on same track", () => {
+    let seq: Sequence = { tracks: [{ id: "t1", clips: [] }] };
+
+    seq = addEmptyClip(seq, "video", 0, 2000, 10000, "t1");
+    seq = addEmptyClip(seq, "image", 3000, 2000, 10000, "t1");
+    seq = addEmptyClip(seq, "audio", 6000, 2000, 10000, "t1");
 
     expect(stabilize(seq)).toMatchSnapshot();
   });
