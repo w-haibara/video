@@ -4,6 +4,7 @@ export type InspectorEditorContext = {
   clip: Clip;
   asset: Asset | undefined;
   clipKind: string;
+  projectId: string;
   onUpdate: (updates: Partial<Clip>) => void;
   onSetTransition?: (transition: ClipTransition | undefined) => void;
 };

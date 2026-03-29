@@ -10,6 +10,7 @@ function makeCtx(overrides: Partial<InspectorEditorContext> = {}): InspectorEdit
     clip: { id: "c1", assetId: "a1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
     asset: { id: "a1", kind: "video", originalPath: "/test.mp4", durationMs: 10000 },
     clipKind: "video",
+    projectId: "proj-1",
     onUpdate: () => {},
     ...overrides,
   };

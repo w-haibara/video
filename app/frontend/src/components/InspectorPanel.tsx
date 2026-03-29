@@ -103,6 +103,7 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveCl
     clip,
     asset,
     clipKind: clip.clipKind,
+    projectId: project.id,
     onUpdate: (updates: Partial<Clip>) => onUpdateClip?.(clip.id, updates),
     onSetTransition: onSetTransition
       ? (transition: ClipTransition | undefined) => onSetTransition(clip.id, transition)

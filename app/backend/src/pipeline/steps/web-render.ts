@@ -142,7 +142,10 @@ export const webRenderStep: PipelineStep = {
 
         ctx.reportProgress(1.0);
 
-        // 7. Update asset's originalPath to point to the rendered MP4
+        // 7. Preserve original source path and update originalPath to rendered MP4
+        if (!ctx.asset.sourcePath) {
+          ctx.asset.sourcePath = ctx.asset.originalPath;
+        }
         ctx.asset.originalPath = `assets/${ctx.asset.id}-rendered.mp4`;
       } finally {
         await session.close();

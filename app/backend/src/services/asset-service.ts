@@ -2,11 +2,11 @@ import type { Asset, ImportAssetResponse } from "@video/shared";
 import { generateId } from "@video/shared";
 import type { PipelineContext } from "../pipeline/types";
 import { runPipeline } from "../pipeline";
-import { assetsDir, projectDir as getProjectDir, proxyDir, thumbnailDir } from "../utils/paths";
+import { assetsDir, projectDir as getProjectDir, proxyDir, thumbnailDir, resolveUnder } from "../utils/paths";
 import { getProject, saveProject } from "./project-service";
 import { enqueue } from "./job-queue";
 import path from "node:path";
-import { mkdir, rm } from "node:fs/promises";
+import { mkdir, rm, readFile, writeFile } from "node:fs/promises";
 import { assetDetectorRegistry } from "../lib/asset-detector-registry";
 
 export function createImportTask(
@@ -76,6 +76,69 @@ export async function importAsset(
   });
 
   return { asset, jobId: job.id };
+}
+
+function resolveAssetContentPath(projDir: string, asset: { originalPath: string; sourcePath?: string }): string {
+  const relativePath = asset.sourcePath ?? asset.originalPath;
+  const filePath = resolveUnder(projDir, relativePath);
+  if (!filePath) {
+    throw new Error("Invalid asset path");
+  }
+  return filePath;
+}
+
+export async function readAssetContent(
+  projectId: string,
+  assetId: string,
+): Promise<string> {
+  const project = await getProject(projectId);
+  const asset = project.assets.find((a) => a.id === assetId);
+  if (!asset) {
+    throw new Error(`Asset not found: ${assetId}`);
+  }
+  const projDir = getProjectDir(projectId);
+  const filePath = resolveAssetContentPath(projDir, asset);
+  return readFile(filePath, "utf-8");
+}
+
+export async function writeAssetContent(
+  projectId: string,
+  assetId: string,
+  content: string,
+): Promise<void> {
+  const project = await getProject(projectId);
+  const asset = project.assets.find((a) => a.id === assetId);
+  if (!asset) {
+    throw new Error(`Asset not found: ${assetId}`);
+  }
+  const projDir = getProjectDir(projectId);
+  const filePath = resolveAssetContentPath(projDir, asset);
+  await writeFile(filePath, content, "utf-8");
+}
+
+export async function reprocessAsset(
+  projectId: string,
+  assetId: string,
+): Promise<{ jobId: string }> {
+  const project = await getProject(projectId);
+  const asset = project.assets.find((a) => a.id === assetId);
+  if (!asset) {
+    throw new Error(`Asset not found: ${assetId}`);
+  }
+
+  const projDir = getProjectDir(projectId);
+  const task = createImportTask(projectId, projDir, { ...asset });
+  const job = enqueue(projectId, assetId, async (j) => {
+    const updatedAsset = await task(j);
+    const proj = await getProject(projectId);
+    const idx = proj.assets.findIndex((a) => a.id === assetId);
+    if (idx !== -1) {
+      proj.assets[idx] = updatedAsset;
+      await saveProject(proj);
+    }
+  });
+
+  return { jobId: job.id };
 }
 
 export async function deleteAsset(
