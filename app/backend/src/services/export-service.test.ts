@@ -273,12 +273,12 @@ describe("buildExportArgs", () => {
     expect(args).toContain("bt709");
   });
 
-  test("throws for missing asset", () => {
+  test("throws when no assets match any clip handler", () => {
     const project = makeProject({
-      assets: [], // no assets
+      assets: [], // no assets — clips are skipped by registry lookup
     });
     expect(() => buildExportArgs(project, "/assets", "/out.mp4")).toThrow(
-      "Asset not found",
+      "No video clips to export",
     );
   });
 

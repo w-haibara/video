@@ -12,7 +12,7 @@ export const audioMixHandler: ExportAudioHandler = {
       const asset = ctx.project.assets.find((a) => a.id === clip.assetId);
       const inputIdx = ctx.clipInputIndices.get(clip.id);
       if (inputIdx == null || !asset) continue;
-      if (asset.kind === "video" && asset.hasAudio) {
+      if (asset.hasAudio) {
         audioStreams.push({ inputIdx, clip, asset });
       }
     }

@@ -26,27 +26,31 @@ beforeAll(async () => {
   await mkdir(assetsPath, { recursive: true });
   await writeFile(path.join(assetsPath, "dummy.mp4"), "fake video");
 
-  // Update project with a video clip
+  // Update project with a video clip (sequence via API, assets via direct file write)
   await app.request(`/api/projects/${projectId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      assets: [
-        { id: "v1", kind: "video", originalPath: "assets/dummy.mp4", durationMs: 5000, hasAudio: false },
-      ],
       sequence: {
         tracks: [
           {
             id: "t1",
-            kind: "video",
             clips: [
-              { id: "c1", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
             ],
           },
         ],
       },
     }),
   });
+
+  // Write assets directly into project.json (updateProject only handles sequence/settings)
+  const projectJsonPath = path.join(tmpDir, "projects", projectId, "project.json");
+  const projectData = JSON.parse(await Bun.file(projectJsonPath).text());
+  projectData.assets = [
+    { id: "v1", kind: "video", originalPath: "assets/dummy.mp4", durationMs: 5000, hasAudio: false },
+  ];
+  await writeFile(projectJsonPath, JSON.stringify(projectData, null, 2));
 });
 
 afterAll(async () => {

@@ -47,6 +47,10 @@ export class ExportHandlerRegistry {
     return this.clipHandlers.find((h) => h.assetKind === assetKind);
   }
 
+  hasClipHandler(assetKind: string): boolean {
+    return this.clipHandlers.some((h) => h.assetKind === assetKind);
+  }
+
   getOverlayHandlers(): ExportOverlayHandler[] {
     return [...this.overlayHandlers];
   }
