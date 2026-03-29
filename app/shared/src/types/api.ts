@@ -15,7 +15,7 @@ export type ListProjectsResponse = {
 
 export type GetProjectResponse = Project;
 
-export type UpdateProjectRequest = Partial<Pick<Project, "name" | "sequence" | "settings">>;
+export type UpdateProjectRequest = Partial<Pick<Project, "name" | "sequence" | "settings" | "markers">>;
 
 export type UpdateProjectResponse = Project;
 

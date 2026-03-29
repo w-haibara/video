@@ -53,12 +53,13 @@ export async function listProjects(): Promise<Project[]> {
 
 export async function updateProject(
   id: string,
-  updates: Partial<Pick<Project, "name" | "sequence" | "settings">>,
+  updates: Partial<Pick<Project, "name" | "sequence" | "settings" | "markers">>,
 ): Promise<Project> {
   const project = await getProject(id);
   if (updates.name !== undefined) project.name = updates.name;
   if (updates.sequence !== undefined) project.sequence = updates.sequence;
   if (updates.settings !== undefined) project.settings = updates.settings;
+  if (updates.markers !== undefined) project.markers = updates.markers;
   project.updatedAt = new Date().toISOString();
   await writeFile(projectJsonPath(id), JSON.stringify(project, null, 2));
   return project;

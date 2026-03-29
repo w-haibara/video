@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import type { Track, Asset, Clip, ClipTransition } from "@video/shared";
 import { TimelineClip } from "./TimelineClip";
 import { clipKindRegistry } from "../lib/clip-kind-registry";
@@ -28,6 +28,10 @@ type Props = {
   toolMode?: "select" | "razor";
   onToggleLocked?: (trackId: string, locked: boolean) => void;
   onToggleMuted?: (trackId: string, muted: boolean) => void;
+  onSetTrackName?: (trackId: string, name: string) => void;
+  onSetTrackColor?: (trackId: string, color: string | undefined) => void;
+  isRenaming?: boolean;
+  onFinishRename?: () => void;
 };
 
 export function TimelineTrack({
@@ -54,6 +58,10 @@ export function TimelineTrack({
   toolMode = "select",
   onToggleLocked,
   onToggleMuted,
+  onSetTrackName,
+  onSetTrackColor,
+  isRenaming,
+  onFinishRename,
 }: Props) {
   const assetMap = new Map(assets.map((a) => [a.id, a]));
   const sortedClips = useMemo(
@@ -63,6 +71,14 @@ export function TimelineTrack({
 
   const isLocked = track.locked === true;
   const isMuted = track.muted === true;
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [isRenaming]);
 
   return (
     <div style={{ display: "flex", height: "40px" }}>
@@ -73,7 +89,7 @@ export function TimelineTrack({
           onTrackContextMenu?.(track.id, { x: e.clientX, y: e.clientY });
         }}
         style={{
-          width: "32px",
+          width: "80px",
           flexShrink: 0,
           display: "flex",
           flexDirection: "column",
@@ -81,6 +97,7 @@ export function TimelineTrack({
           justifyContent: "center",
           background: theme.bgHover,
           borderRight: `1px solid ${theme.border}`,
+          borderLeft: track.color ? `3px solid ${track.color}` : "none",
           color: theme.textMuted,
           fontSize: "11px",
           fontWeight: "bold",
@@ -88,7 +105,53 @@ export function TimelineTrack({
           gap: "1px",
         }}
       >
-        <span style={{ fontSize: "9px", lineHeight: 1 }}>{trackIndex + 1}</span>
+        {isRenaming ? (
+          <input
+            ref={renameInputRef}
+            defaultValue={track.name ?? ""}
+            placeholder={`Track ${trackIndex + 1}`}
+            onBlur={(e) => {
+              onSetTrackName?.(track.id, e.currentTarget.value);
+              onFinishRename?.();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                onSetTrackName?.(track.id, e.currentTarget.value);
+                onFinishRename?.();
+              }
+              if (e.key === "Escape") {
+                onFinishRename?.();
+              }
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              width: "70px",
+              fontSize: "9px",
+              padding: "1px 2px",
+              background: theme.bg,
+              color: theme.text,
+              border: `1px solid ${theme.primary}`,
+              borderRadius: "2px",
+              outline: "none",
+              textAlign: "center",
+            }}
+          />
+        ) : (
+          <span
+            title={track.name || `Track ${trackIndex + 1}`}
+            style={{
+              fontSize: "9px",
+              lineHeight: 1,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              maxWidth: "74px",
+              color: track.color ?? theme.textMuted,
+            }}
+          >
+            {track.name || trackIndex + 1}
+          </span>
+        )}
         <div style={{ display: "flex", gap: "1px" }}>
           <button
             title={isLocked ? "Unlock track" : "Lock track"}

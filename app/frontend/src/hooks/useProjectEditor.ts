@@ -182,6 +182,20 @@ export function useProjectEditor(
     [sequence, pushState],
   );
 
+  const setTrackName = useCallback(
+    (trackId: string, name: string) => {
+      pushState(SeqOps.setTrackName(sequence, trackId, name));
+    },
+    [sequence, pushState],
+  );
+
+  const setTrackColor = useCallback(
+    (trackId: string, color: string | undefined) => {
+      pushState(SeqOps.setTrackColor(sequence, trackId, color));
+    },
+    [sequence, pushState],
+  );
+
   return {
     addClipFromAsset,
     removeClip,
@@ -203,5 +217,7 @@ export function useProjectEditor(
     ungroupClips,
     setTrackLocked,
     setTrackMuted,
+    setTrackName,
+    setTrackColor,
   };
 }

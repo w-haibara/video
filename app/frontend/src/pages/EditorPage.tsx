@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
-import type { Project, ProjectSettings, Clip } from "@video/shared";
+import type { Project, ProjectSettings, Clip, Marker } from "@video/shared";
 import { generateId } from "@video/shared";
 import { useProject, useUpdateProject } from "../api/projects";
 import { useExport } from "../api/exports";
@@ -22,6 +22,7 @@ import { clampClipsToDuration, removeTrack, expandGroupSelection } from "../lib/
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { useAutoSave } from "../hooks/useAutoSave";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { addMarker, removeMarker, updateMarker, nextMarkerTime, prevMarkerTime } from "../lib/marker-ops";
 import { theme, buttonStyle, inputStyle } from "../theme";
 
 function EditorPageInner({ projectId }: { projectId: string }) {
@@ -110,7 +111,7 @@ function EditorPageLoaded({
     project.sequence,
   );
 
-  const { addClipFromAsset, removeClip, moveClip, trimClip, splitClip, addTextClip, addEmptyClip, updateClip, setTransition, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, groupClips, ungroupClips, setTrackLocked, setTrackMuted } =
+  const { addClipFromAsset, removeClip, moveClip, trimClip, splitClip, addTextClip, addEmptyClip, updateClip, setTransition, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, groupClips, ungroupClips, setTrackLocked, setTrackMuted, setTrackName, setTrackColor } =
     useProjectEditor(project, sequence, pushState);
 
   // Primary selected clip (first in the set) — used for inspector, preview, etc.
@@ -157,12 +158,43 @@ function EditorPageLoaded({
   // Internal clipboard for copy/paste
   const [clipboardClip, setClipboardClip] = useState<Clip | null>(null);
 
+  // Markers state
+  const [markers, setMarkers] = useState<Marker[]>(project.markers ?? []);
+  const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
+
+  const handleAddMarker = useCallback(() => {
+    setMarkers((prev) => addMarker(prev, currentTimeMs));
+  }, [currentTimeMs]);
+
+  const handleDeleteMarker = useCallback((markerId: string) => {
+    setMarkers((prev) => removeMarker(prev, markerId));
+    if (selectedMarkerId === markerId) setSelectedMarkerId(null);
+  }, [selectedMarkerId]);
+
+  const handleUpdateMarker = useCallback((markerId: string, updates: { label?: string; color?: string }) => {
+    setMarkers((prev) => updateMarker(prev, markerId, updates));
+  }, []);
+
+  const handleNextMarker = useCallback(() => {
+    const t = nextMarkerTime(markers, currentTimeMs);
+    if (t !== undefined) onSeek(t);
+  }, [markers, currentTimeMs, onSeek]);
+
+  const handlePrevMarker = useCallback(() => {
+    const t = prevMarkerTime(markers, currentTimeMs);
+    if (t !== undefined) onSeek(t);
+  }, [markers, currentTimeMs, onSeek]);
+
+  const handleDeleteSelectedMarker = useCallback(() => {
+    if (selectedMarkerId) handleDeleteMarker(selectedMarkerId);
+  }, [selectedMarkerId, handleDeleteMarker]);
+
   type ToolMode = "select" | "razor";
   const [toolMode, setToolMode] = useState<ToolMode>("select");
   const [snapEnabled, setSnapEnabled] = useState(true);
   const toggleSnap = useCallback(() => setSnapEnabled((v) => !v), []);
 
-  const { saveStatus } = useAutoSave(project.id, sequence);
+  const { saveStatus } = useAutoSave(project.id, sequence, markers);
 
   const updateProjectMutation = useUpdateProject(project.id);
   const handleUpdateSettings = useCallback((settings: ProjectSettings) => {
@@ -227,7 +259,7 @@ function EditorPageLoaded({
     [addEmptyClip],
   );
 
-  const currentProject: Project = { ...project, sequence };
+  const currentProject: Project = { ...project, sequence, markers };
 
   const handleSelectClip = useCallback((clipId: string | null, opts?: { shiftKey?: boolean }) => {
     if (opts?.shiftKey && clipId) {
@@ -361,6 +393,10 @@ function EditorPageLoaded({
     onSelectAll: selectAllClips,
     onGroup: handleGroup,
     onUngroup: handleUngroup,
+    onAddMarker: handleAddMarker,
+    onNextMarker: handleNextMarker,
+    onPrevMarker: handlePrevMarker,
+    onDeleteMarker: handleDeleteSelectedMarker,
   });
 
   return (
@@ -584,6 +620,13 @@ function EditorPageLoaded({
           onToggleSnap={toggleSnap}
           onToggleTrackLocked={setTrackLocked}
           onToggleTrackMuted={setTrackMuted}
+          onSetTrackName={setTrackName}
+          onSetTrackColor={setTrackColor}
+          markers={markers}
+          selectedMarkerId={selectedMarkerId}
+          onSelectMarker={setSelectedMarkerId}
+          onDeleteMarker={handleDeleteMarker}
+          onUpdateMarker={handleUpdateMarker}
         />
       }
     />

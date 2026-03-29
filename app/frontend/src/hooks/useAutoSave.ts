@@ -1,15 +1,15 @@
 import { useEffect, useRef } from "react";
-import type { Sequence } from "@video/shared";
+import type { Sequence, Marker } from "@video/shared";
 import { useUpdateProject } from "../api/projects";
 
 const DEBOUNCE_MS = 1000;
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
-export function useAutoSave(projectId: string, sequence: Sequence) {
+export function useAutoSave(projectId: string, sequence: Sequence, markers?: Marker[]) {
   const updateProject = useUpdateProject(projectId);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastSavedRef = useRef<string>(JSON.stringify(sequence));
+  const lastSavedRef = useRef<string>(JSON.stringify({ sequence, markers }));
   const statusRef = useRef<SaveStatus>("idle");
 
   // Update status based on mutation state
@@ -22,20 +22,20 @@ export function useAutoSave(projectId: string, sequence: Sequence) {
   }
 
   useEffect(() => {
-    const serialized = JSON.stringify(sequence);
+    const serialized = JSON.stringify({ sequence, markers });
     if (serialized === lastSavedRef.current) return;
 
     if (timerRef.current) clearTimeout(timerRef.current);
 
     timerRef.current = setTimeout(() => {
       lastSavedRef.current = serialized;
-      updateProject.mutate({ sequence });
+      updateProject.mutate({ sequence, markers });
     }, DEBOUNCE_MS);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [sequence]);
+  }, [sequence, markers]);
 
   return { saveStatus: statusRef.current };
 }

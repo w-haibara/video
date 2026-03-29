@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
 import { inferTrackKind } from "@video/shared";
-import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, moveClips, groupClips, ungroupClips, expandGroupSelection, setTrackLocked, setTrackMuted, isClipOnLockedTrack, areAnyClipsOnLockedTrack } from "./sequence-ops";
+import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, moveClips, groupClips, ungroupClips, expandGroupSelection, setTrackLocked, setTrackMuted, setTrackName, setTrackColor, isClipOnLockedTrack, areAnyClipsOnLockedTrack } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -1625,5 +1625,80 @@ describe("locked track prevents editing operations", () => {
   test("addTextClip rejects adding to locked track", () => {
     const result = addTextClip(seq, 0, 2000, { value: "Test" }, 30000, "t1");
     expect(result).toBe(seq);
+  });
+});
+
+describe("setTrackName", () => {
+  const seq: Sequence = {
+    tracks: [
+      { id: "t1", clips: [{ id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 1000, inMs: 0, outMs: 1000 }] },
+      { id: "t2", clips: [] },
+    ],
+  };
+
+  test("sets name on specified track", () => {
+    const result = setTrackName(seq, "t1", "My Video Track");
+    expect(result.tracks[0].name).toBe("My Video Track");
+    expect(result.tracks[1].name).toBeUndefined();
+  });
+
+  test("clears name when empty string is provided", () => {
+    const namedSeq: Sequence = {
+      tracks: [{ id: "t1", clips: [], name: "Old Name" }],
+    };
+    const result = setTrackName(namedSeq, "t1", "");
+    expect(result.tracks[0].name).toBeUndefined();
+  });
+
+  test("does not mutate original sequence", () => {
+    const result = setTrackName(seq, "t1", "New Name");
+    expect(seq.tracks[0].name).toBeUndefined();
+    expect(result).not.toBe(seq);
+  });
+
+  test("returns new sequence even if track not found", () => {
+    const result = setTrackName(seq, "nonexistent", "Name");
+    expect(result.tracks.length).toBe(2);
+  });
+});
+
+describe("setTrackColor", () => {
+  const seq: Sequence = {
+    tracks: [
+      { id: "t1", clips: [{ id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 1000, inMs: 0, outMs: 1000 }] },
+      { id: "t2", clips: [] },
+    ],
+  };
+
+  test("sets color on specified track", () => {
+    const result = setTrackColor(seq, "t1", "#DC322F");
+    expect(result.tracks[0].color).toBe("#DC322F");
+    expect(result.tracks[1].color).toBeUndefined();
+  });
+
+  test("clears color when undefined is provided", () => {
+    const coloredSeq: Sequence = {
+      tracks: [{ id: "t1", clips: [], color: "#DC322F" }],
+    };
+    const result = setTrackColor(coloredSeq, "t1", undefined);
+    expect(result.tracks[0].color).toBeUndefined();
+  });
+
+  test("does not mutate original sequence", () => {
+    const result = setTrackColor(seq, "t1", "#268BD2");
+    expect(seq.tracks[0].color).toBeUndefined();
+    expect(result).not.toBe(seq);
+  });
+
+  test("only affects the targeted track", () => {
+    const multiSeq: Sequence = {
+      tracks: [
+        { id: "t1", clips: [], color: "#DC322F" },
+        { id: "t2", clips: [], color: "#268BD2" },
+      ],
+    };
+    const result = setTrackColor(multiSeq, "t2", "#859900");
+    expect(result.tracks[0].color).toBe("#DC322F");
+    expect(result.tracks[1].color).toBe("#859900");
   });
 });

@@ -21,6 +21,10 @@ export type KeyboardShortcutActions = {
   onSelectAll: () => void;
   onGroup: () => void;
   onUngroup: () => void;
+  onAddMarker: () => void;
+  onNextMarker: () => void;
+  onPrevMarker: () => void;
+  onDeleteMarker: () => void;
   isPlaying: boolean;
 };
 
@@ -138,12 +142,20 @@ export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
 
         case "ArrowLeft":
           e.preventDefault();
-          a.onStepBackward();
+          if (e.shiftKey) {
+            a.onPrevMarker();
+          } else {
+            a.onStepBackward();
+          }
           break;
 
         case "ArrowRight":
           e.preventDefault();
-          a.onStepForward();
+          if (e.shiftKey) {
+            a.onNextMarker();
+          } else {
+            a.onStepForward();
+          }
           break;
 
         case "j":
@@ -170,6 +182,13 @@ export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
         case "S":
           if (!e.ctrlKey && !e.metaKey) {
             a.onSplitAtPlayhead();
+          }
+          break;
+
+        case "m":
+        case "M":
+          if (!e.ctrlKey && !e.metaKey) {
+            a.onAddMarker();
           }
           break;
 
@@ -218,5 +237,8 @@ export const SHORTCUT_DEFINITIONS: { key: string; description: string }[] = [
   { key: "Ctrl+Shift+G", description: "Ungroup selected clips" },
   { key: "Ctrl+Z", description: "Undo" },
   { key: "Ctrl+Shift+Z", description: "Redo" },
+  { key: "M", description: "Add marker at playhead" },
+  { key: "Shift+\u2190", description: "Jump to previous marker" },
+  { key: "Shift+\u2192", description: "Jump to next marker" },
   { key: "?", description: "Toggle shortcuts help" },
 ];
