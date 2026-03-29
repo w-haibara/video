@@ -283,6 +283,21 @@ function generateExportSection(tests: ExportTestCase[]): string {
         lines.push(`- \`${a.id}\` (${a.kind}${dur}) — ${a.originalPath}`);
       }
       lines.push("");
+      // Embed asset previews
+      const assetEmbeds: string[] = [];
+      for (const a of tc.assets) {
+        const relPath = `../app/backend/src/__fixtures__/export/${a.originalPath}`;
+        if (a.kind === "image") {
+          assetEmbeds.push(`<img src="${relPath}" width="160" title="${a.id} (${a.kind})">`);
+        } else if (a.kind === "video" || a.kind === "p5js") {
+          assetEmbeds.push(`<video src="${relPath}" width="160" controls muted title="${a.id} (${a.kind})"></video>`);
+        } else if (a.kind === "audio") {
+          assetEmbeds.push(`<audio src="${relPath}" controls title="${a.id} (${a.kind})"></audio>`);
+        }
+      }
+      if (assetEmbeds.length > 0) {
+        lines.push(assetEmbeds.join(" ") + "\n");
+      }
     }
 
     lines.push("**Clip Details**\n");

@@ -112,6 +112,8 @@ Single 1s video clip
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -144,6 +146,8 @@ Two sequential video clips (0-1s, 1-2s)
 **Assets**
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
 
 **Clip Details**
 
@@ -179,6 +183,8 @@ Single image clip displayed for 1s
 
 - `img1` (image) — assets/test-image.png
 
+<img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -211,6 +217,8 @@ Text overlay on video
 **Assets**
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
 
 **Clip Details**
 
@@ -247,6 +255,8 @@ Video with crop and transform
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -280,6 +290,8 @@ Two-track composite (video + image)
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
 
 **Clip Details**
 
@@ -317,6 +329,8 @@ Scaled top clip with transparent bottom clip exposure
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -353,6 +367,8 @@ Fade cross-dissolve (300ms)
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -387,6 +403,8 @@ Fade through black (300ms)
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
 
 **Clip Details**
 
@@ -423,6 +441,8 @@ Fade through white (300ms)
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -457,6 +477,8 @@ Slide left (300ms)
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
 
 **Clip Details**
 
@@ -493,6 +515,8 @@ Slide right (300ms)
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -527,6 +551,8 @@ Slide up (300ms)
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
 
 **Clip Details**
 
@@ -563,6 +589,8 @@ Slide down (300ms)
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -597,6 +625,8 @@ Opacity blend (50% alpha overlay)
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
 
 **Clip Details**
 
@@ -634,6 +664,8 @@ Multiply blend (darkens)
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -669,6 +701,8 @@ Screen blend (lightens)
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
 
 **Clip Details**
 
@@ -706,6 +740,8 @@ Overlay blend (contrast)
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -741,6 +777,8 @@ Add blend (additive light)
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
 
 **Clip Details**
 
@@ -778,6 +816,8 @@ Difference blend (absolute diff)
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -813,6 +853,8 @@ p5.js sketch clip (pre-rendered)
 
 - `p5js1` (p5js, 1000ms) — assets/test-video-1s.mp4
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="p5js1 (p5js)"></video>
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -845,6 +887,8 @@ Video + empty-asset clip (empty skipped)
 **Assets**
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
 
 **Clip Details**
 
@@ -881,6 +925,8 @@ Video clip split into two halves at 500ms
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -915,6 +961,8 @@ Video + muted image track (muted excluded)
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
 
 **Clip Details**
 
@@ -952,6 +1000,8 @@ Fade transition + transform on clip 2
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
 
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
@@ -986,6 +1036,8 @@ Fade transition on track 1 + image overlay on track 2
 
 - `v1` (video, 1000ms) — assets/test-video-1s.mp4
 - `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
 
 **Clip Details**
 
