@@ -21,6 +21,33 @@ describe("AssetDetectorRegistry", () => {
     ).toBe("audio");
   });
 
+  describe("p5js detector", () => {
+    test("detects .p5.js files as p5js", () => {
+      expect(
+        assetDetectorRegistry.detect({ filename: "sketch.p5.js", extension: ".js" }),
+      ).toBe("p5js");
+    });
+
+    test("does not detect generic .js files", () => {
+      expect(
+        assetDetectorRegistry.detect({ filename: "script.js", extension: ".js" }),
+      ).not.toBe("p5js");
+    });
+
+    test("does not detect .p5.js.bak files", () => {
+      expect(
+        assetDetectorRegistry.detect({ filename: "sketch.p5.js.bak", extension: ".bak" }),
+      ).not.toBe("p5js");
+    });
+
+    test("p5js has higher priority than extension-detector for .p5.js files", () => {
+      // Verify that test.p5.js is detected as p5js (not as some other kind via extension-detector)
+      expect(
+        assetDetectorRegistry.detect({ filename: "test.p5.js", extension: ".js" }),
+      ).toBe("p5js");
+    });
+  });
+
   describe("isolated instance", () => {
     let registry: AssetDetectorRegistry;
 
