@@ -496,6 +496,121 @@ export function splitClip(
   return { ...sequence, tracks };
 }
 
+/**
+ * Ripple delete: remove a clip and shift all subsequent clips on the same track
+ * to fill the gap. If the track becomes empty, remove it.
+ */
+export function rippleDelete(sequence: Sequence, clipId: string): Sequence {
+  // Find the clip and its track
+  let targetTrack: Track | undefined;
+  let targetClip: Clip | undefined;
+  for (const track of sequence.tracks) {
+    const clip = track.clips.find((c) => c.id === clipId);
+    if (clip) {
+      targetTrack = track;
+      targetClip = clip;
+      break;
+    }
+  }
+  if (!targetTrack || !targetClip) return sequence;
+
+  const clipEnd = targetClip.startMs + targetClip.durationMs;
+  // Net unique timeline space = duration minus any incoming transition overlap
+  const shiftAmount = targetClip.durationMs - (targetClip.transition?.durationMs ?? 0);
+
+  const tracks = sequence.tracks
+    .map((track: Track) => {
+      if (track.id !== targetTrack!.id) return { ...track, clips: [...track.clips] };
+      const newClips = track.clips
+        .filter((c: Clip) => c.id !== clipId)
+        .map((c: Clip) => {
+          // Shift clips that logically follow the deleted clip.
+          // Account for transitions: a clip with a transition has startMs pulled
+          // back into the previous clip's range, so use the non-overlap start.
+          const logicalStart = c.startMs + (c.transition?.durationMs ?? 0);
+          if (logicalStart >= clipEnd) {
+            const shifted = { ...c, startMs: Math.max(0, c.startMs - shiftAmount) };
+            // Clear transition if it now has no predecessor to overlap with
+            if (shifted.startMs === 0 && c.transition) {
+              return { ...shifted, transition: undefined };
+            }
+            return shifted;
+          }
+          return c;
+        });
+      return { ...track, clips: newClips };
+    })
+    .filter((track: Track) => track.clips.length > 0);
+
+  return { ...sequence, tracks };
+}
+
+/**
+ * Ripple trim: trim a clip then shift all subsequent clips on the same track
+ * by the change in clip duration.
+ */
+export function rippleTrim(
+  sequence: Sequence,
+  clipId: string,
+  side: "left" | "right",
+  deltaMs: number,
+  maxSourceDurationMs?: number,
+  maxTimelineDurationMs?: number,
+): Sequence {
+  // Find the clip before trimming
+  let oldClip: Clip | undefined;
+  let trackId: string | undefined;
+  for (const track of sequence.tracks) {
+    const clip = track.clips.find((c) => c.id === clipId);
+    if (clip) {
+      oldClip = clip;
+      trackId = track.id;
+      break;
+    }
+  }
+  if (!oldClip || !trackId) return sequence;
+
+  const oldEnd = oldClip.startMs + oldClip.durationMs;
+
+  // Apply the regular trim
+  const trimmed = trimClip(sequence, clipId, side, deltaMs, maxSourceDurationMs, maxTimelineDurationMs);
+
+  // Find the clip after trimming
+  let newClip: Clip | undefined;
+  for (const track of trimmed.tracks) {
+    const clip = track.clips.find((c) => c.id === clipId);
+    if (clip) {
+      newClip = clip;
+      break;
+    }
+  }
+  if (!newClip) return trimmed;
+
+  const newEnd = newClip.startMs + newClip.durationMs;
+  const shift = newEnd - oldEnd; // positive = clip grew, negative = clip shrunk
+
+  if (shift === 0) return trimmed;
+
+  // Shift subsequent clips on the same track
+  const tracks = trimmed.tracks.map((track: Track) => {
+    if (track.id !== trackId) return { ...track, clips: [...track.clips] };
+    return {
+      ...track,
+      clips: track.clips.map((c: Clip) => {
+        if (c.id === clipId) return c;
+        // Shift clips that logically follow the trimmed clip (account for transitions)
+        const logicalStart = c.startMs + (c.transition?.durationMs ?? 0);
+        if (logicalStart >= oldEnd) {
+          return { ...c, startMs: Math.max(0, c.startMs + shift) };
+        }
+        return c;
+      }),
+    };
+  });
+
+  return { ...sequence, tracks };
+}
+
 export function trimClip(
   sequence: Sequence,
   clipId: string,

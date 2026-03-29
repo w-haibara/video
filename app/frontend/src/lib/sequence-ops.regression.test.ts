@@ -14,6 +14,8 @@ import {
   removeClip,
   removeTrack,
   setTransition,
+  rippleDelete,
+  rippleTrim,
 } from "./sequence-ops";
 
 const videoAsset: Asset = {
@@ -677,5 +679,161 @@ describe("editor operation regression", () => {
     seq = splitClip(seq, "nonexistent", 2500);
 
     expect(stabilize(seq)).toEqual(before);
+  });
+
+  test("workflow: ripple delete middle clip shifts subsequent", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    seq = addClipFromAsset(seq, audioAsset, 10000);
+
+    // Ripple delete the image clip (middle)
+    const imageClipId = seq.tracks[0].clips[1].id;
+    seq = rippleDelete(seq, imageClipId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: ripple delete first clip shifts all", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+
+    const firstClipId = seq.tracks[0].clips[0].id;
+    seq = rippleDelete(seq, firstClipId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: ripple delete last clip (no shift needed)", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+
+    const lastClipId = seq.tracks[0].clips[1].id;
+    seq = rippleDelete(seq, lastClipId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: ripple delete only clip removes track", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = rippleDelete(seq, clipId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: ripple delete multi-track only affects same track", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+
+    // Add text to a new track at 2000ms
+    seq = addTextClip(seq, 2000, 3000, {
+      value: "Overlay",
+      fontSize: 20,
+      color: "white",
+    }, 10000);
+
+    // Ripple delete the video clip (first track)
+    const videoClipId = seq.tracks[0].clips[0].id;
+    seq = rippleDelete(seq, videoClipId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: ripple trim right shorter shifts subsequent left", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+
+    // Ripple trim video clip right by -2000ms
+    const videoClipId = seq.tracks[0].clips[0].id;
+    seq = rippleTrim(seq, videoClipId, "right", -2000, 5000, 10000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: ripple trim right longer shifts subsequent right", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+
+    // Ripple trim video clip right by +1000ms (extend within source duration)
+    // Note: video is 5000ms source, clip is already 5000ms, so no change possible
+    // Use a shorter clip scenario instead
+    const videoClipId = seq.tracks[0].clips[0].id;
+    seq = trimClip(seq, videoClipId, "right", -2000, 5000, 10000); // shorten first
+    seq = rippleTrim(seq, videoClipId, "right", 1000, 5000, 10000); // then extend
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: ripple trim + ripple delete combined", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    seq = addClipFromAsset(seq, audioAsset, 10000);
+
+    // Ripple trim first clip shorter
+    const videoClipId = seq.tracks[0].clips[0].id;
+    seq = rippleTrim(seq, videoClipId, "right", -2000, 5000, 10000);
+
+    // Ripple delete second clip
+    const imageClipId = seq.tracks[0].clips[1].id;
+    seq = rippleDelete(seq, imageClipId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: ripple delete first clip when second has transition", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipBId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, clipBId, { type: "fade", durationMs: 500 });
+
+    // Delete first clip — B should shift and lose transition
+    const clipAId = seq.tracks[0].clips[0].id;
+    seq = rippleDelete(seq, clipAId);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: ripple delete clip with transition (net shift)", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipBId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, clipBId, { type: "fade", durationMs: 500 });
+
+    // Delete B — C should shift by net duration
+    seq = rippleDelete(seq, clipBId);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: ripple trim with transition on subsequent clip", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    const clipBId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, clipBId, { type: "fade", durationMs: 500 });
+
+    // Right-trim clip A shorter — B should shift
+    const clipAId = seq.tracks[0].clips[0].id;
+    seq = rippleTrim(seq, clipAId, "right", -1000, 5000, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
   });
 });

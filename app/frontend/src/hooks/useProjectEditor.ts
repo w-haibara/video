@@ -83,6 +83,31 @@ export function useProjectEditor(
     [sequence, pushState],
   );
 
+  const rippleDelete = useCallback(
+    (clipId: string) => {
+      pushState(SeqOps.rippleDelete(sequence, clipId));
+    },
+    [sequence, pushState],
+  );
+
+  const rippleTrim = useCallback(
+    (clipId: string, side: "left" | "right", deltaMs: number) => {
+      let maxSourceDurationMs: number | undefined;
+      for (const track of sequence.tracks) {
+        const clip = track.clips.find((c: Clip) => c.id === clipId);
+        if (clip) {
+          const asset = project.assets.find((a: Asset) => a.id === clip.assetId);
+          if (asset && (assetKindRegistry.get(asset.kind)?.hasDuration ?? false) && asset.durationMs) {
+            maxSourceDurationMs = asset.durationMs;
+          }
+          break;
+        }
+      }
+      pushState(SeqOps.rippleTrim(sequence, clipId, side, deltaMs, maxSourceDurationMs, maxDurationMs));
+    },
+    [sequence, project.assets, pushState, maxDurationMs],
+  );
+
   const setTransition = useCallback(
     (clipId: string, transition: ClipTransition | undefined) => {
       if (transition) {
@@ -104,5 +129,7 @@ export function useProjectEditor(
     addEmptyClip,
     updateClip,
     setTransition,
+    rippleDelete,
+    rippleTrim,
   };
 }
