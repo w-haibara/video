@@ -4,6 +4,7 @@ import type { ExportHandlerRegistry } from "./export-handler-registry";
 import type { CompositeStrategyRegistry } from "./composite-strategy-registry";
 import type { TransitionExportRegistry } from "./transition-export-registry";
 import { extensionDetector } from "./asset-detectors/extension-detector";
+import { p5jsDetector } from "./asset-detectors/p5js-detector";
 import { videoClipHandler } from "./export-handlers/video-clip-handler";
 import { imageClipHandler } from "./export-handlers/image-clip-handler";
 import { textOverlayHandler } from "./export-handlers/text-overlay-handler";
@@ -43,11 +44,14 @@ export const builtinPlugin: BackendPlugin = {
 
   registerAssetDetectors(registry: AssetDetectorRegistry) {
     registry.register(extensionDetector);
+    registry.register(p5jsDetector);
   },
 
   registerExportHandlers(registry: ExportHandlerRegistry) {
     registry.registerClipHandler(videoClipHandler);
     registry.registerClipHandler(imageClipHandler);
+    // p5js assets are pre-rendered to MP4, so reuse the video clip handler
+    registry.registerClipHandler({ assetKind: "p5js", buildInput: videoClipHandler.buildInput });
     registry.registerOverlayHandler(textOverlayHandler);
     registry.registerAudioHandler(audioMixHandler);
   },
