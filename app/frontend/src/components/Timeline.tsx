@@ -4,6 +4,7 @@ import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTrack } from "./TimelineTrack";
 import { Playhead } from "./Playhead";
 import { ContextMenu } from "./ContextMenu";
+import type { MenuItem } from "./ContextMenu";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { ClipKindPopup } from "./ClipKindPopup";
 import { useTimelineZoom } from "../hooks/useTimelineZoom";
@@ -345,61 +346,94 @@ export function Timeline({
         <ContextMenu
           position={{ x: contextMenu.x, y: contextMenu.y }}
           onClose={() => setContextMenu(null)}
-          items={[
-            ...(onCopyClip
-              ? [{
-                  label: "Copy (Ctrl+C)",
-                  onClick: () => {
-                    onSelectClip(contextMenu.clipId);
-                    onCopyClip();
-                  },
-                }]
-              : []),
-            ...(onPasteClip && hasClipboard
-              ? [{
-                  label: "Paste (Ctrl+V)",
-                  onClick: () => {
-                    onPasteClip();
-                  },
-                }]
-              : []),
-            ...(onDuplicateClip
-              ? [{
-                  label: "Duplicate (Ctrl+D)",
-                  onClick: () => {
-                    onSelectClip(contextMenu.clipId);
-                    onDuplicateClip();
-                  },
-                }]
-              : []),
-            ...(onPasteAttributes && hasClipboard
-              ? [{
-                  label: "Paste Attributes",
-                  onClick: () => {
-                    onSelectClip(contextMenu.clipId);
-                    onPasteAttributes();
-                  },
-                }]
-              : []),
-            {
+          items={(() => {
+            const items: MenuItem[] = [];
+
+            // Group 1: Split
+            if (onSplitClip) {
+              items.push({
+                label: "Split at Playhead",
+                shortcut: "S",
+                onClick: () => {
+                  onSplitClip(contextMenu.clipId, currentTimeMs);
+                },
+              });
+            }
+
+            // Separator between split and clipboard group
+            if (onSplitClip && (onCopyClip || onDuplicateClip)) {
+              items.push({ type: "separator" });
+            }
+
+            // Group 2: Clipboard operations
+            if (onCopyClip) {
+              items.push({
+                label: "Copy",
+                shortcut: "Ctrl+C",
+                onClick: () => {
+                  onSelectClip(contextMenu.clipId);
+                  onCopyClip();
+                },
+              });
+            }
+            if (onPasteClip) {
+              items.push({
+                label: "Paste",
+                shortcut: "Ctrl+V",
+                disabled: !hasClipboard,
+                onClick: () => {
+                  onPasteClip();
+                },
+              });
+            }
+            if (onDuplicateClip) {
+              items.push({
+                label: "Duplicate",
+                shortcut: "Ctrl+D",
+                onClick: () => {
+                  onSelectClip(contextMenu.clipId);
+                  onDuplicateClip();
+                },
+              });
+            }
+            if (onPasteAttributes) {
+              items.push({
+                label: "Paste Attributes",
+                disabled: !hasClipboard,
+                onClick: () => {
+                  onSelectClip(contextMenu.clipId);
+                  onPasteAttributes();
+                },
+              });
+            }
+
+            // Separator between clipboard and delete group
+            if (items.length > 0) {
+              items.push({ type: "separator" });
+            }
+
+            // Group 3: Delete operations
+            if (onRippleDeleteClip) {
+              items.push({
+                label: "Ripple Delete",
+                shortcut: "Shift+Del",
+                onClick: () => {
+                  onRippleDeleteClip(contextMenu.clipId);
+                  onSelectClip(null);
+                },
+              });
+            }
+            items.push({
               label: "Delete",
+              shortcut: "Del",
               onClick: () => {
                 onDeleteClip(contextMenu.clipId);
                 onSelectClip(null);
               },
-            },
-            ...(onRippleDeleteClip
-              ? [
-                  {
-                    label: "Ripple Delete (Shift+Del)",
-                    onClick: () => {
-                      onRippleDeleteClip(contextMenu.clipId);
-                      onSelectClip(null);
-                    },
-                  },
-                ]
-              : []),
-          ]}
+            });
+
+            return items;
+          })()}
         />
       )}
 
