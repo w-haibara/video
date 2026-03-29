@@ -2,11 +2,13 @@ import type { PluginManifest } from "@video/shared";
 import type { AssetDetectorRegistry } from "./asset-detector-registry";
 import type { ExportHandlerRegistry } from "./export-handler-registry";
 import type { CompositeStrategyRegistry } from "./composite-strategy-registry";
+import type { TransitionExportRegistry } from "./transition-export-registry";
 import type { PipelineStep } from "../pipeline/types";
 import type { AssetKind } from "@video/shared";
 import { assetDetectorRegistry } from "./asset-detector-registry";
 import { exportHandlerRegistry } from "./export-handler-registry";
 import { exportCompositeStrategyRegistry } from "./composite-strategy-registry";
+import { transitionExportRegistry } from "./transition-export-registry";
 import { registerStep, definePipeline } from "../pipeline/registry";
 
 export type PipelineRegistration = {
@@ -19,6 +21,7 @@ export type BackendPlugin = PluginManifest & {
   registerExportHandlers?: (registry: ExportHandlerRegistry) => void;
   registerPipelineSteps?: (registration: PipelineRegistration) => void;
   registerCompositeStrategies?: (registry: CompositeStrategyRegistry) => void;
+  registerTransitions?: (registry: TransitionExportRegistry) => void;
 };
 
 export function loadPlugins(plugins: BackendPlugin[]): void {
@@ -28,5 +31,6 @@ export function loadPlugins(plugins: BackendPlugin[]): void {
     plugin.registerExportHandlers?.(exportHandlerRegistry);
     plugin.registerPipelineSteps?.(pipelineReg);
     plugin.registerCompositeStrategies?.(exportCompositeStrategyRegistry);
+    plugin.registerTransitions?.(transitionExportRegistry);
   }
 }

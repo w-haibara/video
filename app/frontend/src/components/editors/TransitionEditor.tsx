@@ -1,15 +1,10 @@
 import { theme, inputStyle } from "../../theme";
 import type { InspectorEditorContext } from "../../lib/inspector-editor-registry";
+import { transitionPreviewRegistry } from "../../lib/transition-preview-registry";
 
 const TRANSITION_TYPES = [
   { value: "", label: "None" },
-  { value: "fade", label: "Fade" },
-  { value: "fade-black", label: "Fade (Black)" },
-  { value: "fade-white", label: "Fade (White)" },
-  { value: "slide-left", label: "Slide Left" },
-  { value: "slide-right", label: "Slide Right" },
-  { value: "slide-up", label: "Slide Up" },
-  { value: "slide-down", label: "Slide Down" },
+  ...transitionPreviewRegistry.all().map((h) => ({ value: h.type, label: h.label })),
 ];
 
 export function TransitionEditor({ clip, onSetTransition }: InspectorEditorContext) {

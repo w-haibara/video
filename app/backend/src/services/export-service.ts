@@ -1,5 +1,4 @@
 import type { Project, Clip, ExportPreset } from "@video/shared";
-import { FADE_TRANSITION_TYPES, SLIDE_TRANSITION_TYPES } from "@video/shared";
 import type { Job } from "@video/shared";
 import { mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -8,6 +7,7 @@ import * as jobQueue from "./job-queue";
 import * as projectService from "./project-service";
 import { exportHandlerRegistry } from "../lib/export-handler-registry";
 import { exportCompositeStrategyRegistry } from "../lib/composite-strategy-registry";
+import { transitionExportRegistry } from "../lib/transition-export-registry";
 
 export function sanitizeColor(value: string): string {
   // Allow hex (#rgb, #rrggbb, #rrggbbaa), named colors, and color@opacity
@@ -161,13 +161,11 @@ export function buildExportArgs(
     `color=black:s=${preset.width}x${preset.height}:d=${totalDurationSec}:r=${fps},format=yuv420p[base]`,
   );
 
-  const FADE_TYPES = FADE_TRANSITION_TYPES;
-  const SLIDE_TYPES = SLIDE_TRANSITION_TYPES;
-
   // 3. Pre-compute fade-out info for clips that precede a fade-type transition
   const fadeOutMap = new Map<string, { durationSec: number; clipDurationSec: number; transType: string }>();
   for (const { clip, trackIndex } of clipInfos) {
-    if (!clip.transition || !FADE_TYPES.has(clip.transition.type)) continue;
+    const transHandler = clip.transition ? transitionExportRegistry.get(clip.transition.type) : undefined;
+    if (!clip.transition || !transHandler?.buildFadeOut) continue;
     const prev = clipInfos.find(
       (ci) =>
         ci.trackIndex === trackIndex &&
@@ -193,55 +191,29 @@ export function buildExportArgs(
     const transType = clip.transition?.type;
     const ptsOffset = clip.startMs / 1000;
 
-    // ── Incoming fade-in (this clip has a fade-type transition) ──
-    if (transType && FADE_TYPES.has(transType)) {
+    // ── Incoming fade-in (this clip has a transition with buildFadeIn) ──
+    const fadeInHandler = transType ? transitionExportRegistry.get(transType) : undefined;
+    if (fadeInHandler?.buildFadeIn) {
       const fadeDur = clip.transition!.durationMs / 1000;
       const fadeInLabel = `[vfi${overlayIdx}]`;
-
-      if (transType === "fade") {
-        ctx.filterParts.push(
-          `${inputLabel}fade=t=in:st=${ptsOffset}:d=${fadeDur}:alpha=1${fadeInLabel}`,
-        );
-      } else if (transType === "fade-black") {
-        // Fade in only during the second half of the transition
-        ctx.filterParts.push(
-          `${inputLabel}fade=t=in:st=${ptsOffset + fadeDur / 2}:d=${fadeDur / 2}:alpha=1${fadeInLabel}`,
-        );
-      } else if (transType === "fade-white") {
-        // Alpha fade-in (second half) + RGB fade from white (second half)
-        const halfStart = ptsOffset + fadeDur / 2;
-        const halfDur = fadeDur / 2;
-        ctx.filterParts.push(
-          `${inputLabel}fade=t=in:st=${halfStart}:d=${halfDur}:alpha=1,fade=t=in:st=${halfStart}:d=${halfDur}:color=white${fadeInLabel}`,
-        );
+      const filter = fadeInHandler.buildFadeIn(inputLabel, fadeInLabel, ptsOffset, fadeDur);
+      if (filter) {
+        ctx.filterParts.push(filter);
+        effectiveLabel = fadeInLabel;
       }
-      effectiveLabel = fadeInLabel;
     }
 
-    // ── Outgoing fade-out (next clip on same track has a fade-type transition) ──
+    // ── Outgoing fade-out (next clip on same track has a transition with buildFadeOut) ──
     const fadeOut = fadeOutMap.get(clip.id);
     if (fadeOut) {
       const fadeOutStart = ptsOffset + fadeOut.clipDurationSec - fadeOut.durationSec;
       const fadeOutLabel = `[vfo${overlayIdx}]`;
-
-      if (fadeOut.transType === "fade") {
-        ctx.filterParts.push(
-          `${effectiveLabel}fade=t=out:st=${fadeOutStart}:d=${fadeOut.durationSec}:alpha=1${fadeOutLabel}`,
-        );
-      } else if (fadeOut.transType === "fade-black") {
-        // Fade out only during the first half
-        ctx.filterParts.push(
-          `${effectiveLabel}fade=t=out:st=${fadeOutStart}:d=${fadeOut.durationSec / 2}:alpha=1${fadeOutLabel}`,
-        );
-      } else if (fadeOut.transType === "fade-white") {
-        // RGB fade to white (first half) + alpha fade-out (second half)
-        const halfDur = fadeOut.durationSec / 2;
-        const midpoint = fadeOutStart + halfDur;
-        ctx.filterParts.push(
-          `${effectiveLabel}fade=t=out:st=${fadeOutStart}:d=${halfDur}:color=white,fade=t=out:st=${midpoint}:d=${halfDur}:alpha=1${fadeOutLabel}`,
-        );
+      const fadeOutHandler = transitionExportRegistry.get(fadeOut.transType);
+      const fadeOutFilter = fadeOutHandler?.buildFadeOut?.(effectiveLabel, fadeOutLabel, fadeOutStart, fadeOut.durationSec);
+      if (fadeOutFilter) {
+        ctx.filterParts.push(fadeOutFilter);
+        effectiveLabel = fadeOutLabel;
       }
-      effectiveLabel = fadeOutLabel;
     }
 
     // ── Build overlay ──
@@ -255,20 +227,12 @@ export function buildExportArgs(
     // ── Slide transitions: time-dependent overlay position ──
     // Use x='expr':y='expr' named syntax so colons inside expressions
     // are not parsed as overlay parameter separators.
-    if (transType && SLIDE_TYPES.has(transType)) {
+    const slideHandler = transType ? transitionExportRegistry.get(transType) : undefined;
+    if (slideHandler?.buildOverlayPosition) {
       const fadeDur = clip.transition!.durationMs / 1000;
-      const prog = `min(1,(t-${startSec})/${fadeDur})`;
-      const W = preset.width;
-      const H = preset.height;
-
-      if (transType === "slide-left") {
-        position = `x='${W}-${W}*${prog}':y=0`;
-      } else if (transType === "slide-right") {
-        position = `x='-${W}+${W}*${prog}':y=0`;
-      } else if (transType === "slide-up") {
-        position = `x=0:y='${H}-${H}*${prog}'`;
-      } else if (transType === "slide-down") {
-        position = `x=0:y='-${H}+${H}*${prog}'`;
+      const slidePos = slideHandler.buildOverlayPosition(startSec, fadeDur, preset);
+      if (slidePos) {
+        position = slidePos;
       }
     }
 
