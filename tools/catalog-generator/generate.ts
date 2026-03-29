@@ -6,9 +6,10 @@
  * all content from the regression viewer as a static feature catalog.
  */
 
-import { readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import type { Clip, Sequence } from "../../app/shared/src/types/project";
+import { buildP5jsHtml } from "../../app/backend/src/pipeline/steps/p5js-prepare";
 import {
   makeSingleVideoProject,
   makeTwoClipProject,
@@ -47,22 +48,26 @@ const REFS_DIR = path.join(
   ROOT,
   "app/backend/src/__fixtures__/export/references",
 );
+const FIXTURES_DIR = path.join(ROOT, "app/backend/src/__fixtures__/export");
 const OUTPUT_PATH = path.join(ROOT, "docs/feature-catalog.md");
 
 // ── Types ──
 
 type Snapshot = { name: string; sequence: Sequence };
 
+type AssetInfo = {
+  id: string;
+  kind: string;
+  originalPath: string;
+  sourcePath?: string;
+  durationMs?: number;
+};
+
 type ExportTestCase = {
   name: string;
   description: string;
   sequence: Sequence;
-  assets: Array<{
-    id: string;
-    kind: string;
-    originalPath: string;
-    durationMs?: number;
-  }>;
+  assets: AssetInfo[];
   settings: { durationMs: number; canvasWidth: number; canvasHeight: number };
   frameCount: number;
   frameFiles: string[];
@@ -148,6 +153,7 @@ async function buildExportTestCase(
       id: a.id,
       kind: a.kind,
       originalPath: a.originalPath,
+      sourcePath: a.sourcePath,
       durationMs: a.durationMs,
     })),
     settings: project.settings,
@@ -259,7 +265,7 @@ function mdFilmstrip(tc: ExportTestCase): string {
   return imgs.join(" ") + "\n";
 }
 
-function generateExportSection(tests: ExportTestCase[]): string {
+async function generateExportSection(tests: ExportTestCase[]): Promise<string> {
   const lines: string[] = [];
   lines.push("## Export Regression Tests\n");
 
@@ -297,6 +303,30 @@ function generateExportSection(tests: ExportTestCase[]): string {
       }
       if (assetEmbeds.length > 0) {
         lines.push(assetEmbeds.join(" ") + "\n");
+      }
+    }
+
+    // Embed p5.js sketch source code and generated HTML
+    for (const a of tc.assets) {
+      if (a.kind === "p5js" && a.sourcePath) {
+        const sketchPath = path.join(FIXTURES_DIR, a.sourcePath);
+        try {
+          const sketchCode = await readFile(sketchPath, "utf-8");
+          lines.push(`**p5.js Sketch** (\`${a.sourcePath}\`)\n`);
+          lines.push("```javascript");
+          lines.push(sketchCode.trim());
+          lines.push("```\n");
+
+          // Show the generated HTML template
+          const html = buildP5jsHtml(sketchCode, tc.settings.canvasWidth, tc.settings.canvasHeight);
+          lines.push("<details>\n<summary><strong>Generated HTML (passed to Chromium for rendering)</strong></summary>\n");
+          lines.push("```html");
+          lines.push(html.trim());
+          lines.push("```\n");
+          lines.push("</details>\n");
+        } catch {
+          // sourcePath file doesn't exist — skip
+        }
       }
     }
 
@@ -381,7 +411,7 @@ async function main() {
   const parts: string[] = [];
   parts.push("# Feature Catalog — Video Editor\n");
   parts.push(generateToc(exportTests, snapshots));
-  parts.push(generateExportSection(exportTests));
+  parts.push(await generateExportSection(exportTests));
   parts.push(generateSnapshotSection(snapshots));
 
   const md = parts.join("\n");

@@ -855,6 +855,81 @@ p5.js sketch clip (pre-rendered)
 
 <video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="p5js1 (p5js)"></video>
 
+**p5.js Sketch** (`assets/test-sketch.p5.js`)
+
+```javascript
+// Sample p5.js sketch — rotating rectangle
+function setup() {
+  createCanvas(160, 90);
+  background(30);
+}
+
+function draw() {
+  background(30, 20);
+  translate(width / 2, height / 2);
+  rotate(frameCount * 0.05);
+  fill(255, 120, 50);
+  noStroke();
+  rectMode(CENTER);
+  rect(0, 0, 40, 40);
+}
+```
+
+<details>
+<summary><strong>Generated HTML (passed to Chromium for rendering)</strong></summary>
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>html,body{margin:0;padding:0;overflow:hidden;}</style>
+</head>
+<body>
+<script src="file:///home/alice/ghq/github.com/w-haibara/video/app/backend/vendor/p5.min.js"></script>
+<script>
+// User sketch code
+// Sample p5.js sketch — rotating rectangle
+function setup() {
+  createCanvas(160, 90);
+  background(30);
+}
+
+function draw() {
+  background(30, 20);
+  translate(width / 2, height / 2);
+  rotate(frameCount * 0.05);
+  fill(255, 120, 50);
+  noStroke();
+  rectMode(CENTER);
+  rect(0, 0, 40, 40);
+}
+
+
+// Rendering control API for web-render step
+(function() {
+  var _origSetup = typeof setup === 'function' ? setup : function() {};
+  var _origDraw = typeof draw === 'function' ? draw : function() {};
+
+  window.setup = function() {
+    createCanvas(160, 90);
+    _origSetup();
+    noLoop();
+    window.__ready = true;
+  };
+
+  window.__renderFrame = function(frameIndex) {
+    // Advance to the target frame by calling draw
+    _origDraw();
+  };
+})();
+</script>
+</body>
+</html>
+```
+
+</details>
+
 **Clip Details**
 
 | Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |

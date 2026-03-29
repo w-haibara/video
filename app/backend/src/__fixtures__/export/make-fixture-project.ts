@@ -33,6 +33,7 @@ const p5jsAsset: Asset = {
   id: "p5js1",
   kind: "p5js",
   originalPath: "assets/test-video-1s.mp4", // Pre-rendered by pipeline; reuse test video
+  sourcePath: "assets/test-sketch.p5.js",   // Original sketch source
   durationMs: 1000,
   width: CANVAS_W,
   height: CANVAS_H,
