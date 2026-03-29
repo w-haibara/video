@@ -12,6 +12,8 @@ import { probeStep } from "../pipeline/steps/probe";
 import { thumbnailStep } from "../pipeline/steps/thumbnail";
 import { proxyStep } from "../pipeline/steps/proxy";
 import { imageConvertStep } from "../pipeline/steps/image-convert";
+import { p5jsPrepareStep } from "../pipeline/steps/p5js-prepare";
+import { webRenderStep } from "../pipeline/steps/web-render";
 import { coverExportStrategy } from "./composite-strategies/cover-strategy";
 import { opacityExportStrategy } from "./composite-strategies/opacity-strategy";
 import {
@@ -55,10 +57,19 @@ export const builtinPlugin: BackendPlugin = {
     reg.registerStep(thumbnailStep);
     reg.registerStep(proxyStep);
     reg.registerStep(imageConvertStep);
+    reg.registerStep(p5jsPrepareStep);
+    reg.registerStep(webRenderStep);
 
     reg.definePipeline("video", ["probe", "thumbnail", "proxy"]);
     reg.definePipeline("image", ["probe", "thumbnail", "image-convert"]);
     reg.definePipeline("audio", ["probe"]);
+    reg.definePipeline("p5js", [
+      "p5js-prepare",
+      "web-render",
+      "probe",
+      "thumbnail",
+      "proxy",
+    ]);
   },
 
   registerCompositeStrategies(registry: CompositeStrategyRegistry) {
