@@ -993,6 +993,47 @@ describe("editor operation regression", () => {
     seq = ungroupClips(seq, clipIds);
     expect(stabilize(seq)).toMatchSnapshot();
   });
+
+  test("workflow: split on locked track is no-op", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    const trackId = seq.tracks[0].id;
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = setTrackLocked(seq, trackId, true);
+
+    const before = stabilize(seq);
+    const afterSplit = splitClip(seq, clipId, 2500);
+    expect(stabilize(afterSplit)).toEqual(before);
+  });
+
+  test("workflow: ripple delete of one clip in a group", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    seq = addClipFromAsset(seq, imageAsset, 30000);
+    seq = addClipFromAsset(seq, audioAsset, 30000);
+
+    // Group first two clips
+    const clipIds = new Set([seq.tracks[0].clips[0].id, seq.tracks[0].clips[1].id]);
+    seq = groupClips(seq, clipIds);
+
+    // Ripple delete the first grouped clip
+    const firstClipId = seq.tracks[0].clips[0].id;
+    seq = rippleDelete(seq, firstClipId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: paste clip to locked track is no-op", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    const trackId = seq.tracks[0].id;
+    seq = setTrackLocked(seq, trackId, true);
+
+    const clip = seq.tracks[0].clips[0];
+    const before = stabilize(seq);
+    const afterPaste = pasteClip(seq, clip, 6000, trackId, 30000);
+    expect(stabilize(afterPaste)).toEqual(before);
+  });
 });
 
 describe("track lock & mute regression", () => {

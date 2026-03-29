@@ -468,6 +468,100 @@ export function makeOnlyEmptyAssetProject(): Project {
   });
 }
 
+/** Video on track 1, image on muted track 2 — muted track clips should be excluded from export. */
+export function makeMutedTrackProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([makeClip()]),
+        {
+          ...makeTrack(
+            [
+              makeClip({
+                id: "c2",
+                clipKind: "image",
+                assetId: "img1",
+                startMs: 0,
+                durationMs: 1000,
+                inMs: 0,
+                outMs: 1000,
+              }),
+            ],
+            "t2",
+          ),
+          muted: true,
+        },
+      ],
+    },
+  });
+}
+
+/** Two clips where clip 2 has both a fade transition and a transform (cross-feature). */
+export function makeTransitionWithTransformProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    settings: { durationMs: 2000, canvasWidth: CANVAS_W, canvasHeight: CANVAS_H },
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", startMs: 0, durationMs: 1000, outMs: 1000 }),
+          makeClip({
+            id: "c2",
+            clipKind: "image",
+            assetId: "img1",
+            startMs: 700,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+            transition: { type: "fade", durationMs: 300 },
+            transform: { x: 10, y: -5, scale: 0.8, rotation: 15 },
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** Track 1 has 2 clips with fade transition, track 2 has image overlay during the transition window. */
+export function makeTransitionMultiTrackProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    settings: { durationMs: 2000, canvasWidth: CANVAS_W, canvasHeight: CANVAS_H },
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", startMs: 0, durationMs: 1000, outMs: 1000 }),
+          makeClip({
+            id: "c2",
+            clipKind: "image",
+            assetId: "img1",
+            startMs: 700,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+            transition: { type: "fade", durationMs: 300 },
+          }),
+        ]),
+        makeTrack(
+          [
+            makeClip({
+              id: "c3",
+              clipKind: "image",
+              assetId: "img1",
+              startMs: 500,
+              durationMs: 500,
+              inMs: 0,
+              outMs: 500,
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
 export function makeOverlayTransformProject(): Project {
   return baseProject({
     assets: [videoAsset, imageAsset],

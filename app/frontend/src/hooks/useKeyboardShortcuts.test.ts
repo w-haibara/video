@@ -41,6 +41,12 @@ describe("keyboard dispatch logic", () => {
       onPlayPause: mock(() => {}),
       onUndo: mock(() => {}),
       onRedo: mock(() => {}),
+      onCopy: mock(() => {}),
+      onPaste: mock(() => {}),
+      onDuplicate: mock(() => {}),
+      onSelectAll: mock(() => {}),
+      onGroup: mock(() => {}),
+      onUngroup: mock(() => {}),
       onSetToolSelect: mock(() => {}),
       onSetToolRazor: mock(() => {}),
       onDeleteClip: mock(() => {}),
@@ -70,6 +76,7 @@ describe("keyboard dispatch logic", () => {
   // Extracted dispatch logic that mirrors the hook handler exactly
   function dispatch(e: ReturnType<typeof fakeEvent>, a: ReturnType<typeof createActions>) {
     const target = e.target as { tagName: string; isContentEditable: boolean };
+    const isEditableTarget = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable);
 
     if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
       e.preventDefault();
@@ -81,8 +88,45 @@ describe("keyboard dispatch logic", () => {
       a.onRedo();
       return;
     }
+    if ((e.ctrlKey || e.metaKey) && (e.key === "c" || e.key === "C") && !e.shiftKey) {
+      if (!isEditableTarget) {
+        e.preventDefault();
+        a.onCopy();
+        return;
+      }
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === "v" || e.key === "V") && !e.shiftKey) {
+      if (!isEditableTarget) {
+        e.preventDefault();
+        a.onPaste();
+        return;
+      }
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === "d" || e.key === "D") && !e.shiftKey) {
+      e.preventDefault();
+      a.onDuplicate();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A") && !e.shiftKey) {
+      if (!isEditableTarget) {
+        e.preventDefault();
+        a.onSelectAll();
+        return;
+      }
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === "g" || e.key === "G")) {
+      if (!isEditableTarget) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          a.onUngroup();
+        } else {
+          a.onGroup();
+        }
+        return;
+      }
+    }
 
-    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable)) {
+    if (isEditableTarget) {
       return;
     }
 
@@ -250,6 +294,38 @@ describe("keyboard dispatch logic", () => {
     (e.target as { tagName: string }).tagName = "SELECT";
     dispatch(e, actions);
     expect(actions.onPlayPause).toHaveBeenCalledTimes(0);
+  });
+
+  test("Ctrl+C fires onCopy", () => {
+    dispatch(fakeEvent("c", { ctrlKey: true }), actions);
+    expect(actions.onCopy).toHaveBeenCalledTimes(1);
+    expect(actions.onSetToolRazor).toHaveBeenCalledTimes(0);
+  });
+
+  test("Ctrl+V fires onPaste", () => {
+    dispatch(fakeEvent("v", { ctrlKey: true }), actions);
+    expect(actions.onPaste).toHaveBeenCalledTimes(1);
+    expect(actions.onSetToolSelect).toHaveBeenCalledTimes(0);
+  });
+
+  test("Ctrl+D fires onDuplicate", () => {
+    dispatch(fakeEvent("d", { ctrlKey: true }), actions);
+    expect(actions.onDuplicate).toHaveBeenCalledTimes(1);
+  });
+
+  test("Ctrl+A fires onSelectAll", () => {
+    dispatch(fakeEvent("a", { ctrlKey: true }), actions);
+    expect(actions.onSelectAll).toHaveBeenCalledTimes(1);
+  });
+
+  test("Ctrl+G fires onGroup", () => {
+    dispatch(fakeEvent("g", { ctrlKey: true }), actions);
+    expect(actions.onGroup).toHaveBeenCalledTimes(1);
+  });
+
+  test("Ctrl+Shift+G fires onUngroup", () => {
+    dispatch(fakeEvent("g", { ctrlKey: true, shiftKey: true }), actions);
+    expect(actions.onUngroup).toHaveBeenCalledTimes(1);
   });
 
   test("Ctrl+Z still works in INPUT (undo always allowed)", () => {

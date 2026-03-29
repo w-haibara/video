@@ -28,6 +28,9 @@ import {
   makeP5jsProject,
   makeEmptyAssetMixedProject,
   makeSplitClipProject,
+  makeMutedTrackProject,
+  makeTransitionWithTransformProject,
+  makeTransitionMultiTrackProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -105,6 +108,9 @@ const EXPORT_TESTS: Array<{
   { name: "p5js-clip", description: "p5.js sketch clip (pre-rendered)", factory: makeP5jsProject },
   { name: "empty-asset-mixed", description: "Video + empty-asset clip (empty skipped)", factory: makeEmptyAssetMixedProject },
   { name: "split-clip", description: "Video clip split into two halves at 500ms", factory: makeSplitClipProject },
+  { name: "muted-track", description: "Video + muted image track (muted excluded)", factory: makeMutedTrackProject },
+  { name: "transition-with-transform", description: "Fade transition + transform on clip 2", factory: makeTransitionWithTransformProject },
+  { name: "transition-multi-track", description: "Fade transition on track 1 + image overlay on track 2", factory: makeTransitionMultiTrackProject },
 ];
 
 // ── Snap parser ──

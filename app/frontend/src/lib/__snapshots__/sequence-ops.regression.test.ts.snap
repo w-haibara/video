@@ -1841,3 +1841,34 @@ exports[`track lock & mute regression setTrackMuted preserves track state 2`] = 
   ],
 }
 `;
+
+exports[`editor operation regression workflow: ripple delete of one clip in a group 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "groupId": "group-0",
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "a1",
+          "clipKind": "audio",
+          "durationMs": 22000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 22000,
+          "startMs": 3000,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;

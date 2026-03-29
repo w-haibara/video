@@ -282,6 +282,90 @@ describe("buildExportArgs", () => {
     );
   });
 
+  test("skips clips from muted track", () => {
+    const project = makeProject({
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 5000, hasAudio: false },
+        { id: "v2", kind: "video", originalPath: "assets/v2.mp4", durationMs: 3000, hasAudio: false },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            clips: [
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+            ],
+          },
+          {
+            id: "t2",
+            muted: true,
+            clips: [
+              { id: "c2", clipKind: "video", assetId: "v2", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    // Muted track's clip should not appear in filter or inputs
+    expect(args).not.toContain("/assets/v2.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    const overlayMatches = filter.match(/overlay=/g);
+    expect(overlayMatches?.length).toBe(1); // only clip from non-muted track
+  });
+
+  test("all tracks muted throws", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            muted: true,
+            clips: [
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+            ],
+          },
+        ],
+      },
+    });
+    expect(() => buildExportArgs(project, "/assets", "/out.mp4")).toThrow(
+      "No video clips to export",
+    );
+  });
+
+  test("audio from muted track excluded", () => {
+    const project = makeProject({
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/v1.mp4", durationMs: 5000, hasAudio: false },
+        { id: "a1", kind: "audio", originalPath: "assets/bgm.mp3", durationMs: 60000 },
+      ],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            clips: [
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+            ],
+          },
+          {
+            id: "t2",
+            muted: true,
+            clips: [
+              { id: "ac1", clipKind: "audio", assetId: "a1", startMs: 0, durationMs: 10000, inMs: 0, outMs: 10000, volume: 0.5 },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Audio from muted track should not be mixed
+    expect(filter).not.toContain("volume=0.5");
+    expect(args).not.toContain("/assets/bgm.mp3");
+  });
+
   test("excludes clips beyond project settings durationMs", () => {
     const project = makeProject({
       assets: [
