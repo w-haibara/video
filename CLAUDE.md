@@ -53,6 +53,17 @@ Before merging any PR, always:
 
 Implementation and pre-merge review must each run in a separate subagent.
 
+### Issue tracking during development
+
+- If a problem is discovered during a task but not fixed within that task, create a GitHub issue to record it.
+- If the problem should be addressed alongside a later task, link the issue to that task (add a note in the task's issue body).
+- If the problem is independent, decide which Phase it belongs to, set the appropriate milestone and priority, and update the GitHub Project.
+
+### Pre-task issue check
+
+- Before starting a task, review open issues to check whether any block or affect the current task.
+- If a blocking issue is found, resolve it first before proceeding with the task.
+
 ## Devcontainer
 
 See @.devcontainer/README.md for setup instructions. Key points:
