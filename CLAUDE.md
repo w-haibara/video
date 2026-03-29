@@ -17,6 +17,13 @@ Frontend-specific (run from `app/frontend/`):
 | `bun run build-storybook` | Build static Storybook |
 | `bun run test:browser` | Run Vitest browser tests (needs `xvfb-run` in devcontainer) |
 
+## Testing policy
+
+- Aggressively add test cases. Test optimization can happen later — when working on a task, add every test case you can think of without worrying about redundancy.
+- Always add regression tests (both export regression and snapshot) for any change that affects video output or sequence operations. Do not skip regression cases.
+- For video output tests, cover not only individual features but also combinations of features (e.g., transition + transform, blend mode + crop, multi-track + transition). These cross-feature interactions are where regressions hide.
+- When snapshots are added or changed, always visually verify the additions or changes. Use `bun run view:regression` with Playwright, or use `claude -p` to take and inspect screenshots.
+
 ## Regression testing workflow
 
 After modifying `sequence-ops` or export-related code, follow this workflow:
