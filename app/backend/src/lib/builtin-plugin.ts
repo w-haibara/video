@@ -2,6 +2,7 @@ import type { BackendPlugin, PipelineRegistration } from "./plugin-loader";
 import type { AssetDetectorRegistry } from "./asset-detector-registry";
 import type { ExportHandlerRegistry } from "./export-handler-registry";
 import type { CompositeStrategyRegistry } from "./composite-strategy-registry";
+import type { TransitionExportRegistry } from "./transition-export-registry";
 import { extensionDetector } from "./asset-detectors/extension-detector";
 import { videoClipHandler } from "./export-handlers/video-clip-handler";
 import { imageClipHandler } from "./export-handlers/image-clip-handler";
@@ -20,6 +21,17 @@ import {
   addExportStrategy,
   differenceExportStrategy,
 } from "./composite-strategies/blend-strategies";
+import {
+  fadeExportHandler,
+  fadeBlackExportHandler,
+  fadeWhiteExportHandler,
+} from "./transition-export-handlers/fade-handlers";
+import {
+  slideLeftExportHandler,
+  slideRightExportHandler,
+  slideUpExportHandler,
+  slideDownExportHandler,
+} from "./transition-export-handlers/slide-handlers";
 
 export const builtinPlugin: BackendPlugin = {
   id: "builtin",
@@ -57,5 +69,15 @@ export const builtinPlugin: BackendPlugin = {
     registry.register(overlayExportStrategy);
     registry.register(addExportStrategy);
     registry.register(differenceExportStrategy);
+  },
+
+  registerTransitions(registry: TransitionExportRegistry) {
+    registry.register(fadeExportHandler);
+    registry.register(fadeBlackExportHandler);
+    registry.register(fadeWhiteExportHandler);
+    registry.register(slideLeftExportHandler);
+    registry.register(slideRightExportHandler);
+    registry.register(slideUpExportHandler);
+    registry.register(slideDownExportHandler);
   },
 };

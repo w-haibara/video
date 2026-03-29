@@ -1,20 +1,15 @@
 import { theme, inputStyle } from "../../theme";
 import type { InspectorEditorContext } from "../../lib/inspector-editor-registry";
-
-const TRANSITION_TYPES = [
-  { value: "", label: "None" },
-  { value: "fade", label: "Fade" },
-  { value: "fade-black", label: "Fade (Black)" },
-  { value: "fade-white", label: "Fade (White)" },
-  { value: "slide-left", label: "Slide Left" },
-  { value: "slide-right", label: "Slide Right" },
-  { value: "slide-up", label: "Slide Up" },
-  { value: "slide-down", label: "Slide Down" },
-];
+import { transitionPreviewRegistry } from "../../lib/transition-preview-registry";
 
 export function TransitionEditor({ clip, onSetTransition }: InspectorEditorContext) {
   const currentType = clip.transition?.type ?? "";
   const durationMs = clip.transition?.durationMs ?? 500;
+
+  const transitionOptions = [
+    { value: "", label: "None" },
+    ...transitionPreviewRegistry.all().map((h) => ({ value: h.type, label: h.label })),
+  ];
 
   if (!onSetTransition) return null;
 
@@ -42,7 +37,7 @@ export function TransitionEditor({ clip, onSetTransition }: InspectorEditorConte
         onChange={(e) => handleTypeChange(e.target.value)}
         style={inputStyle}
       >
-        {TRANSITION_TYPES.map((t) => (
+        {transitionOptions.map((t) => (
           <option key={t.value} value={t.value}>
             {t.label}
           </option>

@@ -5,6 +5,7 @@ import type { AssetKindRegistry } from "./asset-kind-registry";
 import type { InspectorEditorRegistry } from "./inspector-editor-registry";
 import type { PreviewRendererRegistry } from "./preview-renderer-registry";
 import type { CompositeStrategyRegistry } from "./composite-strategy-registry";
+import type { TransitionPreviewRegistry } from "./transition-preview-registry";
 import { theme } from "../theme";
 import { TrimEditor } from "../components/editors/TrimEditor";
 import { TextEditor } from "../components/editors/TextEditor";
@@ -25,6 +26,17 @@ import {
   addPreviewStrategy,
   differencePreviewStrategy,
 } from "./composite-strategies/blend-strategies";
+import {
+  fadePreviewHandler,
+  fadeBlackPreviewHandler,
+  fadeWhitePreviewHandler,
+} from "./transition-preview-handlers/fade-handlers";
+import {
+  slideLeftPreviewHandler,
+  slideRightPreviewHandler,
+  slideUpPreviewHandler,
+  slideDownPreviewHandler,
+} from "./transition-preview-handlers/slide-handlers";
 
 export const builtinPlugin: FrontendPlugin = {
   id: "builtin",
@@ -189,5 +201,15 @@ export const builtinPlugin: FrontendPlugin = {
     registry.register(overlayPreviewStrategy);
     registry.register(addPreviewStrategy);
     registry.register(differencePreviewStrategy);
+  },
+
+  registerTransitions(registry: TransitionPreviewRegistry) {
+    registry.register(fadePreviewHandler);
+    registry.register(fadeBlackPreviewHandler);
+    registry.register(fadeWhitePreviewHandler);
+    registry.register(slideLeftPreviewHandler);
+    registry.register(slideRightPreviewHandler);
+    registry.register(slideUpPreviewHandler);
+    registry.register(slideDownPreviewHandler);
   },
 };

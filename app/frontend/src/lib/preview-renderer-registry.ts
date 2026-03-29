@@ -1,6 +1,6 @@
 import type { CSSProperties, RefObject } from "react";
 import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
-import { FADE_TRANSITION_TYPES } from "@video/shared";
+import { transitionPreviewRegistry } from "./transition-preview-registry";
 
 export type ActiveClip = {
   clip: Clip;
@@ -169,23 +169,9 @@ export function computeTransitionStyle(
   // ── Incoming transition (this clip fades/slides in) ──
   const inProg = incomingProgress(clip, currentTimeMs);
   if (inProg >= 0 && transType) {
-    if (transType === "fade") {
-      style.opacity = inProg;
-    } else if (transType === "fade-black") {
-      style.opacity = inProg < 0.5 ? 0 : (inProg - 0.5) * 2;
-    } else if (transType === "fade-white") {
-      style.opacity = inProg < 0.5 ? 0 : (inProg - 0.5) * 2;
-      if (inProg < 0.5) {
-        style.filter = "brightness(5)";
-      }
-    } else if (transType === "slide-left") {
-      style.transform = `translateX(${(1 - inProg) * 100}%)`;
-    } else if (transType === "slide-right") {
-      style.transform = `translateX(${-(1 - inProg) * 100}%)`;
-    } else if (transType === "slide-up") {
-      style.transform = `translateY(${(1 - inProg) * 100}%)`;
-    } else if (transType === "slide-down") {
-      style.transform = `translateY(${-(1 - inProg) * 100}%)`;
+    const handler = transitionPreviewRegistry.get(transType);
+    if (handler) {
+      Object.assign(style, handler.computeIncomingStyle(inProg));
     }
   }
 
@@ -193,20 +179,20 @@ export function computeTransitionStyle(
   const out = outgoingTransition(clip, project, currentTimeMs);
   if (out) {
     const nextType = out.next.transition?.type;
-
-    if (nextType === "fade") {
-      style.opacity = ((style.opacity as number) ?? 1) * (1 - out.progress);
-    } else if (nextType === "fade-black") {
-      const outOpacity = out.progress < 0.5 ? 1 - out.progress * 2 : 0;
+    const handler = nextType ? transitionPreviewRegistry.get(nextType) : undefined;
+    if (handler?.computeOutgoingStyle) {
+      const outStyle = handler.computeOutgoingStyle(out.progress);
+      // Multiply opacity with existing value (don't replace)
+      const outOpacity = (outStyle.opacity as number) ?? 1;
       style.opacity = ((style.opacity as number) ?? 1) * outOpacity;
-    } else if (nextType === "fade-white") {
-      const outOpacity = out.progress < 0.5 ? 1 - out.progress * 2 : 0;
-      style.opacity = ((style.opacity as number) ?? 1) * outOpacity;
-      if (out.progress < 0.5) {
-        style.filter = "brightness(5)";
+      // Copy other properties (e.g. filter)
+      for (const [key, value] of Object.entries(outStyle)) {
+        if (key !== "opacity") {
+          (style as Record<string, unknown>)[key] = value;
+        }
       }
     }
-    // slide-*: outgoing clip stays fully visible (incoming slides on top)
+    // Transitions without computeOutgoingStyle (e.g. slide-*): outgoing clip stays fully visible
   }
 
   return style;

@@ -4,11 +4,13 @@ import type { AssetKindRegistry } from "./asset-kind-registry";
 import type { InspectorEditorRegistry } from "./inspector-editor-registry";
 import type { PreviewRendererRegistry } from "./preview-renderer-registry";
 import type { CompositeStrategyRegistry } from "./composite-strategy-registry";
+import type { TransitionPreviewRegistry } from "./transition-preview-registry";
 import { clipKindRegistry } from "./clip-kind-registry";
 import { assetKindRegistry } from "./asset-kind-registry";
 import { inspectorEditorRegistry } from "./inspector-editor-registry";
 import { previewRendererRegistry } from "./preview-renderer-registry";
 import { compositeStrategyRegistry } from "./composite-strategy-registry";
+import { transitionPreviewRegistry } from "./transition-preview-registry";
 
 export type FrontendPlugin = PluginManifest & {
   registerClipKinds?: (registry: ClipKindRegistry) => void;
@@ -16,6 +18,7 @@ export type FrontendPlugin = PluginManifest & {
   registerInspectorEditors?: (registry: InspectorEditorRegistry) => void;
   registerPreviewRenderers?: (registry: PreviewRendererRegistry) => void;
   registerCompositeStrategies?: (registry: CompositeStrategyRegistry) => void;
+  registerTransitions?: (registry: TransitionPreviewRegistry) => void;
 };
 
 export function loadPlugins(plugins: FrontendPlugin[]): void {
@@ -25,5 +28,6 @@ export function loadPlugins(plugins: FrontendPlugin[]): void {
     plugin.registerInspectorEditors?.(inspectorEditorRegistry);
     plugin.registerPreviewRenderers?.(previewRendererRegistry);
     plugin.registerCompositeStrategies?.(compositeStrategyRegistry);
+    plugin.registerTransitions?.(transitionPreviewRegistry);
   }
 }

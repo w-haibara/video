@@ -54,9 +54,6 @@ export type BuiltinTransitionType =
   | "fade" | "fade-black" | "fade-white"
   | "slide-left" | "slide-right" | "slide-up" | "slide-down";
 
-export const FADE_TRANSITION_TYPES: ReadonlySet<string> = new Set<string>(["fade", "fade-black", "fade-white"]);
-export const SLIDE_TRANSITION_TYPES: ReadonlySet<string> = new Set<string>(["slide-left", "slide-right", "slide-up", "slide-down"]);
-
 export type ClipTransition = {
   type: string;
   durationMs: number;
