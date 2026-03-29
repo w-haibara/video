@@ -14,7 +14,7 @@ function secToMs(sec: string): number {
 
 export function TrimEditor({ clip, asset, clipKind, onUpdate }: InspectorEditorContext) {
   const isTextOrImage = clipKind === "title" || asset?.kind === "image";
-  const hasSourceTrim = clipKind !== "title";
+  const hasSourceTrim = clipKind !== "title" && !!asset;
   const maxSourceMs = asset?.durationMs;
 
   const [durationVal, setDurationVal] = useState(msToSec(clip.durationMs));

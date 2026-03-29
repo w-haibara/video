@@ -273,4 +273,161 @@ describe("editor operation regression", () => {
 
     expect(stabilize(seq)).toMatchSnapshot();
   });
+
+  test("workflow: empty-asset video clip", () => {
+    let seq: Sequence = { tracks: [] };
+
+    // Manually add a clip with empty assetId (no asset assigned)
+    seq = {
+      tracks: [{
+        id: "t1",
+        clips: [{
+          id: "empty1",
+          clipKind: "video",
+          assetId: "",
+          startMs: 0,
+          durationMs: 3000,
+          inMs: 0,
+          outMs: 3000,
+        }],
+      }],
+    };
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: empty-asset clip alongside normal clips", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+
+    // Add empty-asset clip to a second track
+    const emptyClip = {
+      id: "empty1",
+      clipKind: "image",
+      assetId: "",
+      startMs: 1000,
+      durationMs: 2000,
+      inMs: 0,
+      outMs: 2000,
+    };
+    seq = {
+      ...seq,
+      tracks: [
+        ...seq.tracks,
+        { id: "t-empty", clips: [emptyClip] },
+      ],
+    };
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: move empty-asset clip", () => {
+    let seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [{
+          id: "empty1",
+          clipKind: "video",
+          assetId: "",
+          startMs: 0,
+          durationMs: 2000,
+          inMs: 0,
+          outMs: 2000,
+        }],
+      }],
+    };
+
+    seq = moveClip(seq, "empty1", 3000, 10000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: trim empty-asset clip", () => {
+    let seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [{
+          id: "empty1",
+          clipKind: "video",
+          assetId: "",
+          startMs: 0,
+          durationMs: 3000,
+          inMs: 0,
+          outMs: 3000,
+        }],
+      }],
+    };
+
+    seq = trimClip(seq, "empty1", "right", -1000, undefined, 10000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: remove empty-asset clip removes empty track", () => {
+    let seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [{
+          id: "empty1",
+          clipKind: "video",
+          assetId: "",
+          startMs: 0,
+          durationMs: 2000,
+          inMs: 0,
+          outMs: 2000,
+        }],
+      }],
+    };
+
+    seq = removeClip(seq, "empty1");
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: update empty-asset clip properties", () => {
+    let seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [{
+          id: "empty1",
+          clipKind: "video",
+          assetId: "",
+          startMs: 0,
+          durationMs: 3000,
+          inMs: 0,
+          outMs: 3000,
+        }],
+      }],
+    };
+
+    seq = updateClip(seq, "empty1", {
+      transform: { x: 10, y: -5, scale: 1.2, rotation: 30 },
+    });
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: clamp empty-asset clip to duration", () => {
+    let seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [
+          {
+            id: "empty1",
+            clipKind: "video",
+            assetId: "",
+            startMs: 0,
+            durationMs: 5000,
+            inMs: 0,
+            outMs: 5000,
+          },
+        ],
+      }],
+    };
+
+    seq = clampClipsToDuration(seq, 3000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
 });

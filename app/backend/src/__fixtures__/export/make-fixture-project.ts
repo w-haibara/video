@@ -407,6 +407,53 @@ export function makeP5jsProject(): Project {
   });
 }
 
+/** Video clip alongside an empty-asset clip — empty clip should be skipped during export. */
+export function makeEmptyAssetMixedProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([makeClip()]),
+        makeTrack(
+          [
+            {
+              id: "empty1",
+              clipKind: "video",
+              assetId: "",
+              startMs: 0,
+              durationMs: 1000,
+              inMs: 0,
+              outMs: 1000,
+            },
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
+/** Only empty-asset clips — export should throw "No video clips" error. */
+export function makeOnlyEmptyAssetProject(): Project {
+  return baseProject({
+    assets: [],
+    sequence: {
+      tracks: [
+        makeTrack([
+          {
+            id: "empty1",
+            clipKind: "video",
+            assetId: "",
+            startMs: 0,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+          },
+        ]),
+      ],
+    },
+  });
+}
+
 export function makeOverlayTransformProject(): Project {
   return baseProject({
     assets: [videoAsset, imageAsset],

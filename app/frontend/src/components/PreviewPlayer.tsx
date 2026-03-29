@@ -119,7 +119,7 @@ export function PreviewPlayer({
     content: renderer.findActiveContent(renderCtx),
   }));
 
-  const hasMediaContent = layers.some((l) => l.renderer.zOrder === 0 && l.content !== null);
+  const hasMediaContent = layers.some((l) => (l.renderer.zOrder === 0 || l.renderer.id === "empty-asset") && l.content !== null);
 
   // Get active video clips for video element management (topmost drives playback)
   const videoClips = layers.find((l) => l.renderer.id === "video-clip")?.content as ActiveClip[] | null;
