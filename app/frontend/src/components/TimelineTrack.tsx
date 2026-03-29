@@ -12,8 +12,8 @@ type Props = {
   pxToMs: (px: number) => number;
   totalWidth: number;
   maxDurationMs: number;
-  selectedClipId: string | null;
-  onSelectClip: (clipId: string) => void;
+  selectedClipIds: Set<string>;
+  onSelectClip: (clipId: string, opts?: { shiftKey?: boolean }) => void;
   onMoveClip: (clipId: string, newStartMs: number, targetTrackId?: string) => void;
   onTrimClip: (clipId: string, side: "left" | "right", deltaMs: number) => void;
   onRippleTrimClip?: (clipId: string, side: "left" | "right", deltaMs: number) => void;
@@ -36,7 +36,7 @@ export function TimelineTrack({
   pxToMs,
   totalWidth,
   maxDurationMs,
-  selectedClipId,
+  selectedClipIds,
   onSelectClip,
   onMoveClip,
   onTrimClip,
@@ -112,7 +112,7 @@ export function TimelineTrack({
             msToPx={msToPx}
             pxToMs={pxToMs}
             maxDurationMs={maxDurationMs}
-            isSelected={selectedClipId === clip.id}
+            isSelected={selectedClipIds.has(clip.id)}
             onSelect={onSelectClip}
             onMove={onMoveClip}
             onTrim={onTrimClip}

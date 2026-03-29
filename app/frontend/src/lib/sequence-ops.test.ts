@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
 import { inferTrackKind } from "@video/shared";
-import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes } from "./sequence-ops";
+import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, moveClips, groupClips, ungroupClips, expandGroupSelection } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -1329,5 +1329,144 @@ describe("pasteAttributes", () => {
     const target = result.tracks[0].clips[1];
     // Source had no transform, so target keeps its own
     expect(target.transform).toEqual({ x: 99, y: 99 });
+  });
+});
+
+// =========== Multi-select & Group operations ===========
+
+function makeMultiClipSeq(): Sequence {
+  return {
+    tracks: [
+      {
+        id: "t1",
+        clips: [
+          { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 },
+          { id: "c2", clipKind: "video", assetId: "v1", startMs: 3000, durationMs: 2000, inMs: 0, outMs: 2000 },
+        ],
+      },
+      {
+        id: "t2",
+        clips: [
+          { id: "c3", clipKind: "audio", assetId: "a1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+        ],
+      },
+    ],
+  };
+}
+
+describe("removeClips", () => {
+  test("removes multiple clips across tracks", () => {
+    const seq = makeMultiClipSeq();
+    const result = removeClips(seq, new Set(["c1", "c3"]));
+    // t1 should have only c2, t2 should be removed (empty)
+    expect(result.tracks.length).toBe(1);
+    expect(result.tracks[0].clips.length).toBe(1);
+    expect(result.tracks[0].clips[0].id).toBe("c2");
+  });
+
+  test("returns unchanged sequence when no clips match", () => {
+    const seq = makeMultiClipSeq();
+    const result = removeClips(seq, new Set(["nonexistent"]));
+    expect(result.tracks.length).toBe(2);
+  });
+
+  test("removes all clips leaves empty sequence", () => {
+    const seq = makeMultiClipSeq();
+    const result = removeClips(seq, new Set(["c1", "c2", "c3"]));
+    expect(result.tracks.length).toBe(0);
+  });
+});
+
+describe("moveClips", () => {
+  test("moves multiple clips by positive delta", () => {
+    const seq = makeMultiClipSeq();
+    const result = moveClips(seq, new Set(["c1", "c2"]), 500);
+    const t1 = result.tracks[0];
+    expect(t1.clips.find((c: Clip) => c.id === "c1")!.startMs).toBe(500);
+    expect(t1.clips.find((c: Clip) => c.id === "c2")!.startMs).toBe(3500);
+    // c3 should be unchanged
+    expect(result.tracks[1].clips[0].startMs).toBe(0);
+  });
+
+  test("clamps so no clip goes below 0", () => {
+    const seq = makeMultiClipSeq();
+    const result = moveClips(seq, new Set(["c1", "c2"]), -1000);
+    // c1 starts at 0, so delta is clamped to 0
+    expect(result.tracks[0].clips.find((c: Clip) => c.id === "c1")!.startMs).toBe(0);
+    expect(result.tracks[0].clips.find((c: Clip) => c.id === "c2")!.startMs).toBe(3000);
+  });
+
+  test("clamps so no clip exceeds maxDurationMs", () => {
+    const seq = makeMultiClipSeq();
+    // c2 ends at 5000, maxDuration 6000, so max delta is 1000
+    const result = moveClips(seq, new Set(["c1", "c2"]), 2000, 6000);
+    expect(result.tracks[0].clips.find((c: Clip) => c.id === "c1")!.startMs).toBe(1000);
+    expect(result.tracks[0].clips.find((c: Clip) => c.id === "c2")!.startMs).toBe(4000);
+  });
+
+  test("returns unchanged when no clips match", () => {
+    const seq = makeMultiClipSeq();
+    const result = moveClips(seq, new Set(["nonexistent"]), 500);
+    expect(result).toBe(seq);
+  });
+});
+
+describe("groupClips", () => {
+  test("assigns shared groupId to selected clips", () => {
+    const seq = makeMultiClipSeq();
+    const result = groupClips(seq, new Set(["c1", "c3"]));
+    const c1 = result.tracks[0].clips.find((c: Clip) => c.id === "c1")!;
+    const c3 = result.tracks[1].clips.find((c: Clip) => c.id === "c3")!;
+    expect(c1.groupId).toBeDefined();
+    expect(c1.groupId).toBe(c3.groupId);
+    // c2 should not have groupId
+    const c2 = result.tracks[0].clips.find((c: Clip) => c.id === "c2")!;
+    expect(c2.groupId).toBeUndefined();
+  });
+
+  test("does nothing with fewer than 2 clips", () => {
+    const seq = makeMultiClipSeq();
+    const result = groupClips(seq, new Set(["c1"]));
+    expect(result).toBe(seq);
+  });
+});
+
+describe("ungroupClips", () => {
+  test("clears groupId from selected clips", () => {
+    const seq = makeMultiClipSeq();
+    const grouped = groupClips(seq, new Set(["c1", "c3"]));
+    const result = ungroupClips(grouped, new Set(["c1", "c3"]));
+    const c1 = result.tracks[0].clips.find((c: Clip) => c.id === "c1")!;
+    const c3 = result.tracks[1].clips.find((c: Clip) => c.id === "c3")!;
+    expect(c1.groupId).toBeUndefined();
+    expect(c3.groupId).toBeUndefined();
+  });
+});
+
+describe("expandGroupSelection", () => {
+  test("expands selection to include all group members", () => {
+    const seq = makeMultiClipSeq();
+    const grouped = groupClips(seq, new Set(["c1", "c3"]));
+    // Select only c1 — should expand to include c3
+    const expanded = expandGroupSelection(grouped, new Set(["c1"]));
+    expect(expanded.has("c1")).toBe(true);
+    expect(expanded.has("c3")).toBe(true);
+    expect(expanded.has("c2")).toBe(false);
+  });
+
+  test("returns original set when no clips are grouped", () => {
+    const seq = makeMultiClipSeq();
+    const expanded = expandGroupSelection(seq, new Set(["c1"]));
+    expect(expanded.size).toBe(1);
+    expect(expanded.has("c1")).toBe(true);
+  });
+
+  test("returns original set when selected clip has no groupId", () => {
+    const seq = makeMultiClipSeq();
+    const grouped = groupClips(seq, new Set(["c1", "c3"]));
+    // c2 is not grouped
+    const expanded = expandGroupSelection(grouped, new Set(["c2"]));
+    expect(expanded.size).toBe(1);
+    expect(expanded.has("c2")).toBe(true);
   });
 });

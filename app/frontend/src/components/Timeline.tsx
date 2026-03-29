@@ -18,8 +18,8 @@ type Props = {
   project: Project;
   currentTimeMs: number;
   onSeek: (ms: number) => void;
-  selectedClipId: string | null;
-  onSelectClip: (clipId: string | null) => void;
+  selectedClipIds: Set<string>;
+  onSelectClip: (clipId: string | null, opts?: { shiftKey?: boolean }) => void;
   onDeleteClip?: (clipId: string) => void;
   onRippleDeleteClip?: (clipId: string) => void;
   onMoveClip?: (clipId: string, newStartMs: number, targetTrackId?: string) => void;
@@ -48,7 +48,7 @@ export function Timeline({
   project,
   currentTimeMs,
   onSeek,
-  selectedClipId,
+  selectedClipIds,
   onSelectClip,
   onDeleteClip,
   onRippleDeleteClip,
@@ -331,7 +331,7 @@ export function Timeline({
                   pxToMs={pxToMs}
                   totalWidth={totalWidth}
                   maxDurationMs={project.settings.durationMs}
-                  selectedClipId={selectedClipId}
+                  selectedClipIds={selectedClipIds}
                   onSelectClip={onSelectClip}
                   onMoveClip={handleMove}
                   onTrimClip={handleTrim}
