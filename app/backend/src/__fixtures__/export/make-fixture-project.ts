@@ -29,6 +29,16 @@ const audioAsset: Asset = {
   durationMs: 1000,
 };
 
+const p5jsAsset: Asset = {
+  id: "p5js1",
+  kind: "p5js",
+  originalPath: "assets/test-video-1s.mp4", // Pre-rendered by pipeline; reuse test video
+  durationMs: 1000,
+  width: CANVAS_W,
+  height: CANVAS_H,
+  hasAudio: false,
+};
+
 function baseProject(overrides: Partial<Project> = {}): Project {
   return {
     id: "fixture",
@@ -383,6 +393,20 @@ export function makeSlideDownTransitionProject(): Project { return makeTransitio
 
 /** Two tracks — top clip with crop + scale + position + rotation to reveal bottom clip.
  *  Verifies transparency compositing with all transform properties combined. */
+/** Single p5.js clip (pre-rendered to video) */
+export function makeP5jsProject(): Project {
+  return baseProject({
+    assets: [p5jsAsset],
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", clipKind: "p5js", assetId: "p5js1", durationMs: 1000 }),
+        ]),
+      ],
+    },
+  });
+}
+
 export function makeOverlayTransformProject(): Project {
   return baseProject({
     assets: [videoAsset, imageAsset],
