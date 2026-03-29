@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import type { Project, Clip, Asset, ClipTransition } from "@video/shared";
+import { DEFAULT_IMAGE_DURATION_MS } from "@video/shared";
 import { theme, inputStyle, sectionHeadingStyle } from "../theme";
 import { clipKindRegistry } from "../lib/clip-kind-registry";
+import { assetKindRegistry } from "../lib/asset-kind-registry";
 import { inspectorEditorRegistry } from "../lib/inspector-editor-registry";
 
 type Props = {
@@ -24,6 +26,53 @@ function findClipAndAsset(
     }
   }
   return null;
+}
+
+/**
+ * Return assets whose kind is compatible with the given clip kind.
+ * Clip kind maps 1:1 to asset kind (e.g. "video" clip -> "video" assets).
+ */
+export function getCompatibleAssets(assets: Asset[], clipKind: string): Asset[] {
+  return assets.filter((a) => a.kind === clipKind);
+}
+
+/**
+ * Compute updated timing properties when switching to a new asset.
+ * Returns the partial Clip updates to apply.
+ */
+export function computeAssetChangeUpdates(
+  newAsset: Asset | undefined,
+  clip: Clip,
+  maxDurationMs?: number,
+): Partial<Clip> {
+  // Clear transition if present — overlap position is no longer valid
+  const transitionCleanup: Partial<Clip> = clip.transition
+    ? { transition: undefined, startMs: clip.startMs + clip.transition.durationMs }
+    : {};
+
+  if (!newAsset) {
+    // Switching to "(No asset)" — keep current timing, just clear assetId
+    return { assetId: "", ...transitionCleanup };
+  }
+
+  const descriptor = assetKindRegistry.get(newAsset.kind);
+  const rawDurationMs = descriptor?.hasDuration
+    ? (newAsset.durationMs ?? descriptor.defaultDurationMs ?? DEFAULT_IMAGE_DURATION_MS)
+    : (descriptor?.defaultDurationMs ?? DEFAULT_IMAGE_DURATION_MS);
+
+  // Clamp to project boundary
+  const effectiveStartMs = transitionCleanup.startMs ?? clip.startMs;
+  const newDurationMs = maxDurationMs != null && effectiveStartMs + rawDurationMs > maxDurationMs
+    ? Math.max(100, maxDurationMs - effectiveStartMs)
+    : rawDurationMs;
+
+  return {
+    assetId: newAsset.id,
+    durationMs: newDurationMs,
+    inMs: 0,
+    outMs: newDurationMs,
+    ...transitionCleanup,
+  };
 }
 
 export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveClip, onSetTransition }: Props) {
@@ -74,6 +123,15 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveCl
           {asset?.codec && <Row label="Codec" value={asset.codec} />}
         </tbody>
       </table>
+
+      {hasAsset && onUpdateClip && (
+        <AssetSelector
+          clip={clip}
+          assets={project.assets}
+          maxDurationMs={project.settings.durationMs}
+          onChangeAsset={(updates) => onUpdateClip(clip.id, updates)}
+        />
+      )}
 
       {onMoveClip && (
         <StartEndEditor clip={clip} onMoveClip={(newStartMs) => onMoveClip(clip.id, newStartMs)} />
@@ -145,6 +203,56 @@ function StartEndEditor({
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+function AssetSelector({
+  clip,
+  assets,
+  maxDurationMs,
+  onChangeAsset,
+}: {
+  clip: Clip;
+  assets: Asset[];
+  maxDurationMs?: number;
+  onChangeAsset: (updates: Partial<Clip>) => void;
+}) {
+  const compatibleAssets = getCompatibleAssets(assets, clip.clipKind);
+
+  if (compatibleAssets.length === 0 && clip.assetId === "") {
+    return (
+      <div style={{ marginTop: "8px", color: theme.textMuted, fontSize: "11px" }}>
+        Asset: (empty)
+      </div>
+    );
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newAssetId = e.target.value;
+    if (newAssetId === clip.assetId) return;
+    const newAsset = newAssetId === "" ? undefined : assets.find((a) => a.id === newAssetId);
+    onChangeAsset(computeAssetChangeUpdates(newAsset, clip, maxDurationMs));
+  };
+
+  return (
+    <div style={{ marginTop: "8px" }}>
+      <label style={{ color: theme.text, display: "block", marginBottom: "4px" }}>
+        Asset
+      </label>
+      <select
+        value={clip.assetId}
+        onChange={handleChange}
+        style={{ ...inputStyle, width: "100%" }}
+        data-testid="asset-selector"
+      >
+        <option value="">(No asset)</option>
+        {compatibleAssets.map((a) => (
+          <option key={a.id} value={a.id}>
+            {a.originalPath.split("/").pop() ?? a.id}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
