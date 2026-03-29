@@ -7,11 +7,13 @@ import {
   addEmptyClip,
   moveClip,
   trimClip,
+  splitClip,
   addTextClip,
   updateClip,
   clampClipsToDuration,
   removeClip,
   removeTrack,
+  setTransition,
 } from "./sequence-ops";
 
 const videoAsset: Asset = {
@@ -516,5 +518,164 @@ describe("editor operation regression", () => {
     seq = addEmptyClip(seq, "audio", 6000, 2000, 10000, "t1");
 
     expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: split video clip at midpoint", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+
+    // Split at 2500ms (midpoint of 0-5000ms clip)
+    seq = splitClip(seq, clipId, 2500);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: split clip near start", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+
+    // Split at 100ms from start
+    seq = splitClip(seq, clipId, 100);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: split clip near end", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+
+    // Split at 4900ms (near end of 0-5000ms clip)
+    seq = splitClip(seq, clipId, 4900);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: split at clip start (no-op)", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    const before = stabilize(seq);
+
+    // Split at exact start — should be no-op
+    seq = splitClip(seq, clipId, 0);
+
+    expect(stabilize(seq)).toEqual(before);
+  });
+
+  test("workflow: split at clip end (no-op)", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    const before = stabilize(seq);
+
+    // Split at exact end — should be no-op
+    seq = splitClip(seq, clipId, 5000);
+
+    expect(stabilize(seq)).toEqual(before);
+  });
+
+  test("workflow: split trimmed clip preserves in/out", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+
+    // Trim left by 1000ms, then right by -1000ms
+    seq = trimClip(seq, clipId, "left", 1000, 5000, 10000);
+    seq = trimClip(seq, clipId, "right", -1000, 5000, 10000);
+
+    // Now clip is: startMs=1000, durationMs=3000, inMs=1000, outMs=4000
+    // Split at 2500ms
+    seq = splitClip(seq, clipId, 2500);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: split clip with transition clears transition on right", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+
+    // Set transition on image clip
+    const imageClipId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, imageClipId, { type: "fade", durationMs: 500 });
+
+    // Split the image clip
+    const clipToSplit = seq.tracks[0].clips[1];
+    seq = splitClip(seq, clipToSplit.id, clipToSplit.startMs + 1000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: split empty-asset clip", () => {
+    let seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [{
+          id: "empty1",
+          clipKind: "video",
+          assetId: "",
+          startMs: 0,
+          durationMs: 3000,
+          inMs: 0,
+          outMs: 3000,
+        }],
+      }],
+    };
+
+    seq = splitClip(seq, "empty1", 1500);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: split then move right part", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+
+    seq = splitClip(seq, clipId, 2500);
+
+    // Move the right clip to 5000ms
+    const rightClipId = seq.tracks[0].clips[1].id;
+    seq = moveClip(seq, rightClipId, 5000, 10000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: split clip within transition zone clears transition on left", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+
+    const imageClipId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, imageClipId, { type: "fade", durationMs: 500 });
+
+    // Split 200ms in — within the 500ms transition zone
+    const clipToSplit = seq.tracks[0].clips[1];
+    seq = splitClip(seq, clipToSplit.id, clipToSplit.startMs + 200);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: split nonexistent clip (no-op)", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const before = stabilize(seq);
+
+    seq = splitClip(seq, "nonexistent", 2500);
+
+    expect(stabilize(seq)).toEqual(before);
   });
 });

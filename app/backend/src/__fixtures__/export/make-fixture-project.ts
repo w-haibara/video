@@ -407,6 +407,20 @@ export function makeP5jsProject(): Project {
   });
 }
 
+/** Video clip split into two halves at 500ms (simulates razor tool result). */
+export function makeSplitClipProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", startMs: 0, durationMs: 500, inMs: 0, outMs: 500 }),
+          makeClip({ id: "c2", startMs: 500, durationMs: 500, inMs: 500, outMs: 1000 }),
+        ]),
+      ],
+    },
+  });
+}
+
 /** Video clip alongside an empty-asset clip — empty clip should be skipped during export. */
 export function makeEmptyAssetMixedProject(): Project {
   return baseProject({

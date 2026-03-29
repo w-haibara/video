@@ -22,6 +22,8 @@ type Props = {
   onDeleteTrack?: (trackId: string) => void;
   onSetTransition?: (clipId: string, transition: ClipTransition | undefined) => void;
   onAddEmptyClip?: (clipKind: string, startMs: number, trackId: string) => void;
+  onSplitClip?: (clipId: string, splitTimeMs: number) => void;
+  toolMode?: "select" | "razor";
 };
 
 function getTimelineDuration(project: Project): number {
@@ -41,6 +43,8 @@ export function Timeline({
   onDeleteTrack,
   onSetTransition,
   onAddEmptyClip,
+  onSplitClip,
+  toolMode = "select",
 }: Props) {
   const { msToPx, pxToMs, zoomIn, zoomOut } = useTimelineZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -274,6 +278,8 @@ export function Timeline({
                   onDragTrackChange={setDragTargetTrackId}
                   onSetTransition={onSetTransition}
                   onTrackDoubleClick={handleTrackDoubleClick}
+                  onSplitClip={onSplitClip}
+                  toolMode={toolMode}
                 />
               ))
             )}

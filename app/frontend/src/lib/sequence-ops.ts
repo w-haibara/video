@@ -437,6 +437,65 @@ export function removeTransition(
   return { ...sequence, tracks };
 }
 
+export function splitClip(
+  sequence: Sequence,
+  clipId: string,
+  splitTimeMs: number,
+): Sequence {
+  // Find the clip and its track
+  let targetTrack: Track | undefined;
+  let clipIdx = -1;
+  for (const track of sequence.tracks) {
+    const idx = track.clips.findIndex((c) => c.id === clipId);
+    if (idx >= 0) {
+      targetTrack = track;
+      clipIdx = idx;
+      break;
+    }
+  }
+  if (!targetTrack || clipIdx < 0) return sequence;
+
+  const clip = targetTrack.clips[clipIdx];
+  const clipEnd = clip.startMs + clip.durationMs;
+
+  // splitTimeMs must be strictly inside the clip (not at edges)
+  if (splitTimeMs <= clip.startMs || splitTimeMs >= clipEnd) return sequence;
+
+  const leftDuration = splitTimeMs - clip.startMs;
+  const rightDuration = clipEnd - splitTimeMs;
+
+  const leftClip: Clip = {
+    ...clip,
+    // Keep original id for the left part
+    durationMs: leftDuration,
+    outMs: clip.inMs + leftDuration,
+    // Clear transition if left clip is too short to honour it
+    ...(clip.transition && leftDuration < clip.transition.durationMs
+      ? { transition: undefined }
+      : {}),
+  };
+
+  const rightClip: Clip = {
+    ...clip,
+    id: generateId(),
+    startMs: splitTimeMs,
+    durationMs: rightDuration,
+    inMs: clip.inMs + leftDuration,
+    // outMs stays the same as original
+    // Clear transition on the right clip — it's a new boundary
+    transition: undefined,
+  };
+
+  const tracks = sequence.tracks.map((track: Track) => {
+    if (track.id !== targetTrack!.id) return { ...track, clips: [...track.clips] };
+    const newClips = [...track.clips];
+    newClips.splice(clipIdx, 1, leftClip, rightClip);
+    return { ...track, clips: newClips };
+  });
+
+  return { ...sequence, tracks };
+}
+
 export function trimClip(
   sequence: Sequence,
   clipId: string,

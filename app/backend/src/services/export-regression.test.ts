@@ -28,6 +28,7 @@ import {
   makeAddProject,
   makeDifferenceProject,
   makeP5jsProject,
+  makeSplitClipProject,
   makeEmptyAssetMixedProject,
   makeOnlyEmptyAssetProject,
   CANVAS_W,
@@ -197,6 +198,10 @@ describe("export regression", () => {
 
   test("p5.js clip (pre-rendered)", async () => {
     await runExportRegression("p5js-clip", makeP5jsProject());
+  }, 30_000);
+
+  test("split clip (two halves of same source)", async () => {
+    await runExportRegression("split-clip", makeSplitClipProject());
   }, 30_000);
 
   test("empty-asset clip mixed with video (empty skipped)", async () => {

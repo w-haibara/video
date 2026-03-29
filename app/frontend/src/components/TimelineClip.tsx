@@ -17,6 +17,8 @@ type Props = {
   trackId: string;
   allTrackIds: string[];
   onDragTrackChange?: (targetTrackId: string | null) => void;
+  onSplitClip?: (clipId: string, splitTimeMs: number) => void;
+  toolMode?: "select" | "razor";
 };
 
 const TRIM_HANDLE_WIDTH = 6;
@@ -43,6 +45,8 @@ export function TimelineClip({
   trackId,
   allTrackIds,
   onDragTrackChange,
+  onSplitClip,
+  toolMode = "select",
 }: Props) {
   const width = msToPx(clip.durationMs);
   const left = msToPx(clip.startMs);
@@ -69,10 +73,31 @@ export function TimelineClip({
   const [isDraggingToOtherTrack, setIsDraggingToOtherTrack] = useState(false);
   const [trimTooltip, setTrimTooltip] = useState<{ side: "left" | "right"; label: string } | null>(null);
 
+  const handleRazorClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (!onSplitClip) return;
+      // Calculate the time position where the user clicked within the clip
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickMs = pxToMs(clickX);
+      const splitTimeMs = clip.startMs + clickMs;
+      onSplitClip(clip.id, splitTimeMs);
+    },
+    [clip.id, clip.startMs, pxToMs, onSplitClip],
+  );
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
+
+      if (toolMode === "razor") {
+        handleRazorClick(e);
+        return;
+      }
+
       onSelect(clip.id);
       const sourceTrackIndex = allTrackIds.indexOf(trackId);
       dragRef.current = { startX: e.clientX, startMs: clip.startMs, startY: e.clientY, sourceTrackIndex };
@@ -129,7 +154,7 @@ export function TimelineClip({
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [clip.id, clip.startMs, clip.durationMs, pxToMs, onSelect, onMove, maxDurationMs, trackId, allTrackIds, onDragTrackChange],
+    [clip.id, clip.startMs, clip.durationMs, pxToMs, onSelect, onMove, maxDurationMs, trackId, allTrackIds, onDragTrackChange, toolMode, handleRazorClick],
   );
 
   const formatTrimLabel = useCallback(
@@ -198,7 +223,7 @@ export function TimelineClip({
         borderRadius: "3px",
         border: `${isSelected ? 2 : 1}px ${isEmptyAsset ? "dashed" : "solid"} ${borderColor}`,
         overflow: "hidden",
-        cursor: isDragging ? "grabbing" : "grab",
+        cursor: toolMode === "razor" ? "crosshair" : isDragging ? "grabbing" : "grab",
         opacity: isDraggingToOtherTrack ? 0.5 : 1,
         display: "flex",
         alignItems: "center",

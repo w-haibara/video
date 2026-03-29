@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
 import { inferTrackKind } from "@video/shared";
-import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition } from "./sequence-ops";
+import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -837,5 +837,104 @@ describe("removeTransition", () => {
     };
     const result = removeTransition(seq, "c1");
     expect(result).toBe(seq);
+  });
+});
+
+describe("splitClip", () => {
+  test("splits a clip at midpoint with correct timing", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    const clip = seq.tracks[0].clips[0];
+    // Clip: startMs=0, durationMs=5000, inMs=0, outMs=5000
+    seq = splitClip(seq, clipId, 2000);
+    expect(seq.tracks[0].clips).toHaveLength(2);
+
+    const left = seq.tracks[0].clips[0];
+    const right = seq.tracks[0].clips[1];
+    expect(left.id).toBe(clipId); // left keeps original id
+    expect(left.startMs).toBe(0);
+    expect(left.durationMs).toBe(2000);
+    expect(left.inMs).toBe(0);
+    expect(left.outMs).toBe(2000);
+
+    expect(right.id).not.toBe(clipId); // right gets new id
+    expect(right.startMs).toBe(2000);
+    expect(right.durationMs).toBe(3000);
+    expect(right.inMs).toBe(2000);
+    expect(right.outMs).toBe(5000);
+  });
+
+  test("splits a trimmed clip correctly", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    // Trim: inMs=1000, outMs=4000, durationMs=3000
+    seq = trimClip(seq, clipId, "left", 1000);
+    const trimmed = seq.tracks[0].clips[0];
+    expect(trimmed.inMs).toBe(1000);
+
+    seq = splitClip(seq, trimmed.id, trimmed.startMs + 1500);
+    const left = seq.tracks[0].clips[0];
+    const right = seq.tracks[0].clips[1];
+
+    expect(left.durationMs).toBe(1500);
+    expect(left.inMs).toBe(1000);
+    expect(left.outMs).toBe(2500);
+
+    expect(right.durationMs).toBe(2500);
+    expect(right.inMs).toBe(2500);
+    expect(right.outMs).toBe(5000);
+  });
+
+  test("no-op when split at clip start", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    const original = seq;
+    seq = splitClip(seq, clipId, 0);
+    expect(seq).toBe(original);
+  });
+
+  test("no-op when split at clip end", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    const clip = seq.tracks[0].clips[0];
+    const original = seq;
+    seq = splitClip(seq, clipId, clip.startMs + clip.durationMs);
+    expect(seq).toBe(original);
+  });
+
+  test("no-op for nonexistent clip", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset, 10000);
+    const original = seq;
+    seq = splitClip(seq, "nonexistent", 2000);
+    expect(seq).toBe(original);
+  });
+
+  test("clears transition on left clip when split within transition zone", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    const imageClipId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, imageClipId, { type: "fade", durationMs: 500 });
+    const clip = seq.tracks[0].clips[1];
+
+    // Split 200ms in — within the 500ms transition zone
+    seq = splitClip(seq, clip.id, clip.startMs + 200);
+    const left = seq.tracks[0].clips[1]; // was the image clip
+    expect(left.transition).toBeUndefined(); // transition cleared
+    expect(left.durationMs).toBe(200);
+  });
+
+  test("keeps transition on left clip when split outside transition zone", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    const imageClipId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, imageClipId, { type: "fade", durationMs: 500 });
+    const clip = seq.tracks[0].clips[1];
+
+    // Split 1000ms in — outside the 500ms transition zone
+    seq = splitClip(seq, clip.id, clip.startMs + 1000);
+    const left = seq.tracks[0].clips[1];
+    expect(left.transition).toBeDefined();
+    expect(left.transition?.durationMs).toBe(500);
+    expect(left.durationMs).toBe(1000);
   });
 });

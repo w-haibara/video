@@ -27,6 +27,7 @@ import {
   makeDifferenceProject,
   makeP5jsProject,
   makeEmptyAssetMixedProject,
+  makeSplitClipProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -103,6 +104,7 @@ const EXPORT_TESTS: Array<{
   { name: "blend-difference", description: "Difference blend (absolute diff)", factory: makeDifferenceProject },
   { name: "p5js-clip", description: "p5.js sketch clip (pre-rendered)", factory: makeP5jsProject },
   { name: "empty-asset-mixed", description: "Video + empty-asset clip (empty skipped)", factory: makeEmptyAssetMixedProject },
+  { name: "split-clip", description: "Video clip split into two halves at 500ms", factory: makeSplitClipProject },
 ];
 
 // ── Snap parser ──

@@ -744,3 +744,274 @@ exports[`editor operation regression workflow: addEmptyClip multiple kinds on sa
   ],
 }
 `;
+
+exports[`editor operation regression workflow: split video clip at midpoint 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 2500,
+          "startMs": 0,
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-1",
+          "inMs": 2500,
+          "outMs": 5000,
+          "startMs": 2500,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: split clip near start 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 100,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 100,
+          "startMs": 0,
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 4900,
+          "id": "clip-1",
+          "inMs": 100,
+          "outMs": 5000,
+          "startMs": 100,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: split clip near end 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 4900,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 4900,
+          "startMs": 0,
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 100,
+          "id": "clip-1",
+          "inMs": 4900,
+          "outMs": 5000,
+          "startMs": 4900,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: split trimmed clip preserves in/out 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 1500,
+          "id": "clip-0",
+          "inMs": 1000,
+          "outMs": 2500,
+          "startMs": 1000,
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 1500,
+          "id": "clip-1",
+          "inMs": 2500,
+          "outMs": 4000,
+          "startMs": 2500,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: split clip with transition clears transition on right 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 1000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 1000,
+          "startMs": 4500,
+          "transition": {
+            "durationMs": 500,
+            "type": "fade",
+          },
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 2000,
+          "id": "clip-2",
+          "inMs": 1000,
+          "outMs": 3000,
+          "startMs": 5500,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: split empty-asset clip 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "",
+          "clipKind": "video",
+          "durationMs": 1500,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 1500,
+          "startMs": 0,
+        },
+        {
+          "assetId": "",
+          "clipKind": "video",
+          "durationMs": 1500,
+          "id": "clip-1",
+          "inMs": 1500,
+          "outMs": 3000,
+          "startMs": 1500,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: split then move right part 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 2500,
+          "startMs": 0,
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-1",
+          "inMs": 2500,
+          "outMs": 5000,
+          "startMs": 5000,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: split clip within transition zone clears transition on left 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 200,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 200,
+          "startMs": 4500,
+          "transition": undefined,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 2800,
+          "id": "clip-2",
+          "inMs": 200,
+          "outMs": 3000,
+          "startMs": 4700,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
