@@ -16,6 +16,7 @@ type Props = {
   onSelectClip: (clipId: string) => void;
   onMoveClip: (clipId: string, newStartMs: number, targetTrackId?: string) => void;
   onTrimClip: (clipId: string, side: "left" | "right", deltaMs: number) => void;
+  onRippleTrimClip?: (clipId: string, side: "left" | "right", deltaMs: number) => void;
   onContextMenu?: (clipId: string, position: { x: number; y: number }) => void;
   onTrackContextMenu?: (trackId: string, position: { x: number; y: number }) => void;
   allTrackIds: string[];
@@ -39,6 +40,7 @@ export function TimelineTrack({
   onSelectClip,
   onMoveClip,
   onTrimClip,
+  onRippleTrimClip,
   onContextMenu,
   onTrackContextMenu,
   allTrackIds,
@@ -114,6 +116,7 @@ export function TimelineTrack({
             onSelect={onSelectClip}
             onMove={onMoveClip}
             onTrim={onTrimClip}
+            onRippleTrim={onRippleTrimClip}
             onContextMenu={onContextMenu}
             trackId={track.id}
             allTrackIds={allTrackIds}

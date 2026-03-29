@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
 import { inferTrackKind } from "@video/shared";
-import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip } from "./sequence-ops";
+import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -936,5 +936,185 @@ describe("splitClip", () => {
     expect(left.transition).toBeDefined();
     expect(left.transition?.durationMs).toBe(500);
     expect(left.durationMs).toBe(1000);
+  });
+});
+
+describe("rippleDelete", () => {
+  function threeClipSeq(): Sequence {
+    return {
+      tracks: [{
+        id: "t1",
+        clips: [
+          { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 },
+          { id: "c2", clipKind: "video", assetId: "v1", startMs: 2000, durationMs: 3000, inMs: 0, outMs: 3000 },
+          { id: "c3", clipKind: "video", assetId: "v1", startMs: 5000, durationMs: 1000, inMs: 0, outMs: 1000 },
+        ],
+      }],
+    };
+  }
+
+  test("removes clip and shifts subsequent clips left", () => {
+    const seq = rippleDelete(threeClipSeq(), "c2");
+    expect(seq.tracks[0].clips).toHaveLength(2);
+    expect(seq.tracks[0].clips[0].id).toBe("c1");
+    expect(seq.tracks[0].clips[0].startMs).toBe(0); // unchanged
+    expect(seq.tracks[0].clips[1].id).toBe("c3");
+    expect(seq.tracks[0].clips[1].startMs).toBe(2000); // 5000 - 3000 = 2000
+  });
+
+  test("removes first clip and shifts all subsequent clips left", () => {
+    const seq = rippleDelete(threeClipSeq(), "c1");
+    expect(seq.tracks[0].clips).toHaveLength(2);
+    expect(seq.tracks[0].clips[0].id).toBe("c2");
+    expect(seq.tracks[0].clips[0].startMs).toBe(0); // 2000 - 2000 = 0
+    expect(seq.tracks[0].clips[1].id).toBe("c3");
+    expect(seq.tracks[0].clips[1].startMs).toBe(3000); // 5000 - 2000 = 3000
+  });
+
+  test("removes last clip without shifting others", () => {
+    const seq = rippleDelete(threeClipSeq(), "c3");
+    expect(seq.tracks[0].clips).toHaveLength(2);
+    expect(seq.tracks[0].clips[0].startMs).toBe(0);
+    expect(seq.tracks[0].clips[1].startMs).toBe(2000);
+  });
+
+  test("removes track when last clip is deleted", () => {
+    const seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [
+          { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 },
+        ],
+      }],
+    };
+    const result = rippleDelete(seq, "c1");
+    expect(result.tracks).toHaveLength(0);
+  });
+
+  test("only affects same track", () => {
+    const seq: Sequence = {
+      tracks: [
+        {
+          id: "t1",
+          clips: [
+            { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 },
+            { id: "c2", clipKind: "video", assetId: "v1", startMs: 2000, durationMs: 3000, inMs: 0, outMs: 3000 },
+          ],
+        },
+        {
+          id: "t2",
+          clips: [
+            { id: "c3", clipKind: "video", assetId: "v1", startMs: 2000, durationMs: 3000, inMs: 0, outMs: 3000 },
+          ],
+        },
+      ],
+    };
+    const result = rippleDelete(seq, "c1");
+    // Track 1: c2 shifted left
+    expect(result.tracks[0].clips[0].id).toBe("c2");
+    expect(result.tracks[0].clips[0].startMs).toBe(0); // shifted from 2000 to 0
+    // Track 2: unchanged
+    expect(result.tracks[1].clips[0].id).toBe("c3");
+    expect(result.tracks[1].clips[0].startMs).toBe(2000);
+  });
+
+  test("no-op for nonexistent clip", () => {
+    const seq = threeClipSeq();
+    const result = rippleDelete(seq, "nonexistent");
+    expect(result).toBe(seq);
+  });
+
+  test("handles clips with gaps correctly", () => {
+    const seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [
+          { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 1000, inMs: 0, outMs: 1000 },
+          { id: "c2", clipKind: "video", assetId: "v1", startMs: 3000, durationMs: 1000, inMs: 0, outMs: 1000 },
+          { id: "c3", clipKind: "video", assetId: "v1", startMs: 6000, durationMs: 1000, inMs: 0, outMs: 1000 },
+        ],
+      }],
+    };
+    // Delete c1 (0-1000), only c2 and c3 should shift left by 1000
+    const result = rippleDelete(seq, "c1");
+    expect(result.tracks[0].clips[0].id).toBe("c2");
+    expect(result.tracks[0].clips[0].startMs).toBe(2000); // 3000 - 1000
+    expect(result.tracks[0].clips[1].id).toBe("c3");
+    expect(result.tracks[0].clips[1].startMs).toBe(5000); // 6000 - 1000
+  });
+});
+
+describe("rippleTrim", () => {
+  function threeClipSeq(): Sequence {
+    return {
+      tracks: [{
+        id: "t1",
+        clips: [
+          { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 },
+          { id: "c2", clipKind: "video", assetId: "v1", startMs: 2000, durationMs: 3000, inMs: 0, outMs: 3000 },
+          { id: "c3", clipKind: "video", assetId: "v1", startMs: 5000, durationMs: 1000, inMs: 0, outMs: 1000 },
+        ],
+      }],
+    };
+  }
+
+  test("right trim shorter shifts subsequent clips left", () => {
+    // Shorten c2 by 1000ms, c3 should shift left by 1000ms
+    const seq = rippleTrim(threeClipSeq(), "c2", "right", -1000);
+    expect(seq.tracks[0].clips[1].durationMs).toBe(2000); // 3000 - 1000
+    expect(seq.tracks[0].clips[2].startMs).toBe(4000); // 5000 - 1000
+  });
+
+  test("right trim longer shifts subsequent clips right", () => {
+    // Extend c2 by 500ms, c3 should shift right by 500ms
+    const seq = rippleTrim(threeClipSeq(), "c2", "right", 500);
+    expect(seq.tracks[0].clips[1].durationMs).toBe(3500);
+    expect(seq.tracks[0].clips[2].startMs).toBe(5500); // 5000 + 500
+  });
+
+  test("left trim does not affect subsequent clips (end unchanged)", () => {
+    // Left trim c2 by 500ms — start moves right, end stays same
+    const seq = rippleTrim(threeClipSeq(), "c2", "left", 500);
+    expect(seq.tracks[0].clips[1].startMs).toBe(2500);
+    expect(seq.tracks[0].clips[1].durationMs).toBe(2500);
+    // c3 stays same since c2's end didn't change
+    expect(seq.tracks[0].clips[2].startMs).toBe(5000);
+  });
+
+  test("does not affect other tracks", () => {
+    const seq: Sequence = {
+      tracks: [
+        {
+          id: "t1",
+          clips: [
+            { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 },
+            { id: "c2", clipKind: "video", assetId: "v1", startMs: 2000, durationMs: 3000, inMs: 0, outMs: 3000 },
+          ],
+        },
+        {
+          id: "t2",
+          clips: [
+            { id: "c3", clipKind: "video", assetId: "v1", startMs: 5000, durationMs: 1000, inMs: 0, outMs: 1000 },
+          ],
+        },
+      ],
+    };
+    const result = rippleTrim(seq, "c1", "right", -500);
+    // c2 should shift left
+    expect(result.tracks[0].clips[1].startMs).toBe(1500); // 2000 - 500
+    // c3 on other track should not move
+    expect(result.tracks[1].clips[0].startMs).toBe(5000);
+  });
+
+  test("no-op for nonexistent clip", () => {
+    const seq = threeClipSeq();
+    const result = rippleTrim(seq, "nonexistent", "right", -500);
+    expect(result).toBe(seq);
+  });
+
+  test("no shift when trim has no duration change", () => {
+    // Try to extend beyond source max — clamped to 0 change
+    const seq = rippleTrim(threeClipSeq(), "c2", "right", 0);
+    expect(seq.tracks[0].clips[2].startMs).toBe(5000); // unchanged
   });
 });

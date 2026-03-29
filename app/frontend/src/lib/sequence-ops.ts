@@ -496,6 +496,111 @@ export function splitClip(
   return { ...sequence, tracks };
 }
 
+/**
+ * Ripple delete: remove a clip and shift all subsequent clips on the same track
+ * to fill the gap. If the track becomes empty, remove it.
+ */
+export function rippleDelete(sequence: Sequence, clipId: string): Sequence {
+  // Find the clip and its track
+  let targetTrack: Track | undefined;
+  let targetClip: Clip | undefined;
+  for (const track of sequence.tracks) {
+    const clip = track.clips.find((c) => c.id === clipId);
+    if (clip) {
+      targetTrack = track;
+      targetClip = clip;
+      break;
+    }
+  }
+  if (!targetTrack || !targetClip) return sequence;
+
+  const clipEnd = targetClip.startMs + targetClip.durationMs;
+  const shiftAmount = targetClip.durationMs;
+
+  const tracks = sequence.tracks
+    .map((track: Track) => {
+      if (track.id !== targetTrack!.id) return { ...track, clips: [...track.clips] };
+      const newClips = track.clips
+        .filter((c: Clip) => c.id !== clipId)
+        .map((c: Clip) => {
+          // Shift subsequent clips left by the removed clip's duration
+          if (c.startMs >= clipEnd) {
+            return { ...c, startMs: c.startMs - shiftAmount };
+          }
+          return c;
+        });
+      return { ...track, clips: newClips };
+    })
+    .filter((track: Track) => track.clips.length > 0);
+
+  return { ...sequence, tracks };
+}
+
+/**
+ * Ripple trim: trim a clip then shift all subsequent clips on the same track
+ * by the change in clip duration.
+ */
+export function rippleTrim(
+  sequence: Sequence,
+  clipId: string,
+  side: "left" | "right",
+  deltaMs: number,
+  maxSourceDurationMs?: number,
+  maxTimelineDurationMs?: number,
+): Sequence {
+  // Find the clip before trimming
+  let oldClip: Clip | undefined;
+  let trackId: string | undefined;
+  for (const track of sequence.tracks) {
+    const clip = track.clips.find((c) => c.id === clipId);
+    if (clip) {
+      oldClip = clip;
+      trackId = track.id;
+      break;
+    }
+  }
+  if (!oldClip || !trackId) return sequence;
+
+  const oldEnd = oldClip.startMs + oldClip.durationMs;
+
+  // Apply the regular trim
+  const trimmed = trimClip(sequence, clipId, side, deltaMs, maxSourceDurationMs, maxTimelineDurationMs);
+
+  // Find the clip after trimming
+  let newClip: Clip | undefined;
+  for (const track of trimmed.tracks) {
+    const clip = track.clips.find((c) => c.id === clipId);
+    if (clip) {
+      newClip = clip;
+      break;
+    }
+  }
+  if (!newClip) return trimmed;
+
+  const newEnd = newClip.startMs + newClip.durationMs;
+  const shift = newEnd - oldEnd; // positive = clip grew, negative = clip shrunk
+
+  if (shift === 0) return trimmed;
+
+  // Shift subsequent clips on the same track
+  const tracks = trimmed.tracks.map((track: Track) => {
+    if (track.id !== trackId) return { ...track, clips: [...track.clips] };
+    return {
+      ...track,
+      clips: track.clips.map((c: Clip) => {
+        if (c.id === clipId) return c;
+        // Only shift clips that were after the original clip end
+        if (c.startMs >= oldEnd) {
+          return { ...c, startMs: Math.max(0, c.startMs + shift) };
+        }
+        return c;
+      }),
+    };
+  });
+
+  return { ...sequence, tracks };
+}
+
 export function trimClip(
   sequence: Sequence,
   clipId: string,

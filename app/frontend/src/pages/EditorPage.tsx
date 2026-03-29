@@ -108,7 +108,7 @@ function EditorPageLoaded({
     project.sequence,
   );
 
-  const { addClipFromAsset, removeClip, moveClip, trimClip, splitClip, addTextClip, addEmptyClip, updateClip, setTransition } =
+  const { addClipFromAsset, removeClip, moveClip, trimClip, splitClip, addTextClip, addEmptyClip, updateClip, setTransition, rippleDelete, rippleTrim } =
     useProjectEditor(project, sequence, pushState);
 
   type ToolMode = "select" | "razor";
@@ -198,6 +198,11 @@ function EditorPageLoaded({
     removeClip(clipId);
     handleSelectClip(null);
   }, [removeClip, handleSelectClip]);
+
+  const handleRippleDeleteClip = useCallback((clipId: string) => {
+    rippleDelete(clipId);
+    handleSelectClip(null);
+  }, [rippleDelete, handleSelectClip]);
 
   // Keyboard shortcuts for undo/redo and tool modes
   useEffect(() => {
@@ -427,8 +432,10 @@ function EditorPageLoaded({
           selectedClipId={selectedClipId}
           onSelectClip={handleSelectClip}
           onDeleteClip={handleDeleteClip}
+          onRippleDeleteClip={handleRippleDeleteClip}
           onMoveClip={moveClip}
           onTrimClip={trimClip}
+          onRippleTrimClip={rippleTrim}
           onSplitClip={splitClip}
           toolMode={toolMode}
           onAddTrack={handleAddTrack}

@@ -16,8 +16,10 @@ type Props = {
   selectedClipId: string | null;
   onSelectClip: (clipId: string | null) => void;
   onDeleteClip?: (clipId: string) => void;
+  onRippleDeleteClip?: (clipId: string) => void;
   onMoveClip?: (clipId: string, newStartMs: number, targetTrackId?: string) => void;
   onTrimClip?: (clipId: string, side: "left" | "right", deltaMs: number) => void;
+  onRippleTrimClip?: (clipId: string, side: "left" | "right", deltaMs: number) => void;
   onAddTrack?: () => void;
   onDeleteTrack?: (trackId: string) => void;
   onSetTransition?: (clipId: string, transition: ClipTransition | undefined) => void;
@@ -37,8 +39,10 @@ export function Timeline({
   selectedClipId,
   onSelectClip,
   onDeleteClip,
+  onRippleDeleteClip,
   onMoveClip,
   onTrimClip,
+  onRippleTrimClip,
   onAddTrack,
   onDeleteTrack,
   onSetTransition,
@@ -143,24 +147,27 @@ export function Timeline({
     [onAddEmptyClip],
   );
 
-  // Handle Delete key
+  // Handle Delete key (Shift+Delete = ripple delete)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         (e.key === "Delete" || e.key === "Backspace") &&
-        selectedClipId &&
-        onDeleteClip
+        selectedClipId
       ) {
         // Don't delete if user is typing in an input
         const target = e.target as HTMLElement;
         if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
         e.preventDefault();
-        onDeleteClip(selectedClipId);
+        if (e.shiftKey && onRippleDeleteClip) {
+          onRippleDeleteClip(selectedClipId);
+        } else if (onDeleteClip) {
+          onDeleteClip(selectedClipId);
+        }
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [selectedClipId, onDeleteClip]);
+  }, [selectedClipId, onDeleteClip, onRippleDeleteClip]);
 
   return (
     <div
@@ -271,6 +278,7 @@ export function Timeline({
                   onSelectClip={onSelectClip}
                   onMoveClip={handleMove}
                   onTrimClip={handleTrim}
+                  onRippleTrimClip={onRippleTrimClip}
                   onContextMenu={handleClipContextMenu}
                   onTrackContextMenu={handleTrackContextMenu}
                   allTrackIds={allTrackIds}
@@ -356,6 +364,17 @@ export function Timeline({
                 onSelectClip(null);
               },
             },
+            ...(onRippleDeleteClip
+              ? [
+                  {
+                    label: "Ripple Delete (Shift+Del)",
+                    onClick: () => {
+                      onRippleDeleteClip(contextMenu.clipId);
+                      onSelectClip(null);
+                    },
+                  },
+                ]
+              : []),
           ]}
         />
       )}

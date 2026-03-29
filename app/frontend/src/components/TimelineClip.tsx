@@ -13,6 +13,7 @@ type Props = {
   onSelect: (clipId: string) => void;
   onMove: (clipId: string, newStartMs: number, targetTrackId?: string) => void;
   onTrim: (clipId: string, side: "left" | "right", deltaMs: number) => void;
+  onRippleTrim?: (clipId: string, side: "left" | "right", deltaMs: number) => void;
   onContextMenu?: (clipId: string, position: { x: number; y: number }) => void;
   trackId: string;
   allTrackIds: string[];
@@ -41,6 +42,7 @@ export function TimelineClip({
   onSelect,
   onMove,
   onTrim,
+  onRippleTrim,
   onContextMenu,
   trackId,
   allTrackIds,
@@ -179,7 +181,11 @@ export function TimelineClip({
         const dx = ev.clientX - trimRef.current.startX;
         const deltaMs = pxToMs(dx);
         trimRef.current.startX = ev.clientX;
-        onTrim(clip.id, trimRef.current.side, deltaMs);
+        if (ev.shiftKey && onRippleTrim) {
+          onRippleTrim(clip.id, trimRef.current.side, deltaMs);
+        } else {
+          onTrim(clip.id, trimRef.current.side, deltaMs);
+        }
       };
 
       const handleMouseUp = () => {
@@ -193,7 +199,7 @@ export function TimelineClip({
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [clip.id, pxToMs, onSelect, onTrim, formatTrimLabel],
+    [clip.id, pxToMs, onSelect, onTrim, onRippleTrim, formatTrimLabel],
   );
 
   // Update tooltip value during trim drag
