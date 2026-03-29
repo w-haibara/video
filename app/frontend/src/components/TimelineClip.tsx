@@ -47,15 +47,22 @@ export function TimelineClip({
   const width = msToPx(clip.durationMs);
   const left = msToPx(clip.startMs);
   const isTextClip = !!clip.text;
+  const isEmptyAsset = clip.assetId === "" && !isTextClip;
   const label = isTextClip
     ? (clip.text?.value || "Text")
-    : asset
-      ? asset.originalPath.split("/").pop() ?? asset.kind
-      : "clip";
+    : isEmptyAsset
+      ? "No Asset"
+      : asset
+        ? asset.originalPath.split("/").pop() ?? asset.kind
+        : "clip";
 
   const descriptor = clipKindRegistry.get(clip.clipKind);
-  const bgColor = isSelected ? (descriptor?.clipSelectedColor ?? theme.clipVideoSelect) : (descriptor?.clipColor ?? theme.clipVideo);
-  const borderColor = isSelected ? theme.text : (descriptor?.clipColor ?? theme.clipVideo);
+  const bgColor = isEmptyAsset
+    ? (isSelected ? theme.bgHover : theme.bgDark)
+    : isSelected ? (descriptor?.clipSelectedColor ?? theme.clipVideoSelect) : (descriptor?.clipColor ?? theme.clipVideo);
+  const borderColor = isEmptyAsset
+    ? theme.textMuted
+    : isSelected ? theme.text : (descriptor?.clipColor ?? theme.clipVideo);
   const dragRef = useRef<{ startX: number; startMs: number; startY: number; sourceTrackIndex: number } | null>(null);
   const trimRef = useRef<{ startX: number; side: "left" | "right" } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -189,7 +196,7 @@ export function TimelineClip({
         minWidth: "4px",
         background: bgColor,
         borderRadius: "3px",
-        border: `${isSelected ? 2 : 1}px solid ${borderColor}`,
+        border: `${isSelected ? 2 : 1}px ${isEmptyAsset ? "dashed" : "solid"} ${borderColor}`,
         overflow: "hidden",
         cursor: isDragging ? "grabbing" : "grab",
         opacity: isDraggingToOtherTrack ? 0.5 : 1,

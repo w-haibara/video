@@ -67,6 +67,11 @@ export class PreviewRendererRegistry {
 
 export const previewRendererRegistry = new PreviewRendererRegistry();
 
+/** Check whether a clip has an empty (unassigned) asset. */
+export function isEmptyAssetClip(clip: Clip): boolean {
+  return clip.assetId === "";
+}
+
 /** Find the first active clip matching the given clipKind, optionally filtered by asset kind. */
 export function findActiveClipInTracks(
   project: Project,
@@ -78,6 +83,7 @@ export function findActiveClipInTracks(
     const track = project.sequence.tracks[i];
     for (const clip of track.clips) {
       if (clip.clipKind !== clipKind) continue;
+      if (isEmptyAssetClip(clip)) continue;
       if (timeMs >= clip.startMs && timeMs < clip.startMs + clip.durationMs) {
         const asset = project.assets.find((a: Asset) => a.id === clip.assetId);
         if (!asset) continue;
@@ -103,6 +109,7 @@ export function findAllActiveClips(
     const track = project.sequence.tracks[i];
     for (const clip of track.clips) {
       if (clipKind && clip.clipKind !== clipKind) continue;
+      if (isEmptyAssetClip(clip)) continue;
       if (timeMs >= clip.startMs && timeMs < clip.startMs + clip.durationMs) {
         const asset = project.assets.find((a: Asset) => a.id === clip.assetId);
         if (!asset) continue;
@@ -110,6 +117,32 @@ export function findAllActiveClips(
         const offset = timeMs - clip.startMs;
         const clipTimeMs = clip.inMs + offset;
         result.push({ clip, asset, clipTimeMs, trackIndex: i });
+      }
+    }
+  }
+  return result;
+}
+
+/** Active clip placeholder for clips with empty assetId. */
+export type ActiveEmptyClip = {
+  clip: Clip;
+  trackIndex: number;
+};
+
+/** Find all active clips that have an empty assetId (no asset assigned). */
+export function findAllActiveEmptyClips(
+  project: Project,
+  timeMs: number,
+): ActiveEmptyClip[] {
+  const result: ActiveEmptyClip[] = [];
+  for (let i = 0; i < project.sequence.tracks.length; i++) {
+    const track = project.sequence.tracks[i];
+    for (const clip of track.clips) {
+      if (!isEmptyAssetClip(clip)) continue;
+      // title clips with text are handled by the text overlay renderer
+      if (clip.clipKind === "title" && clip.text) continue;
+      if (timeMs >= clip.startMs && timeMs < clip.startMs + clip.durationMs) {
+        result.push({ clip, trackIndex: i });
       }
     }
   }

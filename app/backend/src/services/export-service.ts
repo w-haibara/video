@@ -93,9 +93,11 @@ export function buildExportArgs(
 
   // Collect all visual clips from all tracks, with track index.
   // A clip is "visual" if a clip handler is registered for its asset kind.
+  // Clips with empty assetId (no asset assigned) are skipped.
   const allVisualClips: { clip: Clip; trackIndex: number }[] = [];
   project.sequence.tracks.forEach((track, trackIndex) => {
     for (const clip of track.clips) {
+      if (!clip.assetId) continue;
       const asset = project.assets.find((a) => a.id === clip.assetId);
       if (asset && exportHandlerRegistry.hasClipHandler(asset.kind)) {
         allVisualClips.push({ clip, trackIndex });
@@ -329,9 +331,10 @@ export async function startExport(
   const outputPath = path.join(expDir, path.basename(filename));
   const assetsBase = assetsDir(projectId);
 
-  // Validate - check for visual clips across all tracks
+  // Validate - check for visual clips across all tracks (skip empty-asset clips)
   const visualClips = project.sequence.tracks.flatMap((t) =>
     t.clips.filter((c) => {
+      if (!c.assetId) return false;
       const asset = project.assets.find((a) => a.id === c.assetId);
       return asset != null && exportHandlerRegistry.hasClipHandler(asset.kind);
     }),

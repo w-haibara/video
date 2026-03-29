@@ -47,7 +47,8 @@ export function InspectorPanel({ project, selectedClipId, onUpdateClip, onMoveCl
   const { clip, asset } = result;
   const descriptor = clipKindRegistry.get(clip.clipKind);
   const hasAsset = descriptor?.hasAsset ?? true;
-  const fileName = asset?.originalPath.split("/").pop() ?? "\u2014";
+  const isEmptyAsset = clip.assetId === "" && hasAsset;
+  const fileName = isEmptyAsset ? "(No asset assigned)" : (asset?.originalPath.split("/").pop() ?? "\u2014");
 
   const editorCtx = {
     clip,

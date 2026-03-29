@@ -826,6 +826,94 @@ describe("buildExportArgs", () => {
     expect(filter).toContain("enable='between(t,6,9)'");
   });
 
+  test("skips empty-asset clips and exports only clips with assets", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            clips: [
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+            ],
+          },
+          {
+            id: "t2",
+            clips: [
+              { id: "empty1", clipKind: "video", assetId: "", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Only one overlay (for the real video clip), the empty-asset clip is skipped
+    const overlayMatches = filter.match(/overlay=/g);
+    expect(overlayMatches?.length).toBe(1);
+  });
+
+  test("throws when all clips have empty assetId", () => {
+    const project = makeProject({
+      assets: [],
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            clips: [
+              { id: "empty1", clipKind: "video", assetId: "", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
+            ],
+          },
+        ],
+      },
+    });
+    expect(() => buildExportArgs(project, "/assets", "/out.mp4")).toThrow("No video clips to export");
+  });
+
+  test("skips empty-asset clips in mixed multi-track with text", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [
+          {
+            id: "t1",
+            clips: [
+              { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 5000, inMs: 0, outMs: 5000 },
+            ],
+          },
+          {
+            id: "t2",
+            clips: [
+              { id: "empty1", clipKind: "image", assetId: "", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
+            ],
+          },
+          {
+            id: "t3",
+            clips: [
+              {
+                id: "tc1",
+                clipKind: "title",
+                assetId: "",
+                startMs: 0,
+                durationMs: 2000,
+                inMs: 0,
+                outMs: 2000,
+                text: { value: "Title" },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/out.mp4");
+    const filterIdx = args.indexOf("-filter_complex");
+    const filter = args[filterIdx + 1];
+    // Only the real video clip overlay, empty image clip is skipped
+    const overlayMatches = filter.match(/overlay=/g);
+    expect(overlayMatches?.length).toBe(1);
+    // But text overlay should still be applied
+    expect(filter).toContain("drawtext=text='Title'");
+  });
+
   test("collects text clips by clipKind across all tracks", () => {
     const project = makeProject({
       sequence: {

@@ -28,6 +28,8 @@ import {
   makeAddProject,
   makeDifferenceProject,
   makeP5jsProject,
+  makeEmptyAssetMixedProject,
+  makeOnlyEmptyAssetProject,
   CANVAS_W,
   CANVAS_H,
   FPS,
@@ -196,4 +198,16 @@ describe("export regression", () => {
   test("p5.js clip (pre-rendered)", async () => {
     await runExportRegression("p5js-clip", makeP5jsProject());
   }, 30_000);
+
+  test("empty-asset clip mixed with video (empty skipped)", async () => {
+    await runExportRegression("empty-asset-mixed", makeEmptyAssetMixedProject());
+  }, 30_000);
+
+  test("only empty-asset clips (should throw)", async () => {
+    expect(() => {
+      const project = makeOnlyEmptyAssetProject();
+      const { buildExportArgs } = require("./export-service");
+      buildExportArgs(project, ASSETS_DIR, "/tmp/test-output.mp4");
+    }).toThrow("No video clips to export");
+  });
 });

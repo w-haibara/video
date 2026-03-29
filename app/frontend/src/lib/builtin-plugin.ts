@@ -17,6 +17,7 @@ import { P5jsEditor } from "../components/editors/P5jsEditor";
 import { videoClipRenderer, p5jsClipRenderer } from "../components/renderers/VideoClipRenderer";
 import { imageClipRenderer } from "../components/renderers/ImageClipRenderer";
 import { textOverlayRenderer } from "../components/renderers/TextOverlayRenderer";
+import { emptyAssetRenderer } from "../components/renderers/EmptyAssetRenderer";
 import type { ActiveClip, TickContext } from "./preview-renderer-registry";
 import { coverPreviewStrategy } from "./composite-strategies/cover-strategy";
 import { opacityPreviewStrategy } from "./composite-strategies/opacity-strategy";
@@ -182,6 +183,7 @@ export const builtinPlugin: FrontendPlugin = {
     registry.register(p5jsClipRenderer);
     registry.register(imageClipRenderer);
     registry.register(textOverlayRenderer);
+    registry.register(emptyAssetRenderer);
 
     registry.registerTickStrategy({
       assetKind: "video",
