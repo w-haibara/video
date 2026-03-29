@@ -611,6 +611,138 @@ export function rippleTrim(
   return { ...sequence, tracks };
 }
 
+/**
+ * Duplicate a clip immediately after the original on the same track.
+ * The new clip gets a fresh ID and no transition.
+ */
+export function duplicateClip(
+  sequence: Sequence,
+  clipId: string,
+  maxDurationMs: number,
+): Sequence {
+  let targetTrack: Track | undefined;
+  let originalClip: Clip | undefined;
+  for (const track of sequence.tracks) {
+    const clip = track.clips.find((c) => c.id === clipId);
+    if (clip) {
+      targetTrack = track;
+      originalClip = clip;
+      break;
+    }
+  }
+  if (!targetTrack || !originalClip) return sequence;
+
+  const newStartMs = originalClip.startMs + originalClip.durationMs;
+
+  // Reject if start is beyond the limit
+  if (newStartMs >= maxDurationMs) return sequence;
+
+  // Clamp duration to fit within the limit
+  let durationMs = originalClip.durationMs;
+  if (newStartMs + durationMs > maxDurationMs) {
+    durationMs = maxDurationMs - newStartMs;
+  }
+
+  // Check for overlap with existing clips on this track
+  const hasOverlap = targetTrack.clips.some((c: Clip) => {
+    if (c.id === clipId) return false;
+    const cEnd = c.startMs + c.durationMs;
+    return newStartMs < cEnd && newStartMs + durationMs > c.startMs;
+  });
+  if (hasOverlap) return sequence;
+
+  const newClip: Clip = {
+    ...originalClip,
+    id: generateId(),
+    startMs: newStartMs,
+    durationMs,
+    outMs: originalClip.inMs + durationMs,
+    transition: undefined, // duplicated clip has no transition
+  };
+
+  const tracks = sequence.tracks.map((track: Track) => {
+    if (track.id !== targetTrack!.id) return { ...track, clips: [...track.clips] };
+    const newClips = [...track.clips, newClip].sort((a: Clip, b: Clip) => a.startMs - b.startMs);
+    return { ...track, clips: newClips };
+  });
+
+  return { ...sequence, tracks };
+}
+
+/**
+ * Paste a clip at a given time on a target track.
+ * The clip gets a fresh ID and no transition.
+ */
+export function pasteClip(
+  sequence: Sequence,
+  clip: Clip,
+  pasteTimeMs: number,
+  targetTrackId: string,
+  maxDurationMs: number,
+): Sequence {
+  const startMs = Math.max(0, Math.round(pasteTimeMs));
+
+  // Reject if start is beyond the limit
+  if (startMs >= maxDurationMs) return sequence;
+
+  // Clamp duration to fit within the limit
+  let durationMs = clip.durationMs;
+  if (startMs + durationMs > maxDurationMs) {
+    durationMs = maxDurationMs - startMs;
+  }
+
+  let targetTrack = sequence.tracks.find((t: Track) => t.id === targetTrackId);
+  const tracks = sequence.tracks.map((t: Track) => ({ ...t, clips: [...t.clips] }));
+
+  if (!targetTrack) {
+    // If target track doesn't exist, create one
+    targetTrack = { id: generateId(), clips: [] };
+    tracks.push(targetTrack);
+  } else {
+    // Use the copy from tracks array
+    targetTrack = tracks.find((t: Track) => t.id === targetTrackId)!;
+  }
+
+  // Check for overlap with existing clips on target track
+  const hasOverlap = targetTrack.clips.some((c: Clip) => {
+    const cEnd = c.startMs + c.durationMs;
+    return startMs < cEnd && startMs + durationMs > c.startMs;
+  });
+  if (hasOverlap) return sequence;
+
+  const newClip: Clip = {
+    ...clip,
+    id: generateId(),
+    startMs,
+    durationMs,
+    outMs: clip.inMs + durationMs,
+    transition: undefined, // pasted clip has no transition
+  };
+
+  targetTrack.clips.push(newClip);
+  targetTrack.clips.sort((a: Clip, b: Clip) => a.startMs - b.startMs);
+
+  return { ...sequence, tracks };
+}
+
+/**
+ * Paste only visual attributes (transform, blendMode, crop, transition) from
+ * a source clip onto a target clip.
+ */
+export function pasteAttributes(
+  sequence: Sequence,
+  sourceClip: Clip,
+  targetClipId: string,
+): Sequence {
+  const updates: Partial<Clip> = {};
+  if (sourceClip.transform) updates.transform = { ...sourceClip.transform };
+  if (sourceClip.blendMode) updates.blendMode = sourceClip.blendMode;
+  if (sourceClip.crop) updates.crop = { ...sourceClip.crop };
+  // Note: transition is NOT pasted because it depends on clip position/context
+
+  return updateClip(sequence, targetClipId, updates);
+}
+
 export function trimClip(
   sequence: Sequence,
   clipId: string,

@@ -14,6 +14,9 @@ export type KeyboardShortcutActions = {
   onStepBackward: () => void;
   onSplitAtPlayhead: () => void;
   onToggleShortcutsHelp: () => void;
+  onCopy: () => void;
+  onPaste: () => void;
+  onDuplicate: () => void;
   isPlaying: boolean;
 };
 
@@ -36,7 +39,7 @@ export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
     const handleKeyDown = (e: KeyboardEvent) => {
       const a = actionsRef.current;
 
-      // Always allow undo/redo even in inputs (consistent with OS behavior)
+      // Always allow undo/redo and clipboard shortcuts even in inputs
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         a.onUndo();
@@ -45,6 +48,26 @@ export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
       if ((e.ctrlKey || e.metaKey) && ((e.key === "z" && e.shiftKey) || e.key === "y")) {
         e.preventDefault();
         a.onRedo();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "c" || e.key === "C") && !e.shiftKey) {
+        // Only handle copy when not in an editable target
+        if (!isEditableTarget(e)) {
+          e.preventDefault();
+          a.onCopy();
+          return;
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "v" || e.key === "V") && !e.shiftKey) {
+        if (!isEditableTarget(e)) {
+          e.preventDefault();
+          a.onPaste();
+          return;
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "d" || e.key === "D") && !e.shiftKey) {
+        e.preventDefault();
+        a.onDuplicate();
         return;
       }
 
@@ -157,6 +180,9 @@ export const SHORTCUT_DEFINITIONS: { key: string; description: string }[] = [
   { key: "S", description: "Split at playhead" },
   { key: "Delete", description: "Delete selected clip" },
   { key: "Shift+Delete", description: "Ripple delete selected clip" },
+  { key: "Ctrl+C", description: "Copy selected clip" },
+  { key: "Ctrl+V", description: "Paste clip at playhead" },
+  { key: "Ctrl+D", description: "Duplicate selected clip" },
   { key: "Ctrl+Z", description: "Undo" },
   { key: "Ctrl+Shift+Z", description: "Redo" },
   { key: "?", description: "Toggle shortcuts help" },
