@@ -41,6 +41,18 @@ After modifying `sequence-ops` or export-related code, follow this workflow:
 - Add entry to `EXPORT_TESTS` in `tools/regression-viewer/index.ts`
 - Verify frames visually in viewer before committing
 
+## PR merge checklist
+
+Before merging any PR, always:
+
+1. Run `bun run test` — all tests must pass
+2. Verify with Playwright by accessing the dev server
+3. If snapshots were added or changed, visually confirm via the regression viewer
+
+## Agent workflow
+
+Implementation and pre-merge review must each run in a separate subagent.
+
 ## Devcontainer
 
 See @.devcontainer/README.md for setup instructions. Key points:
