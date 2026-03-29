@@ -111,6 +111,7 @@ const EXPORT_TESTS: Array<{
   { name: "muted-track", description: "Video + muted image track (muted excluded)", factory: makeMutedTrackProject },
   { name: "transition-with-transform", description: "Fade transition + transform on clip 2", factory: makeTransitionWithTransformProject },
   { name: "transition-multi-track", description: "Fade transition on track 1 + image overlay on track 2", factory: makeTransitionMultiTrackProject },
+  { name: "p5js-rendered", description: "p5.js sketch rendered from source via Chromium pipeline", factory: makeP5jsProject },
 ];
 
 // ── Snap parser ──

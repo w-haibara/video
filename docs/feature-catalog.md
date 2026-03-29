@@ -2,7 +2,7 @@
 
 ## Table of Contents
 
-### Export Regression Tests (26)
+### Export Regression Tests (27)
 
 - [single-video](#single-video) — Single 1s video clip
 - [two-clips](#two-clips) — Two sequential video clips (0-1s, 1-2s)
@@ -30,6 +30,7 @@
 - [muted-track](#muted-track) — Video + muted image track (muted excluded)
 - [transition-with-transform](#transition-with-transform) — Fade transition + transform on clip 2
 - [transition-multi-track](#transition-multi-track) — Fade transition on track 1 + image overlay on track 2
+- [p5js-rendered](#p5js-rendered) — p5.js sketch rendered from source via Chromium pipeline
 
 ### Editor Operation Snapshots (62)
 
@@ -1125,6 +1126,108 @@ t2                          [IIIIIIIIIIIIIII]
 **Filmstrip**
 
 <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0012.png" width="80" title="frame 12"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0013.png" width="80" title="frame 13"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0014.png" width="80" title="frame 14"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0015.png" width="80" title="frame 15"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0016.png" width="80" title="frame 16"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0017.png" width="80" title="frame 17"> <img src="../app/backend/src/__fixtures__/export/references/transition-multi-track/frame_0018.png" width="80" title="frame 18">
+
+---
+
+### p5js-rendered
+
+p5.js sketch rendered from source via Chromium pipeline
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 10
+
+**Assets**
+
+- `p5js1` (p5js, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="p5js1 (p5js)"></video>
+
+**p5.js Sketch** (`assets/test-sketch.p5.js`)
+
+```javascript
+// Sample p5.js sketch — blue circle on red background
+function setup() {
+  createCanvas(160, 90);
+}
+
+function draw() {
+  background(220, 40, 40);
+  fill(40, 80, 220);
+  noStroke();
+  ellipse(width / 2, height / 2, 50, 50);
+}
+```
+
+<details>
+<summary><strong>Generated HTML (passed to Chromium for rendering)</strong></summary>
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>html,body{margin:0;padding:0;overflow:hidden;}</style>
+</head>
+<body>
+<script src="file:///home/alice/ghq/github.com/w-haibara/video/app/backend/vendor/p5.min.js"></script>
+<script>
+// User sketch code
+// Sample p5.js sketch — blue circle on red background
+function setup() {
+  createCanvas(160, 90);
+}
+
+function draw() {
+  background(220, 40, 40);
+  fill(40, 80, 220);
+  noStroke();
+  ellipse(width / 2, height / 2, 50, 50);
+}
+
+
+// Rendering control API for web-render step
+(function() {
+  var _origSetup = typeof setup === 'function' ? setup : function() {};
+  var _origDraw = typeof draw === 'function' ? draw : function() {};
+
+  window.setup = function() {
+    createCanvas(160, 90);
+    _origSetup();
+    noLoop();
+    window.__ready = true;
+  };
+
+  window.__renderFrame = function(frameIndex) {
+    // Advance to the target frame by calling draw
+    _origDraw();
+  };
+})();
+</script>
+</body>
+</html>
+```
+
+</details>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | p5js | p5js1 | 0ms | 1000ms | 0-1000ms | - |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0010.png" width="80" title="frame 10">
 
 ---
 

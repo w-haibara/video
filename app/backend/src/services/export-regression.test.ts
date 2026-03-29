@@ -1,11 +1,14 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
-import { mkdtemp, rm, mkdir, cp, readdir } from "node:fs/promises";
+import { mkdtemp, rm, mkdir, cp, readdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { Project } from "@video/shared";
+import type { Project, Asset } from "@video/shared";
 import { exportProject } from "./export-runner";
 import { extractFrames } from "../utils/frame-extract";
 import { compareFrames, listFrames } from "../utils/frame-compare";
+import { p5jsPrepareStep } from "../pipeline/steps/p5js-prepare";
+import { webRenderStep } from "../pipeline/steps/web-render";
+import type { PipelineContext } from "../pipeline/types";
 import {
   makeSingleVideoProject,
   makeTwoClipProject,
@@ -64,13 +67,14 @@ async function hasReferenceFrames(dir: string): Promise<boolean> {
 async function runExportRegression(
   testName: string,
   project: Project,
+  assetsDir: string = ASSETS_DIR,
 ) {
   const testDir = path.join(tmpDir, testName);
   const outputPath = path.join(testDir, "output.mp4");
   const actualFramesDir = path.join(testDir, "frames");
 
   // Export
-  await exportProject(project, ASSETS_DIR, outputPath);
+  await exportProject(project, assetsDir, outputPath);
 
   // Extract frames
   const frames = await extractFrames({
@@ -230,4 +234,74 @@ describe("export regression", () => {
   test("transition + multi-track overlay", async () => {
     await runExportRegression("transition-multi-track", makeTransitionMultiTrackProject());
   }, 30_000);
+
+  test("p5.js clip (rendered from sketch)", async () => {
+    // 1. Read sketch source and set up a temp project dir with the sketch
+    const sketchCode = await readFile(
+      path.join(ASSETS_DIR, "test-sketch.p5.js"),
+      "utf-8",
+    );
+    const projDir = path.join(tmpDir, "p5js-rendered-project");
+    await mkdir(projDir, { recursive: true });
+    await writeFile(path.join(projDir, "sketch.p5.js"), sketchCode);
+
+    // 2. Run p5js pipeline: prepare → web-render
+    const asset: Asset = {
+      id: "p5js-rendered",
+      kind: "p5js",
+      originalPath: "sketch.p5.js",
+      durationMs: 1000,
+      width: CANVAS_W,
+      height: CANVAS_H,
+    };
+    const shared = new Map<string, unknown>([
+      ["canvasWidth", CANVAS_W],
+      ["canvasHeight", CANVAS_H],
+      ["fps", FPS],
+      ["durationMs", 1000],
+    ]);
+    const ctx: PipelineContext = {
+      asset,
+      projectDir: projDir,
+      projectId: "p5js-render-test",
+      shared,
+      reportProgress: () => {},
+    };
+    await p5jsPrepareStep.execute(ctx);
+    await webRenderStep.execute(ctx);
+
+    // 3. Build project pointing to the rendered MP4
+    const project: Project = {
+      id: "p5js-render-test",
+      name: "p5js render test",
+      createdAt: "2026-01-01T00:00:00Z",
+      updatedAt: "2026-01-01T00:00:00Z",
+      assets: [ctx.asset],
+      sequence: {
+        tracks: [{
+          id: "t1",
+          clips: [{
+            id: "c1",
+            clipKind: "p5js",
+            assetId: "p5js-rendered",
+            startMs: 0,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+          }],
+        }],
+      },
+      settings: { durationMs: 2000, canvasWidth: CANVAS_W, canvasHeight: CANVAS_H },
+      exportPreset: {
+        width: CANVAS_W,
+        height: CANVAS_H,
+        fps: FPS,
+        videoBitrate: "200k",
+        audioBitrate: "64k",
+      },
+    };
+
+    // 4. Export and compare frames (rendered MP4 is in projDir/assets/)
+    await runExportRegression("p5js-rendered", project, path.join(projDir, "assets"));
+  }, 60_000);
 });
