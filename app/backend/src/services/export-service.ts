@@ -91,11 +91,13 @@ export function buildExportArgs(
   // Project duration limit
   const projectDurationMs = project.settings?.durationMs;
 
-  // Collect all visual clips (video/image) from all tracks, with track index
+  // Collect all visual clips from all tracks, with track index.
+  // A clip is "visual" if a clip handler is registered for its asset kind.
   const allVisualClips: { clip: Clip; trackIndex: number }[] = [];
   project.sequence.tracks.forEach((track, trackIndex) => {
     for (const clip of track.clips) {
-      if (clip.clipKind === "video" || clip.clipKind === "image") {
+      const asset = project.assets.find((a) => a.id === clip.assetId);
+      if (asset && exportHandlerRegistry.hasClipHandler(asset.kind)) {
         allVisualClips.push({ clip, trackIndex });
       }
     }
@@ -365,7 +367,10 @@ export async function startExport(
 
   // Validate - check for visual clips across all tracks
   const visualClips = project.sequence.tracks.flatMap((t) =>
-    t.clips.filter((c) => c.clipKind === "video" || c.clipKind === "image"),
+    t.clips.filter((c) => {
+      const asset = project.assets.find((a) => a.id === c.assetId);
+      return asset != null && exportHandlerRegistry.hasClipHandler(asset.kind);
+    }),
   );
   if (visualClips.length === 0) {
     throw new Error("No video clips to export");
