@@ -13,7 +13,8 @@ import { TransformEditor } from "../components/editors/TransformEditor";
 import { AudioVolumeEditor } from "../components/editors/AudioVolumeEditor";
 import { BlendModeEditor } from "../components/editors/BlendModeEditor";
 import { TransitionEditor } from "../components/editors/TransitionEditor";
-import { videoClipRenderer } from "../components/renderers/VideoClipRenderer";
+import { P5jsEditor } from "../components/editors/P5jsEditor";
+import { videoClipRenderer, p5jsClipRenderer } from "../components/renderers/VideoClipRenderer";
 import { imageClipRenderer } from "../components/renderers/ImageClipRenderer";
 import { textOverlayRenderer } from "../components/renderers/TextOverlayRenderer";
 import type { ActiveClip, TickContext } from "./preview-renderer-registry";
@@ -77,6 +78,14 @@ export const builtinPlugin: FrontendPlugin = {
       hasSourceTrim: false,
       hasAsset: false,
     });
+    registry.register({
+      kind: "p5js",
+      label: "p5.js",
+      clipColor: "#ed225d",
+      clipSelectedColor: "#ff4081",
+      hasSourceTrim: false,
+      hasAsset: true,
+    });
   },
 
   registerAssetKinds(registry: AssetKindRegistry) {
@@ -104,6 +113,15 @@ export const builtinPlugin: FrontendPlugin = {
       mimePatterns: ["audio/*"],
       defaultTrackKind: "audio",
       hasDuration: true,
+    });
+    registry.register({
+      kind: "p5js",
+      label: "p5.js",
+      extensions: [".p5.js"],
+      mimePatterns: [],
+      defaultTrackKind: "video",
+      hasDuration: false,
+      defaultDurationMs: 5000,
     });
   },
 
@@ -150,15 +168,50 @@ export const builtinPlugin: FrontendPlugin = {
       canHandle: (ctx) => ctx.clipKind === "audio",
       Component: AudioVolumeEditor,
     });
+    registry.register({
+      id: "p5js",
+      label: "Sketch",
+      order: 15,
+      canHandle: (ctx) => ctx.clipKind === "p5js",
+      Component: P5jsEditor,
+    });
   },
 
   registerPreviewRenderers(registry: PreviewRendererRegistry) {
     registry.register(videoClipRenderer);
+    registry.register(p5jsClipRenderer);
     registry.register(imageClipRenderer);
     registry.register(textOverlayRenderer);
 
     registry.registerTickStrategy({
       assetKind: "video",
+      tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
+        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded } = tickCtx;
+        const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
+        const videoReady = clip.clip.id === lastClipId;
+
+        if (!videoRef) {
+          return null;
+        } else if (!videoReady) {
+          return Math.min(currentTimeMs + deltaMs, clipEndMs);
+        } else if (videoRef.ended || videoEnded) {
+          resetVideoEnded();
+          return Math.min(currentTimeMs + deltaMs, clipEndMs);
+        } else if (videoRef.readyState >= 2 && !videoRef.paused) {
+          const videoTimeMs = videoRef.currentTime * 1000;
+          const expectedVideoTime = clip.clip.inMs + (currentTimeMs - clip.clip.startMs);
+          if (Math.abs(videoTimeMs - expectedVideoTime) > 500) {
+            return Math.min(currentTimeMs + deltaMs, clipEndMs);
+          }
+          const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs);
+          return Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
+        }
+        return null;
+      },
+    });
+
+    registry.registerTickStrategy({
+      assetKind: "p5js",
       tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
         const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded } = tickCtx;
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;

@@ -5,7 +5,7 @@ import { compositeStrategyRegistry } from "../../lib/composite-strategy-registry
 import type { Asset } from "@video/shared";
 
 function getVideoMediaUrl(asset: Asset, projectId: string): string {
-  if (asset.kind === "video" && asset.proxyPath) {
+  if ((asset.kind === "video" || asset.kind === "p5js") && asset.proxyPath) {
     const filename = asset.proxyPath.split("/").pop();
     return `/media/projects/${projectId}/proxies/${filename}`;
   }
@@ -156,5 +156,17 @@ export const videoClipRenderer: PreviewLayerRenderer = {
   id: "video-clip",
   zOrder: 0,
   findActiveContent: findActiveVideoClips,
+  Component: VideoClipComponent,
+};
+
+function findActiveP5jsClips(ctx: PreviewRenderContext): ActiveClip[] | null {
+  const clips = findAllActiveClips(ctx.project, ctx.currentTimeMs, "p5js", "p5js");
+  return clips.length > 0 ? clips : null;
+}
+
+export const p5jsClipRenderer: PreviewLayerRenderer = {
+  id: "p5js-clip",
+  zOrder: 0,
+  findActiveContent: findActiveP5jsClips,
   Component: VideoClipComponent,
 };

@@ -68,7 +68,7 @@ export function AssetPanel({ project, onAddToTimeline }: Props) {
         ref={fileInputRef}
         type="file"
         multiple
-        accept="video/*,image/*,audio/*,.heic"
+        accept="video/*,image/*,audio/*,.heic,.p5.js"
         style={{ display: "none" }}
         onChange={handleFileSelect}
       />
