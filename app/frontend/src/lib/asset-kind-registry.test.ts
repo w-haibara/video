@@ -32,6 +32,12 @@ describe("AssetKindRegistry", () => {
     expect(assetKindRegistry.detectByExtension(".JPG")?.kind).toBe("image");
   });
 
+  test("p5js kind is registered", () => {
+    const desc = assetKindRegistry.get("p5js");
+    expect(desc).toBeDefined();
+    expect(desc!.extensions).toContain(".p5.js");
+  });
+
   test("detectByExtension returns undefined for unknown extension", () => {
     expect(assetKindRegistry.detectByExtension(".xyz")).toBeUndefined();
     expect(assetKindRegistry.detectByExtension(".doc")).toBeUndefined();

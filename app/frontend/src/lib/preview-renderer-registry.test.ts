@@ -16,6 +16,17 @@ describe("PreviewRendererRegistry", () => {
     expect(previewRendererRegistry.getTickStrategy("image")).toBeDefined();
   });
 
+  test("p5js tick strategy is registered", () => {
+    expect(previewRendererRegistry.getTickStrategy("p5js")).toBeDefined();
+  });
+
+  test("p5js renderer is registered with findActiveContent", () => {
+    const all = previewRendererRegistry.all();
+    const p5jsRenderer = all.find((r) => r.id === "p5js-clip");
+    expect(p5jsRenderer).toBeDefined();
+    expect(p5jsRenderer!.findActiveContent).toBeDefined();
+  });
+
   describe("isolated instance", () => {
     let registry: PreviewRendererRegistry;
 
