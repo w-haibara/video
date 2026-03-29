@@ -17,6 +17,7 @@ export type KeyboardShortcutActions = {
   onCopy: () => void;
   onPaste: () => void;
   onDuplicate: () => void;
+  onToggleSnap: () => void;
   isPlaying: boolean;
 };
 
@@ -151,6 +152,13 @@ export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
           }
           break;
 
+        case "n":
+        case "N":
+          if (!e.ctrlKey && !e.metaKey) {
+            a.onToggleSnap();
+          }
+          break;
+
         case "?":
           a.onToggleShortcutsHelp();
           break;
@@ -178,6 +186,7 @@ export const SHORTCUT_DEFINITIONS: { key: string; description: string }[] = [
   { key: "V", description: "Select tool" },
   { key: "C", description: "Razor tool" },
   { key: "S", description: "Split at playhead" },
+  { key: "N", description: "Toggle snapping" },
   { key: "Delete", description: "Delete selected clip" },
   { key: "Shift+Delete", description: "Ripple delete selected clip" },
   { key: "Ctrl+C", description: "Copy selected clip" },

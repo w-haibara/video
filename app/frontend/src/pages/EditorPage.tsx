@@ -118,6 +118,8 @@ function EditorPageLoaded({
 
   type ToolMode = "select" | "razor";
   const [toolMode, setToolMode] = useState<ToolMode>("select");
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const toggleSnap = useCallback(() => setSnapEnabled((v) => !v), []);
 
   const { saveStatus } = useAutoSave(project.id, sequence);
 
@@ -286,6 +288,7 @@ function EditorPageLoaded({
     onCopy: handleCopy,
     onPaste: handlePaste,
     onDuplicate: handleDuplicate,
+    onToggleSnap: toggleSnap,
   });
 
   return (
@@ -505,6 +508,8 @@ function EditorPageLoaded({
           onDuplicateClip={handleDuplicate}
           onPasteAttributes={handlePasteAttributes}
           hasClipboard={clipboardClip !== null}
+          snapEnabled={snapEnabled}
+          onToggleSnap={toggleSnap}
         />
       }
     />
