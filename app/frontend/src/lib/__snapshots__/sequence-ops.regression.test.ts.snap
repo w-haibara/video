@@ -1717,3 +1717,127 @@ exports[`editor operation regression group: groupClips assigns groupId, ungroupC
   ],
 }
 `;
+
+exports[`track lock & mute regression setTrackLocked then attempt operations 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 5000,
+        },
+      ],
+      "id": "track-0",
+      "locked": true,
+    },
+  ],
+}
+`;
+
+exports[`track lock & mute regression setTrackLocked then attempt operations 2`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 5000,
+        },
+      ],
+      "id": "track-0",
+      "locked": false,
+    },
+  ],
+}
+`;
+
+exports[`track lock & mute regression setTrackMuted preserves track state 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 5000,
+        },
+      ],
+      "id": "track-0",
+      "muted": true,
+    },
+  ],
+}
+`;
+
+exports[`track lock & mute regression setTrackMuted preserves track state 2`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 5000,
+        },
+      ],
+      "id": "track-0",
+      "muted": false,
+    },
+  ],
+}
+`;

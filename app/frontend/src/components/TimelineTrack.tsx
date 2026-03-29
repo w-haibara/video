@@ -26,6 +26,8 @@ type Props = {
   onTrackDoubleClick?: (trackId: string, timeMs: number, position: { x: number; y: number }) => void;
   onSplitClip?: (clipId: string, splitTimeMs: number) => void;
   toolMode?: "select" | "razor";
+  onToggleLocked?: (trackId: string, locked: boolean) => void;
+  onToggleMuted?: (trackId: string, muted: boolean) => void;
 };
 
 export function TimelineTrack({
@@ -50,12 +52,17 @@ export function TimelineTrack({
   onTrackDoubleClick,
   onSplitClip,
   toolMode = "select",
+  onToggleLocked,
+  onToggleMuted,
 }: Props) {
   const assetMap = new Map(assets.map((a) => [a.id, a]));
   const sortedClips = useMemo(
     () => [...track.clips].sort((a, b) => a.startMs - b.startMs),
     [track.clips],
   );
+
+  const isLocked = track.locked === true;
+  const isMuted = track.muted === true;
 
   return (
     <div style={{ display: "flex", height: "40px" }}>
@@ -69,6 +76,7 @@ export function TimelineTrack({
           width: "32px",
           flexShrink: 0,
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           background: theme.bgHover,
@@ -77,9 +85,52 @@ export function TimelineTrack({
           fontSize: "11px",
           fontWeight: "bold",
           userSelect: "none",
+          gap: "1px",
         }}
       >
-        {trackIndex + 1}
+        <span style={{ fontSize: "9px", lineHeight: 1 }}>{trackIndex + 1}</span>
+        <div style={{ display: "flex", gap: "1px" }}>
+          <button
+            title={isLocked ? "Unlock track" : "Lock track"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleLocked?.(track.id, !isLocked);
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              fontSize: "10px",
+              lineHeight: 1,
+              color: isLocked ? theme.warning : theme.textMuted,
+              opacity: isLocked ? 1 : 0.5,
+            }}
+          >
+            {isLocked ? "\uD83D\uDD12" : "\uD83D\uDD13"}
+          </button>
+          <button
+            title={isMuted ? "Unmute track" : "Mute track"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleMuted?.(track.id, !isMuted);
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              fontSize: "10px",
+              lineHeight: 1,
+              color: isMuted ? theme.error : theme.textMuted,
+              opacity: isMuted ? 1 : 0.5,
+            }}
+          >
+            {isMuted ? "\uD83D\uDD07" : "\uD83D\uDD0A"}
+          </button>
+        </div>
       </div>
       <div
         onMouseDown={(e) => {
@@ -101,7 +152,8 @@ export function TimelineTrack({
           minWidth: `${totalWidth}px`,
           background: isDropTarget ? theme.bgHover : theme.timelineTrackBg,
           borderBottom: `1px solid ${theme.borderLight}`,
-          transition: "background 0.1s",
+          transition: "background 0.1s, opacity 0.15s",
+          opacity: isMuted ? 0.4 : isLocked ? 0.7 : 1,
         }}
       >
         {track.clips.map((clip: Clip) => (
@@ -123,6 +175,7 @@ export function TimelineTrack({
             onDragTrackChange={onDragTrackChange}
             onSplitClip={onSplitClip}
             toolMode={toolMode}
+            isLocked={isLocked}
           />
         ))}
 

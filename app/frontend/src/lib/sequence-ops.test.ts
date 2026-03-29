@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
 import { inferTrackKind } from "@video/shared";
-import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, moveClips, groupClips, ungroupClips, expandGroupSelection } from "./sequence-ops";
+import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, moveClips, groupClips, ungroupClips, expandGroupSelection, setTrackLocked, setTrackMuted, isClipOnLockedTrack, areAnyClipsOnLockedTrack } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -1468,5 +1468,162 @@ describe("expandGroupSelection", () => {
     const expanded = expandGroupSelection(grouped, new Set(["c2"]));
     expect(expanded.size).toBe(1);
     expect(expanded.has("c2")).toBe(true);
+  });
+});
+
+// ────────── Track Lock & Mute ──────────
+
+describe("setTrackLocked / setTrackMuted", () => {
+  const baseTracks: Track[] = [
+    { id: "t1", clips: [{ id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 }] },
+    { id: "t2", clips: [{ id: "c2", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 }] },
+  ];
+  const seq: Sequence = { tracks: baseTracks };
+
+  test("setTrackLocked sets locked=true", () => {
+    const result = setTrackLocked(seq, "t1", true);
+    expect(result.tracks[0].locked).toBe(true);
+    expect(result.tracks[1].locked).toBeUndefined();
+  });
+
+  test("setTrackLocked sets locked=false", () => {
+    const locked = setTrackLocked(seq, "t1", true);
+    const unlocked = setTrackLocked(locked, "t1", false);
+    expect(unlocked.tracks[0].locked).toBe(false);
+  });
+
+  test("setTrackMuted sets muted=true", () => {
+    const result = setTrackMuted(seq, "t2", true);
+    expect(result.tracks[1].muted).toBe(true);
+    expect(result.tracks[0].muted).toBeUndefined();
+  });
+
+  test("setTrackMuted sets muted=false", () => {
+    const muted = setTrackMuted(seq, "t2", true);
+    const unmuted = setTrackMuted(muted, "t2", false);
+    expect(unmuted.tracks[1].muted).toBe(false);
+  });
+});
+
+describe("isClipOnLockedTrack / areAnyClipsOnLockedTrack", () => {
+  const baseTracks: Track[] = [
+    { id: "t1", clips: [{ id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 }], locked: true },
+    { id: "t2", clips: [{ id: "c2", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 }] },
+  ];
+  const seq: Sequence = { tracks: baseTracks };
+
+  test("isClipOnLockedTrack returns true for clip on locked track", () => {
+    expect(isClipOnLockedTrack(seq, "c1")).toBe(true);
+  });
+
+  test("isClipOnLockedTrack returns false for clip on unlocked track", () => {
+    expect(isClipOnLockedTrack(seq, "c2")).toBe(false);
+  });
+
+  test("areAnyClipsOnLockedTrack returns true if any clip is on locked track", () => {
+    expect(areAnyClipsOnLockedTrack(seq, new Set(["c1", "c2"]))).toBe(true);
+  });
+
+  test("areAnyClipsOnLockedTrack returns false if no clips on locked track", () => {
+    expect(areAnyClipsOnLockedTrack(seq, new Set(["c2"]))).toBe(false);
+  });
+});
+
+describe("locked track prevents editing operations", () => {
+  const lockedTrack: Track = {
+    id: "t1",
+    clips: [
+      { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 },
+      { id: "c2", clipKind: "video", assetId: "v1", startMs: 2000, durationMs: 2000, inMs: 0, outMs: 2000 },
+    ],
+    locked: true,
+  };
+  const unlockedTrack: Track = {
+    id: "t2",
+    clips: [
+      { id: "c3", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000 },
+    ],
+  };
+  const seq: Sequence = { tracks: [lockedTrack, unlockedTrack] };
+
+  test("removeClip returns unchanged sequence for locked track clip", () => {
+    const result = removeClip(seq, "c1");
+    expect(result).toBe(seq);
+  });
+
+  test("removeClip works for unlocked track clip", () => {
+    const result = removeClip(seq, "c3");
+    expect(result.tracks.length).toBe(1); // unlocked track removed (empty)
+  });
+
+  test("moveClip returns unchanged sequence for locked track clip", () => {
+    const result = moveClip(seq, "c1", 1000);
+    expect(result).toBe(seq);
+  });
+
+  test("moveClip rejects cross-track move to locked track", () => {
+    const result = moveClip(seq, "c3", 5000, undefined, "t1");
+    expect(result).toBe(seq);
+  });
+
+  test("trimClip returns unchanged sequence for locked track clip", () => {
+    const result = trimClip(seq, "c1", "right", 500);
+    expect(result).toBe(seq);
+  });
+
+  test("splitClip returns unchanged sequence for locked track clip", () => {
+    const result = splitClip(seq, "c1", 1000);
+    expect(result).toBe(seq);
+  });
+
+  test("updateClip returns unchanged sequence for locked track clip", () => {
+    const result = updateClip(seq, "c1", { durationMs: 5000 });
+    expect(result).toBe(seq);
+  });
+
+  test("removeClips returns unchanged sequence when any clip is on locked track", () => {
+    const result = removeClips(seq, new Set(["c1", "c3"]));
+    expect(result).toBe(seq);
+  });
+
+  test("moveClips returns unchanged sequence when any clip is on locked track", () => {
+    const result = moveClips(seq, new Set(["c1"]), 500);
+    expect(result).toBe(seq);
+  });
+
+  test("rippleDelete returns unchanged sequence for locked track clip", () => {
+    const result = rippleDelete(seq, "c1");
+    expect(result).toBe(seq);
+  });
+
+  test("rippleTrim returns unchanged sequence for locked track clip", () => {
+    const result = rippleTrim(seq, "c1", "right", 500);
+    expect(result).toBe(seq);
+  });
+
+  test("duplicateClip returns unchanged sequence for locked track clip", () => {
+    const result = duplicateClip(seq, "c1", 30000);
+    expect(result).toBe(seq);
+  });
+
+  test("pasteClip rejects paste to locked track", () => {
+    const clipToPaste: Clip = { id: "cx", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 1000, inMs: 0, outMs: 1000 };
+    const result = pasteClip(seq, clipToPaste, 5000, "t1", 30000);
+    expect(result).toBe(seq);
+  });
+
+  test("setTransition returns unchanged sequence for locked track clip", () => {
+    const result = setTransition(seq, "c2", { type: "fade", durationMs: 500 });
+    expect(result).toBe(seq);
+  });
+
+  test("addClipFromAsset rejects adding to locked track", () => {
+    const result = addClipFromAsset(seq, videoAsset, 30000, "t1");
+    expect(result).toBe(seq);
+  });
+
+  test("addTextClip rejects adding to locked track", () => {
+    const result = addTextClip(seq, 0, 2000, { value: "Test" }, 30000, "t1");
+    expect(result).toBe(seq);
   });
 });

@@ -81,6 +81,7 @@ export function findActiveClipInTracks(
 ): ActiveClip | null {
   for (let i = 0; i < project.sequence.tracks.length; i++) {
     const track = project.sequence.tracks[i];
+    if (track.muted) continue; // Skip muted tracks in preview
     for (const clip of track.clips) {
       if (clip.clipKind !== clipKind) continue;
       if (isEmptyAssetClip(clip)) continue;
@@ -107,6 +108,7 @@ export function findAllActiveClips(
   const result: ActiveClip[] = [];
   for (let i = 0; i < project.sequence.tracks.length; i++) {
     const track = project.sequence.tracks[i];
+    if (track.muted) continue; // Skip muted tracks in preview
     for (const clip of track.clips) {
       if (clipKind && clip.clipKind !== clipKind) continue;
       if (isEmptyAssetClip(clip)) continue;
@@ -137,6 +139,7 @@ export function findAllActiveEmptyClips(
   const result: ActiveEmptyClip[] = [];
   for (let i = 0; i < project.sequence.tracks.length; i++) {
     const track = project.sequence.tracks[i];
+    if (track.muted) continue; // Skip muted tracks in preview
     for (const clip of track.clips) {
       if (!isEmptyAssetClip(clip)) continue;
       // title clips with text are handled by the text overlay renderer

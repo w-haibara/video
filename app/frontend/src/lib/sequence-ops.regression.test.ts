@@ -23,6 +23,8 @@ import {
   moveClips,
   groupClips,
   ungroupClips,
+  setTrackLocked,
+  setTrackMuted,
 } from "./sequence-ops";
 
 const videoAsset: Asset = {
@@ -990,5 +992,62 @@ describe("editor operation regression", () => {
 
     seq = ungroupClips(seq, clipIds);
     expect(stabilize(seq)).toMatchSnapshot();
+  });
+});
+
+describe("track lock & mute regression", () => {
+  test("setTrackLocked then attempt operations", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+
+    // Lock the track
+    const trackId = seq.tracks[0].id;
+    seq = setTrackLocked(seq, trackId, true);
+    expect(stabilize(seq)).toMatchSnapshot();
+
+    // Attempt move on locked track — should be unchanged
+    const clipId = seq.tracks[0].clips[0].id;
+    const afterMove = moveClip(seq, clipId, 1000, 30000);
+    expect(afterMove).toBe(seq);
+
+    // Unlock and move should work
+    seq = setTrackLocked(seq, trackId, false);
+    const afterUnlock = moveClip(seq, seq.tracks[0].clips[0].id, 1000, 30000);
+    expect(stabilize(afterUnlock)).toMatchSnapshot();
+  });
+
+  test("setTrackMuted preserves track state", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    seq = addClipFromAsset(seq, imageAsset, 30000);
+
+    const trackId = seq.tracks[0].id;
+    seq = setTrackMuted(seq, trackId, true);
+    expect(stabilize(seq)).toMatchSnapshot();
+
+    seq = setTrackMuted(seq, trackId, false);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("locked track blocks addClipFromAsset to that track", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    const trackId = seq.tracks[0].id;
+    seq = setTrackLocked(seq, trackId, true);
+
+    const afterAdd = addClipFromAsset(seq, videoAsset, 30000, trackId);
+    expect(afterAdd).toBe(seq);
+  });
+
+  test("locked track blocks splitClip", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    const trackId = seq.tracks[0].id;
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = setTrackLocked(seq, trackId, true);
+
+    const afterSplit = splitClip(seq, clipId, 2500);
+    expect(afterSplit).toBe(seq);
   });
 });

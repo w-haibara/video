@@ -110,7 +110,7 @@ function EditorPageLoaded({
     project.sequence,
   );
 
-  const { addClipFromAsset, removeClip, moveClip, trimClip, splitClip, addTextClip, addEmptyClip, updateClip, setTransition, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, groupClips, ungroupClips } =
+  const { addClipFromAsset, removeClip, moveClip, trimClip, splitClip, addTextClip, addEmptyClip, updateClip, setTransition, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, groupClips, ungroupClips, setTrackLocked, setTrackMuted } =
     useProjectEditor(project, sequence, pushState);
 
   // Primary selected clip (first in the set) — used for inspector, preview, etc.
@@ -582,6 +582,8 @@ function EditorPageLoaded({
           hasClipboard={clipboardClip !== null}
           snapEnabled={snapEnabled}
           onToggleSnap={toggleSnap}
+          onToggleTrackLocked={setTrackLocked}
+          onToggleTrackMuted={setTrackMuted}
         />
       }
     />
