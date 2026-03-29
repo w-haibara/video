@@ -1118,3 +1118,61 @@ describe("rippleTrim", () => {
     expect(seq.tracks[0].clips[2].startMs).toBe(5000); // unchanged
   });
 });
+
+describe("rippleDelete with transitions", () => {
+  test("ripple delete shifts clips with transitions correctly", () => {
+    // A → B (with 500ms transition) → C
+    let seq = addClipFromAsset(emptySeq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipBId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, clipBId, { type: "fade", durationMs: 500 });
+
+    // Delete clip A — B and C should be shifted
+    const clipAId = seq.tracks[0].clips[0].id;
+    const result = rippleDelete(seq, clipAId);
+
+    // B should be shifted and its transition cleared (no predecessor)
+    const clips = result.tracks[0].clips;
+    expect(clips).toHaveLength(2);
+    expect(clips[0].startMs).toBe(0);
+    expect(clips[0].transition).toBeUndefined();
+  });
+
+  test("ripple delete of clip with transition uses net duration for shift", () => {
+    // A → B (with 500ms transition) → C
+    let seq = addClipFromAsset(emptySeq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipBId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, clipBId, { type: "fade", durationMs: 500 });
+
+    const clipCBefore = seq.tracks[0].clips[2];
+
+    // Delete clip B — C should shift by B's net duration (not full duration)
+    const result = rippleDelete(seq, clipBId);
+    const clips = result.tracks[0].clips;
+    expect(clips).toHaveLength(2);
+    // C should be shifted left by B's net duration (durationMs - transition overlap)
+    const shiftedC = clips[1];
+    expect(shiftedC.startMs).toBeLessThan(clipCBefore.startMs);
+  });
+});
+
+describe("rippleTrim with transitions", () => {
+  test("ripple trim shifts clips with transitions on right-side shorten", () => {
+    // A → B (with 500ms transition)
+    let seq = addClipFromAsset(emptySeq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    const clipBId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, clipBId, { type: "fade", durationMs: 500 });
+
+    const clipAId = seq.tracks[0].clips[0].id;
+    const clipBBefore = seq.tracks[0].clips[1];
+
+    // Right-trim clip A by -1000ms (shorter) — B should shift left
+    const result = rippleTrim(seq, clipAId, "right", -1000);
+    const clipBAfter = result.tracks[0].clips[1];
+    expect(clipBAfter.startMs).toBe(clipBBefore.startMs - 1000);
+  });
+});

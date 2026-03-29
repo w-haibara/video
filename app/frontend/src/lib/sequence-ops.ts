@@ -515,7 +515,8 @@ export function rippleDelete(sequence: Sequence, clipId: string): Sequence {
   if (!targetTrack || !targetClip) return sequence;
 
   const clipEnd = targetClip.startMs + targetClip.durationMs;
-  const shiftAmount = targetClip.durationMs;
+  // Net unique timeline space = duration minus any incoming transition overlap
+  const shiftAmount = targetClip.durationMs - (targetClip.transition?.durationMs ?? 0);
 
   const tracks = sequence.tracks
     .map((track: Track) => {
@@ -523,9 +524,17 @@ export function rippleDelete(sequence: Sequence, clipId: string): Sequence {
       const newClips = track.clips
         .filter((c: Clip) => c.id !== clipId)
         .map((c: Clip) => {
-          // Shift subsequent clips left by the removed clip's duration
-          if (c.startMs >= clipEnd) {
-            return { ...c, startMs: c.startMs - shiftAmount };
+          // Shift clips that logically follow the deleted clip.
+          // Account for transitions: a clip with a transition has startMs pulled
+          // back into the previous clip's range, so use the non-overlap start.
+          const logicalStart = c.startMs + (c.transition?.durationMs ?? 0);
+          if (logicalStart >= clipEnd) {
+            const shifted = { ...c, startMs: Math.max(0, c.startMs - shiftAmount) };
+            // Clear transition if it now has no predecessor to overlap with
+            if (shifted.startMs === 0 && c.transition) {
+              return { ...shifted, transition: undefined };
+            }
+            return shifted;
           }
           return c;
         });
@@ -589,8 +598,9 @@ export function rippleTrim(
       ...track,
       clips: track.clips.map((c: Clip) => {
         if (c.id === clipId) return c;
-        // Only shift clips that were after the original clip end
-        if (c.startMs >= oldEnd) {
+        // Shift clips that logically follow the trimmed clip (account for transitions)
+        const logicalStart = c.startMs + (c.transition?.durationMs ?? 0);
+        if (logicalStart >= oldEnd) {
           return { ...c, startMs: Math.max(0, c.startMs + shift) };
         }
         return c;

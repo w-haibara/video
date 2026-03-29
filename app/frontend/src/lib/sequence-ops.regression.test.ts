@@ -796,4 +796,44 @@ describe("editor operation regression", () => {
 
     expect(stabilize(seq)).toMatchSnapshot();
   });
+
+  test("workflow: ripple delete first clip when second has transition", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipBId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, clipBId, { type: "fade", durationMs: 500 });
+
+    // Delete first clip — B should shift and lose transition
+    const clipAId = seq.tracks[0].clips[0].id;
+    seq = rippleDelete(seq, clipAId);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: ripple delete clip with transition (net shift)", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipBId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, clipBId, { type: "fade", durationMs: 500 });
+
+    // Delete B — C should shift by net duration
+    seq = rippleDelete(seq, clipBId);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: ripple trim with transition on subsequent clip", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    const clipBId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, clipBId, { type: "fade", durationMs: 500 });
+
+    // Right-trim clip A shorter — B should shift
+    const clipAId = seq.tracks[0].clips[0].id;
+    seq = rippleTrim(seq, clipAId, "right", -1000, 5000, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
 });
