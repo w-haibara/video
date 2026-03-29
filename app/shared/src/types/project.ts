@@ -24,6 +24,10 @@ export type Sequence = {
 export type Track = {
   id: string;
   clips: Clip[];
+  name?: string;
+  color?: string;
+  locked?: boolean;
+  muted?: boolean;
 };
 
 export type ClipText = {
