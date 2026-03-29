@@ -18,6 +18,9 @@ describe("SHORTCUT_DEFINITIONS", () => {
     expect(keys).toContain("S");
     expect(keys).toContain("Delete");
     expect(keys).toContain("Shift+Delete");
+    expect(keys).toContain("Ctrl+A");
+    expect(keys).toContain("Ctrl+G");
+    expect(keys).toContain("Ctrl+Shift+G");
     expect(keys).toContain("Ctrl+Z");
     expect(keys).toContain("Ctrl+Shift+Z");
     expect(keys).toContain("?");

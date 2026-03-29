@@ -12,7 +12,7 @@ const meta = preview.meta({
     pxToMs: storyPxToMs,
     totalWidth: 1500,
     maxDurationMs: 30000,
-    selectedClipId: null,
+    selectedClipIds: new Set(),
     onSelectClip: fn(),
     onMoveClip: fn(),
     onTrimClip: fn(),

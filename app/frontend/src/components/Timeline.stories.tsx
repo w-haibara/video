@@ -28,7 +28,7 @@ export const Empty = meta.story({
       },
     }),
     currentTimeMs: 0,
-    selectedClipId: null,
+    selectedClipIds: new Set(),
   },
 });
 
@@ -36,7 +36,7 @@ export const WithClips = meta.story({
   args: {
     project: projectWithClips,
     currentTimeMs: 5000,
-    selectedClipId: null,
+    selectedClipIds: new Set(),
   },
 });
 
@@ -44,7 +44,7 @@ export const WithSelectedClip = meta.story({
   args: {
     project: projectWithClips,
     currentTimeMs: 5000,
-    selectedClipId: "clip-v1",
+    selectedClipIds: new Set(["clip-v1"]),
   },
 });
 
@@ -87,7 +87,7 @@ export const SingleTrackWithEmptySpace = meta.story({
       },
     }),
     currentTimeMs: 2000,
-    selectedClipId: null,
+    selectedClipIds: new Set(),
   },
   decorators: [
     (Story: React.ComponentType) => (
@@ -136,7 +136,7 @@ export const MixedClipKinds = meta.story({
       },
     }),
     currentTimeMs: 0,
-    selectedClipId: null,
+    selectedClipIds: new Set(),
   },
 });
 
@@ -176,7 +176,7 @@ export const MultiLayerTracks = meta.story({
       },
     }),
     currentTimeMs: 3000,
-    selectedClipId: null,
+    selectedClipIds: new Set(),
   },
 });
 
@@ -212,7 +212,7 @@ export const CrossTrackDrag = meta.story({
       },
     }),
     currentTimeMs: 0,
-    selectedClipId: null,
+    selectedClipIds: new Set(),
   },
 });
 
@@ -239,7 +239,7 @@ export const WithAddTrackButton = meta.story({
       },
     }),
     currentTimeMs: 0,
-    selectedClipId: null,
+    selectedClipIds: new Set(),
     onAddTrack: fn(),
   },
 });
@@ -281,7 +281,7 @@ export const TrackHeaderContextMenu = meta.story({
       },
     }),
     currentTimeMs: 0,
-    selectedClipId: null,
+    selectedClipIds: new Set(),
     onDeleteTrack: fn(),
   },
 });

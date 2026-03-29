@@ -83,6 +83,7 @@ export type Clip = {
   crop?: ClipCrop;
   blendMode?: string; // 省略時は "cover" として扱う
   transition?: ClipTransition; // このクリップの先頭に適用されるトランジション
+  groupId?: string; // グループID（同じgroupIdを持つクリップは一緒に選択される）
 };
 
 export type ExportPreset = {

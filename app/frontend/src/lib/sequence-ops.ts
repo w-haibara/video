@@ -1,5 +1,124 @@
 import type { Asset, Clip, ClipText, ClipTransition, Sequence, Track } from "@video/shared";
 import { generateId, DEFAULT_IMAGE_DURATION_MS } from "@video/shared";
+
+/**
+ * Find all clip IDs that belong to the same group as any of the given clip IDs.
+ * Returns the expanded set including the original IDs.
+ */
+export function expandGroupSelection(
+  sequence: Sequence,
+  clipIds: ReadonlySet<string>,
+): Set<string> {
+  const result = new Set(clipIds);
+  // Collect groupIds from selected clips
+  const groupIds = new Set<string>();
+  for (const track of sequence.tracks) {
+    for (const clip of track.clips) {
+      if (clipIds.has(clip.id) && clip.groupId) {
+        groupIds.add(clip.groupId);
+      }
+    }
+  }
+  // Add all clips that share any of those groupIds
+  if (groupIds.size > 0) {
+    for (const track of sequence.tracks) {
+      for (const clip of track.clips) {
+        if (clip.groupId && groupIds.has(clip.groupId)) {
+          result.add(clip.id);
+        }
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * Remove multiple clips from the sequence.
+ * Empty tracks are removed.
+ */
+export function removeClips(sequence: Sequence, clipIds: ReadonlySet<string>): Sequence {
+  const tracks = sequence.tracks
+    .map((track: Track) => ({
+      ...track,
+      clips: track.clips.filter((c: Clip) => !clipIds.has(c.id)),
+    }))
+    .filter((track: Track) => track.clips.length > 0);
+  return { ...sequence, tracks };
+}
+
+/**
+ * Move multiple clips by a delta (in ms).
+ * All clips shift by the same amount. Clamped to 0 on the left.
+ */
+export function moveClips(
+  sequence: Sequence,
+  clipIds: ReadonlySet<string>,
+  deltaMs: number,
+  maxDurationMs?: number,
+): Sequence {
+  // Find minimum startMs among selected clips to prevent going below 0
+  let minStart = Infinity;
+  let maxEnd = 0;
+  for (const track of sequence.tracks) {
+    for (const clip of track.clips) {
+      if (clipIds.has(clip.id)) {
+        minStart = Math.min(minStart, clip.startMs);
+        maxEnd = Math.max(maxEnd, clip.startMs + clip.durationMs);
+      }
+    }
+  }
+  if (minStart === Infinity) return sequence;
+
+  // Clamp delta so no clip goes below 0 or beyond max duration
+  let clampedDelta = deltaMs;
+  if (minStart + clampedDelta < 0) {
+    clampedDelta = -minStart;
+  }
+  if (maxDurationMs != null && maxEnd + clampedDelta > maxDurationMs) {
+    clampedDelta = maxDurationMs - maxEnd;
+  }
+  if (clampedDelta === 0) return sequence;
+
+  const roundedDelta = Math.round(clampedDelta);
+
+  const tracks = sequence.tracks.map((track: Track) => ({
+    ...track,
+    clips: track.clips
+      .map((c: Clip) =>
+        clipIds.has(c.id) ? { ...c, startMs: c.startMs + roundedDelta } : c,
+      )
+      .sort((a: Clip, b: Clip) => a.startMs - b.startMs),
+  }));
+  return { ...sequence, tracks };
+}
+
+/**
+ * Assign a shared groupId to all specified clips.
+ */
+export function groupClips(sequence: Sequence, clipIds: ReadonlySet<string>): Sequence {
+  if (clipIds.size < 2) return sequence;
+  const groupId = generateId();
+  const tracks = sequence.tracks.map((track: Track) => ({
+    ...track,
+    clips: track.clips.map((c: Clip) =>
+      clipIds.has(c.id) ? { ...c, groupId } : c,
+    ),
+  }));
+  return { ...sequence, tracks };
+}
+
+/**
+ * Remove groupId from all specified clips.
+ */
+export function ungroupClips(sequence: Sequence, clipIds: ReadonlySet<string>): Sequence {
+  const tracks = sequence.tracks.map((track: Track) => ({
+    ...track,
+    clips: track.clips.map((c: Clip) =>
+      clipIds.has(c.id) ? { ...c, groupId: undefined } : c,
+    ),
+  }));
+  return { ...sequence, tracks };
+}
 import { assetKindRegistry } from "./asset-kind-registry";
 
 export function addClipFromAsset(

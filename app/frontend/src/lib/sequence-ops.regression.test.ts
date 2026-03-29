@@ -19,6 +19,10 @@ import {
   duplicateClip,
   pasteClip,
   pasteAttributes,
+  removeClips,
+  moveClips,
+  groupClips,
+  ungroupClips,
 } from "./sequence-ops";
 
 const videoAsset: Asset = {
@@ -52,14 +56,27 @@ beforeAll(() => {
 function stabilize(seq: Sequence): Sequence {
   let trackIdx = 0;
   let clipIdx = 0;
+  // Map random groupIds to deterministic ones
+  const groupIdMap = new Map<string, string>();
+  let groupIdx = 0;
   return {
     tracks: seq.tracks.map((track) => ({
       ...track,
       id: `track-${trackIdx++}`,
-      clips: track.clips.map((clip) => ({
-        ...clip,
-        id: `clip-${clipIdx++}`,
-      })),
+      clips: track.clips.map((clip) => {
+        let stableGroupId = clip.groupId;
+        if (clip.groupId) {
+          if (!groupIdMap.has(clip.groupId)) {
+            groupIdMap.set(clip.groupId, `group-${groupIdx++}`);
+          }
+          stableGroupId = groupIdMap.get(clip.groupId);
+        }
+        return {
+          ...clip,
+          id: `clip-${clipIdx++}`,
+          ...(stableGroupId ? { groupId: stableGroupId } : {}),
+        };
+      }),
     })),
   };
 }
@@ -940,6 +957,38 @@ describe("editor operation regression", () => {
     // Right-trim clip A shorter — B should shift
     const clipAId = seq.tracks[0].clips[0].id;
     seq = rippleTrim(seq, clipAId, "right", -1000, 5000, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("multi-select: removeClips removes multiple clips at once", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    seq = addClipFromAsset(seq, imageAsset, 30000);
+    seq = addClipFromAsset(seq, audioAsset, 30000);
+    // Remove the first and third clips
+    const clipIds = new Set([seq.tracks[0].clips[0].id, seq.tracks[0].clips[2].id]);
+    seq = removeClips(seq, clipIds);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("multi-select: moveClips shifts multiple clips by delta", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    seq = addClipFromAsset(seq, imageAsset, 30000);
+    const clipIds = new Set([seq.tracks[0].clips[0].id, seq.tracks[0].clips[1].id]);
+    seq = moveClips(seq, clipIds, 1000, 30000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("group: groupClips assigns groupId, ungroupClips clears it", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    seq = addClipFromAsset(seq, imageAsset, 30000);
+    const clipIds = new Set([seq.tracks[0].clips[0].id, seq.tracks[0].clips[1].id]);
+    seq = groupClips(seq, clipIds);
+    expect(stabilize(seq)).toMatchSnapshot();
+
+    seq = ungroupClips(seq, clipIds);
     expect(stabilize(seq)).toMatchSnapshot();
   });
 });

@@ -140,6 +140,34 @@ export function useProjectEditor(
     [sequence, pushState],
   );
 
+  const removeClips = useCallback(
+    (clipIds: ReadonlySet<string>) => {
+      pushState(SeqOps.removeClips(sequence, clipIds));
+    },
+    [sequence, pushState],
+  );
+
+  const moveClips = useCallback(
+    (clipIds: ReadonlySet<string>, deltaMs: number) => {
+      pushState(SeqOps.moveClips(sequence, clipIds, deltaMs, maxDurationMs));
+    },
+    [sequence, pushState, maxDurationMs],
+  );
+
+  const groupClips = useCallback(
+    (clipIds: ReadonlySet<string>) => {
+      pushState(SeqOps.groupClips(sequence, clipIds));
+    },
+    [sequence, pushState],
+  );
+
+  const ungroupClips = useCallback(
+    (clipIds: ReadonlySet<string>) => {
+      pushState(SeqOps.ungroupClips(sequence, clipIds));
+    },
+    [sequence, pushState],
+  );
+
   return {
     addClipFromAsset,
     removeClip,
@@ -155,5 +183,9 @@ export function useProjectEditor(
     duplicateClip,
     pasteClip,
     pasteAttributes,
+    removeClips,
+    moveClips,
+    groupClips,
+    ungroupClips,
   };
 }

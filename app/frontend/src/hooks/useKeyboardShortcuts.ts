@@ -18,6 +18,9 @@ export type KeyboardShortcutActions = {
   onPaste: () => void;
   onDuplicate: () => void;
   onToggleSnap: () => void;
+  onSelectAll: () => void;
+  onGroup: () => void;
+  onUngroup: () => void;
   isPlaying: boolean;
 };
 
@@ -70,6 +73,24 @@ export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
         e.preventDefault();
         a.onDuplicate();
         return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A") && !e.shiftKey) {
+        if (!isEditableTarget(e)) {
+          e.preventDefault();
+          a.onSelectAll();
+          return;
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "g" || e.key === "G")) {
+        if (!isEditableTarget(e)) {
+          e.preventDefault();
+          if (e.shiftKey) {
+            a.onUngroup();
+          } else {
+            a.onGroup();
+          }
+          return;
+        }
       }
 
       // All other shortcuts are blocked when typing in inputs
@@ -192,6 +213,9 @@ export const SHORTCUT_DEFINITIONS: { key: string; description: string }[] = [
   { key: "Ctrl+C", description: "Copy selected clip" },
   { key: "Ctrl+V", description: "Paste clip at playhead" },
   { key: "Ctrl+D", description: "Duplicate selected clip" },
+  { key: "Ctrl+A", description: "Select all clips" },
+  { key: "Ctrl+G", description: "Group selected clips" },
+  { key: "Ctrl+Shift+G", description: "Ungroup selected clips" },
   { key: "Ctrl+Z", description: "Undo" },
   { key: "Ctrl+Shift+Z", description: "Redo" },
   { key: "?", description: "Toggle shortcuts help" },

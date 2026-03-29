@@ -18,7 +18,7 @@ import { JobProgress } from "../components/JobProgress";
 import { ProjectSettingsPanel } from "../components/ProjectSettingsPanel";
 import { KeyboardShortcutsPanel } from "../components/KeyboardShortcutsPanel";
 import { useProjectEditor } from "../hooks/useProjectEditor";
-import { clampClipsToDuration, removeTrack } from "../lib/sequence-ops";
+import { clampClipsToDuration, removeTrack, expandGroupSelection } from "../lib/sequence-ops";
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { useAutoSave } from "../hooks/useAutoSave";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
@@ -27,7 +27,7 @@ import { theme, buttonStyle, inputStyle } from "../theme";
 function EditorPageInner({ projectId }: { projectId: string }) {
   const { data: project, isLoading, error } = useProject(projectId);
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
-  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+  const [selectedClipIds, setSelectedClipIds] = useState<Set<string>>(new Set());
   const [isPlaying, setIsPlaying] = useState(false);
 
   if (isLoading) return <div>Loading...</div>;
@@ -39,8 +39,8 @@ function EditorPageInner({ projectId }: { projectId: string }) {
       project={project}
       currentTimeMs={currentTimeMs}
       onSeek={setCurrentTimeMs}
-      selectedClipId={selectedClipId}
-      onSelectClip={setSelectedClipId}
+      selectedClipIds={selectedClipIds}
+      onSelectClipIds={setSelectedClipIds}
       isPlaying={isPlaying}
       onPlayPause={() => setIsPlaying((p) => !p)}
     />
@@ -51,16 +51,16 @@ function EditorPageLoaded({
   project,
   currentTimeMs,
   onSeek,
-  selectedClipId,
-  onSelectClip,
+  selectedClipIds,
+  onSelectClipIds,
   isPlaying,
   onPlayPause,
 }: {
   project: Project;
   currentTimeMs: number;
   onSeek: (ms: number) => void;
-  selectedClipId: string | null;
-  onSelectClip: (id: string | null) => void;
+  selectedClipIds: Set<string>;
+  onSelectClipIds: (ids: Set<string>) => void;
   isPlaying: boolean;
   onPlayPause: () => void;
 }) {
@@ -110,8 +110,49 @@ function EditorPageLoaded({
     project.sequence,
   );
 
-  const { addClipFromAsset, removeClip, moveClip, trimClip, splitClip, addTextClip, addEmptyClip, updateClip, setTransition, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes } =
+  const { addClipFromAsset, removeClip, moveClip, trimClip, splitClip, addTextClip, addEmptyClip, updateClip, setTransition, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, groupClips, ungroupClips } =
     useProjectEditor(project, sequence, pushState);
+
+  // Primary selected clip (first in the set) — used for inspector, preview, etc.
+  const primarySelectedClipId = selectedClipIds.size > 0 ? [...selectedClipIds][0] : null;
+
+  // Helper to select a single clip (clears others)
+  const selectSingleClip = useCallback((clipId: string | null) => {
+    if (clipId === null) {
+      onSelectClipIds(new Set());
+    } else {
+      // Expand to group members
+      const initial = new Set([clipId]);
+      const expanded = expandGroupSelection(sequence, initial);
+      onSelectClipIds(expanded);
+    }
+  }, [onSelectClipIds, sequence]);
+
+  // Helper to toggle a clip in/out of selection (shift+click)
+  const toggleClipSelection = useCallback((clipId: string) => {
+    const next = new Set(selectedClipIds);
+    if (next.has(clipId)) {
+      // Also remove group members
+      const groupExpanded = expandGroupSelection(sequence, new Set([clipId]));
+      for (const id of groupExpanded) next.delete(id);
+    } else {
+      // Add clip + group members
+      const groupExpanded = expandGroupSelection(sequence, new Set([clipId]));
+      for (const id of groupExpanded) next.add(id);
+    }
+    onSelectClipIds(next);
+  }, [selectedClipIds, onSelectClipIds, sequence]);
+
+  // Select all clips
+  const selectAllClips = useCallback(() => {
+    const allIds = new Set<string>();
+    for (const track of sequence.tracks) {
+      for (const clip of track.clips) {
+        allIds.add(clip.id);
+      }
+    }
+    onSelectClipIds(allIds);
+  }, [sequence, onSelectClipIds]);
 
   // Internal clipboard for copy/paste
   const [clipboardClip, setClipboardClip] = useState<Clip | null>(null);
@@ -130,9 +171,9 @@ function EditorPageLoaded({
     pushState(clamped);
   }, [updateProjectMutation, sequence, pushState]);
 
-  // Derive selected track from selected clip
-  const selectedTrackId = selectedClipId
-    ? sequence.tracks.find((t) => t.clips.some((c) => c.id === selectedClipId))?.id ?? null
+  // Derive selected track from primary selected clip
+  const selectedTrackId = primarySelectedClipId
+    ? sequence.tracks.find((t) => t.clips.some((c) => c.id === primarySelectedClipId))?.id ?? null
     : null;
 
   const handleAddTrack = useCallback(() => {
@@ -169,14 +210,14 @@ function EditorPageLoaded({
     if (pendingAutoSelectRef.current && prevClipIdsRef.current.size > 0) {
       for (const id of currentIds) {
         if (!prevClipIdsRef.current.has(id)) {
-          onSelectClip(id);
+          selectSingleClip(id);
           break;
         }
       }
       pendingAutoSelectRef.current = false;
     }
     prevClipIdsRef.current = currentIds;
-  }, [sequence, onSelectClip]);
+  }, [sequence, selectSingleClip]);
 
   const handleAddEmptyClip = useCallback(
     (clipKind: string, startMs: number, trackId: string) => {
@@ -188,8 +229,12 @@ function EditorPageLoaded({
 
   const currentProject: Project = { ...project, sequence };
 
-  const handleSelectClip = useCallback((clipId: string | null) => {
-    onSelectClip(clipId);
+  const handleSelectClip = useCallback((clipId: string | null, opts?: { shiftKey?: boolean }) => {
+    if (opts?.shiftKey && clipId) {
+      toggleClipSelection(clipId);
+    } else {
+      selectSingleClip(clipId);
+    }
     if (clipId) {
       for (const track of sequence.tracks) {
         const clip = track.clips.find((c: { id: string }) => c.id === clipId);
@@ -199,29 +244,39 @@ function EditorPageLoaded({
         }
       }
     }
-  }, [onSelectClip, onSeek, sequence.tracks]);
+  }, [selectSingleClip, toggleClipSelection, onSeek, sequence.tracks]);
 
   const handleDeleteClip = useCallback((clipId: string) => {
     removeClip(clipId);
     handleSelectClip(null);
   }, [removeClip, handleSelectClip]);
 
+  const handleDeleteSelectedClips = useCallback(() => {
+    if (selectedClipIds.size === 0) return;
+    if (selectedClipIds.size === 1) {
+      removeClip([...selectedClipIds][0]);
+    } else {
+      removeClips(selectedClipIds);
+    }
+    selectSingleClip(null);
+  }, [selectedClipIds, removeClip, removeClips, selectSingleClip]);
+
   const handleRippleDeleteClip = useCallback((clipId: string) => {
     rippleDelete(clipId);
     handleSelectClip(null);
   }, [rippleDelete, handleSelectClip]);
 
-  // Copy: store the selected clip in clipboard
+  // Copy: store the primary selected clip in clipboard
   const handleCopy = useCallback(() => {
-    if (!selectedClipId) return;
+    if (!primarySelectedClipId) return;
     for (const track of sequence.tracks) {
-      const clip = track.clips.find((c: Clip) => c.id === selectedClipId);
+      const clip = track.clips.find((c: Clip) => c.id === primarySelectedClipId);
       if (clip) {
         setClipboardClip({ ...clip });
         return;
       }
     }
-  }, [selectedClipId, sequence.tracks]);
+  }, [primarySelectedClipId, sequence.tracks]);
 
   // Paste: insert clipboard clip at playhead on the selected track (or same track)
   const handlePaste = useCallback(() => {
@@ -233,17 +288,28 @@ function EditorPageLoaded({
     pasteClip(clipboardClip, currentTimeMs, targetTrackId);
   }, [clipboardClip, selectedTrackId, sequence.tracks, pasteClip, currentTimeMs]);
 
-  // Duplicate: duplicate selected clip in place
+  // Duplicate: duplicate primary selected clip in place
   const handleDuplicate = useCallback(() => {
-    if (!selectedClipId) return;
-    duplicateClip(selectedClipId);
-  }, [selectedClipId, duplicateClip]);
+    if (!primarySelectedClipId) return;
+    duplicateClip(primarySelectedClipId);
+  }, [primarySelectedClipId, duplicateClip]);
 
-  // Paste attributes: paste only visual properties from clipboard to selected clip
+  // Paste attributes: paste only visual properties from clipboard to primary selected clip
   const handlePasteAttributes = useCallback(() => {
-    if (!clipboardClip || !selectedClipId) return;
-    pasteAttributes(clipboardClip, selectedClipId);
-  }, [clipboardClip, selectedClipId, pasteAttributes]);
+    if (!clipboardClip || !primarySelectedClipId) return;
+    pasteAttributes(clipboardClip, primarySelectedClipId);
+  }, [clipboardClip, primarySelectedClipId, pasteAttributes]);
+
+  // Group/Ungroup handlers
+  const handleGroup = useCallback(() => {
+    if (selectedClipIds.size < 2) return;
+    groupClips(selectedClipIds);
+  }, [selectedClipIds, groupClips]);
+
+  const handleUngroup = useCallback(() => {
+    if (selectedClipIds.size === 0) return;
+    ungroupClips(selectedClipIds);
+  }, [selectedClipIds, ungroupClips]);
 
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
 
@@ -277,8 +343,11 @@ function EditorPageLoaded({
     onRedo: redo,
     onSetToolSelect: () => setToolMode("select"),
     onSetToolRazor: () => setToolMode("razor"),
-    onDeleteClip: () => { if (selectedClipId) handleDeleteClip(selectedClipId); },
-    onRippleDeleteClip: () => { if (selectedClipId) handleRippleDeleteClip(selectedClipId); },
+    onDeleteClip: handleDeleteSelectedClips,
+    onRippleDeleteClip: () => {
+      if (selectedClipIds.size === 1) handleRippleDeleteClip([...selectedClipIds][0]);
+      else if (selectedClipIds.size > 1) handleDeleteSelectedClips();
+    },
     onJumpToStart: () => onSeek(0),
     onJumpToEnd: () => onSeek(sequenceEndMs > 0 ? Math.min(durationMs, sequenceEndMs) : durationMs),
     onStepForward: () => onSeek(Math.min(durationMs, currentTimeMs + frameTimeMs)),
@@ -289,6 +358,9 @@ function EditorPageLoaded({
     onPaste: handlePaste,
     onDuplicate: handleDuplicate,
     onToggleSnap: toggleSnap,
+    onSelectAll: selectAllClips,
+    onGroup: handleGroup,
+    onUngroup: handleUngroup,
   });
 
   return (
@@ -370,8 +442,8 @@ function EditorPageLoaded({
                   onTimeUpdate={onSeek}
                   isPlaying={isPlaying}
                   onPlayPause={onPlayPause}
-                  selectedClipId={selectedClipId}
-                  onSelectClip={handleSelectClip}
+                  selectedClipId={primarySelectedClipId}
+                  onSelectClip={(id) => handleSelectClip(id)}
                   isPopout={isPopout}
                   onTogglePopout={togglePopout}
                 />
@@ -384,8 +456,8 @@ function EditorPageLoaded({
               onTimeUpdate={onSeek}
               isPlaying={isPlaying}
               onPlayPause={onPlayPause}
-              selectedClipId={selectedClipId}
-              onSelectClip={handleSelectClip}
+              selectedClipId={primarySelectedClipId}
+              onSelectClip={(id) => handleSelectClip(id)}
               isFullscreen={isPreviewFullscreen}
               onToggleFullscreen={togglePreviewFullscreen}
               isPopout={isPopout}
@@ -397,11 +469,11 @@ function EditorPageLoaded({
       mainPanel={
         <>
           <EditorMainPanel
-            selectedClipId={selectedClipId}
+            selectedClipId={primarySelectedClipId}
             inspectorContent={
               <InspectorPanel
                 project={currentProject}
-                selectedClipId={selectedClipId}
+                selectedClipId={primarySelectedClipId}
                 onUpdateClip={updateClip}
                 onMoveClip={moveClip}
                 onSetTransition={setTransition}
@@ -490,7 +562,7 @@ function EditorPageLoaded({
           project={currentProject}
           currentTimeMs={currentTimeMs}
           onSeek={onSeek}
-          selectedClipId={selectedClipId}
+          selectedClipIds={selectedClipIds}
           onSelectClip={handleSelectClip}
           onDeleteClip={handleDeleteClip}
           onRippleDeleteClip={handleRippleDeleteClip}

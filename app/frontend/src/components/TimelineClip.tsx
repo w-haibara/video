@@ -10,7 +10,7 @@ type Props = {
   pxToMs: (px: number) => number;
   maxDurationMs: number;
   isSelected: boolean;
-  onSelect: (clipId: string) => void;
+  onSelect: (clipId: string, opts?: { shiftKey?: boolean }) => void;
   onMove: (clipId: string, newStartMs: number, targetTrackId?: string) => void;
   onTrim: (clipId: string, side: "left" | "right", deltaMs: number) => void;
   onRippleTrim?: (clipId: string, side: "left" | "right", deltaMs: number) => void;
@@ -100,7 +100,7 @@ export function TimelineClip({
         return;
       }
 
-      onSelect(clip.id);
+      onSelect(clip.id, { shiftKey: e.shiftKey });
       const sourceTrackIndex = allTrackIds.indexOf(trackId);
       dragRef.current = { startX: e.clientX, startMs: clip.startMs, startY: e.clientY, sourceTrackIndex };
       setIsDragging(true);
