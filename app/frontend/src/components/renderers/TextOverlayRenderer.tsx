@@ -3,6 +3,7 @@ import type { ActiveTextClip, PreviewRenderContext, PreviewLayerRenderer } from 
 function findActiveTextClips(ctx: PreviewRenderContext): ActiveTextClip[] | null {
   const result: ActiveTextClip[] = [];
   for (const track of ctx.project.sequence.tracks) {
+    if (track.muted) continue; // Skip muted tracks in preview
     for (const clip of track.clips) {
       if (clip.clipKind !== "title") continue;
       if (ctx.currentTimeMs >= clip.startMs && ctx.currentTimeMs < clip.startMs + clip.durationMs && clip.text) {

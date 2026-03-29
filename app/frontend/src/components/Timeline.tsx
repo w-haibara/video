@@ -38,6 +38,8 @@ type Props = {
   hasClipboard?: boolean;
   snapEnabled?: boolean;
   onToggleSnap?: () => void;
+  onToggleTrackLocked?: (trackId: string, locked: boolean) => void;
+  onToggleTrackMuted?: (trackId: string, muted: boolean) => void;
 };
 
 function getTimelineDuration(project: Project): number {
@@ -68,6 +70,8 @@ export function Timeline({
   hasClipboard,
   snapEnabled = true,
   onToggleSnap,
+  onToggleTrackLocked,
+  onToggleTrackMuted,
 }: Props) {
   const { msToPx, pxToMs, zoomIn, zoomOut } = useTimelineZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -345,6 +349,8 @@ export function Timeline({
                   onTrackDoubleClick={handleTrackDoubleClick}
                   onSplitClip={onSplitClip}
                   toolMode={toolMode}
+                  onToggleLocked={onToggleTrackLocked}
+                  onToggleMuted={onToggleTrackMuted}
                 />
               ))
             )}
@@ -524,15 +530,37 @@ export function Timeline({
         <ContextMenu
           position={{ x: trackContextMenu.x, y: trackContextMenu.y }}
           onClose={() => setTrackContextMenu(null)}
-          items={[
-            {
+          items={(() => {
+            const trk = project.sequence.tracks.find((t: Track) => t.id === trackContextMenu.trackId);
+            const items: MenuItem[] = [];
+            if (onToggleTrackLocked) {
+              items.push({
+                label: trk?.locked ? "Unlock Track" : "Lock Track",
+                onClick: () => {
+                  onToggleTrackLocked(trackContextMenu.trackId, !trk?.locked);
+                },
+              });
+            }
+            if (onToggleTrackMuted) {
+              items.push({
+                label: trk?.muted ? "Unmute Track" : "Mute Track",
+                onClick: () => {
+                  onToggleTrackMuted(trackContextMenu.trackId, !trk?.muted);
+                },
+              });
+            }
+            if (items.length > 0) {
+              items.push({ type: "separator" });
+            }
+            items.push({
               label: "Delete Track",
               onClick: () => {
                 setConfirmDeleteTrackId(trackContextMenu.trackId);
                 setTrackContextMenu(null);
               },
-            },
-          ]}
+            });
+            return items;
+          })()}
         />
       )}
 

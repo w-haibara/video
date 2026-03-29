@@ -94,8 +94,10 @@ export function buildExportArgs(
   // Collect all visual clips from all tracks, with track index.
   // A clip is "visual" if a clip handler is registered for its asset kind.
   // Clips with empty assetId (no asset assigned) are skipped.
+  // Muted tracks are excluded from export.
   const allVisualClips: { clip: Clip; trackIndex: number }[] = [];
   project.sequence.tracks.forEach((track, trackIndex) => {
+    if (track.muted) return; // Skip muted tracks
     for (const clip of track.clips) {
       if (!clip.assetId) continue;
       const asset = project.assets.find((a) => a.id === clip.assetId);
@@ -260,23 +262,23 @@ export function buildExportArgs(
 
   let videoOut = currentBase;
 
-  // 4. Apply overlay handlers (text) - collect clips by clipKind from all tracks
+  // 4. Apply overlay handlers (text) - collect clips by clipKind from all tracks (skip muted)
   for (const overlayHandler of exportHandlerRegistry.getOverlayHandlers()) {
-    const matchingClips = project.sequence.tracks.flatMap((t) =>
-      t.clips.filter((c) => c.clipKind === overlayHandler.clipKind),
-    );
+    const matchingClips = project.sequence.tracks
+      .filter((t) => !t.muted)
+      .flatMap((t) => t.clips.filter((c) => c.clipKind === overlayHandler.clipKind));
     if (matchingClips.length > 0) {
       videoOut = overlayHandler.buildOverlay(matchingClips, ctx, videoOut);
     }
   }
 
-  // 5. Apply audio handlers - collect clips by clipKind from all tracks
+  // 5. Apply audio handlers - collect clips by clipKind from all tracks (skip muted)
   const allVideoClips = sortedClips.map(({ clip }) => clip);
   let audioFilter = "";
   for (const audioHandler of exportHandlerRegistry.getAudioHandlers()) {
-    const matchingClips = project.sequence.tracks.flatMap((t) =>
-      t.clips.filter((c) => c.clipKind === audioHandler.clipKind),
-    );
+    const matchingClips = project.sequence.tracks
+      .filter((t) => !t.muted)
+      .flatMap((t) => t.clips.filter((c) => c.clipKind === audioHandler.clipKind));
     const result = audioHandler.buildAudio(matchingClips, ctx, allVideoClips);
     if (result) {
       audioFilter = result;
@@ -331,8 +333,8 @@ export async function startExport(
   const outputPath = path.join(expDir, path.basename(filename));
   const assetsBase = assetsDir(projectId);
 
-  // Validate - check for visual clips across all tracks (skip empty-asset clips)
-  const visualClips = project.sequence.tracks.flatMap((t) =>
+  // Validate - check for visual clips across non-muted tracks (skip empty-asset clips)
+  const visualClips = project.sequence.tracks.filter((t) => !t.muted).flatMap((t) =>
     t.clips.filter((c) => {
       if (!c.assetId) return false;
       const asset = project.assets.find((a) => a.id === c.assetId);

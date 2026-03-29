@@ -168,6 +168,20 @@ export function useProjectEditor(
     [sequence, pushState],
   );
 
+  const setTrackLocked = useCallback(
+    (trackId: string, locked: boolean) => {
+      pushState(SeqOps.setTrackLocked(sequence, trackId, locked));
+    },
+    [sequence, pushState],
+  );
+
+  const setTrackMuted = useCallback(
+    (trackId: string, muted: boolean) => {
+      pushState(SeqOps.setTrackMuted(sequence, trackId, muted));
+    },
+    [sequence, pushState],
+  );
+
   return {
     addClipFromAsset,
     removeClip,
@@ -187,5 +201,7 @@ export function useProjectEditor(
     moveClips,
     groupClips,
     ungroupClips,
+    setTrackLocked,
+    setTrackMuted,
   };
 }

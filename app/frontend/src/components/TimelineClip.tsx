@@ -20,6 +20,7 @@ type Props = {
   onDragTrackChange?: (targetTrackId: string | null) => void;
   onSplitClip?: (clipId: string, splitTimeMs: number) => void;
   toolMode?: "select" | "razor";
+  isLocked?: boolean;
 };
 
 const TRIM_HANDLE_WIDTH = 6;
@@ -49,6 +50,7 @@ export function TimelineClip({
   onDragTrackChange,
   onSplitClip,
   toolMode = "select",
+  isLocked = false,
 }: Props) {
   const width = msToPx(clip.durationMs);
   const left = msToPx(clip.startMs);
@@ -96,11 +98,13 @@ export function TimelineClip({
       e.preventDefault();
 
       if (toolMode === "razor") {
+        if (isLocked) return;
         handleRazorClick(e);
         return;
       }
 
       onSelect(clip.id, { shiftKey: e.shiftKey });
+      if (isLocked) return;
       const sourceTrackIndex = allTrackIds.indexOf(trackId);
       dragRef.current = { startX: e.clientX, startMs: clip.startMs, startY: e.clientY, sourceTrackIndex };
       setIsDragging(true);
@@ -156,7 +160,7 @@ export function TimelineClip({
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [clip.id, clip.startMs, clip.durationMs, pxToMs, onSelect, onMove, maxDurationMs, trackId, allTrackIds, onDragTrackChange, toolMode, handleRazorClick],
+    [clip.id, clip.startMs, clip.durationMs, pxToMs, onSelect, onMove, maxDurationMs, trackId, allTrackIds, onDragTrackChange, toolMode, handleRazorClick, isLocked],
   );
 
   const formatTrimLabel = useCallback(
@@ -171,6 +175,7 @@ export function TimelineClip({
     (side: "left" | "right", e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
+      if (isLocked) return;
       onSelect(clip.id);
       trimRef.current = { startX: e.clientX, side };
       setTrimTooltip({ side, label: formatTrimLabel(side) });
@@ -199,7 +204,7 @@ export function TimelineClip({
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [clip.id, pxToMs, onSelect, onTrim, onRippleTrim, formatTrimLabel],
+    [clip.id, pxToMs, onSelect, onTrim, onRippleTrim, formatTrimLabel, isLocked],
   );
 
   // Update tooltip value during trim drag
@@ -229,7 +234,7 @@ export function TimelineClip({
         borderRadius: "3px",
         border: `${isSelected ? 2 : 1}px ${isEmptyAsset ? "dashed" : "solid"} ${borderColor}`,
         overflow: "hidden",
-        cursor: toolMode === "razor" ? "crosshair" : isDragging ? "grabbing" : "grab",
+        cursor: isLocked ? "not-allowed" : toolMode === "razor" ? "crosshair" : isDragging ? "grabbing" : "grab",
         opacity: isDraggingToOtherTrack ? 0.5 : 1,
         display: "flex",
         alignItems: "center",

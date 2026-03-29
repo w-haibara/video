@@ -37,6 +37,7 @@ export function expandGroupSelection(
  * Empty tracks are removed.
  */
 export function removeClips(sequence: Sequence, clipIds: ReadonlySet<string>): Sequence {
+  if (areAnyClipsOnLockedTrack(sequence, clipIds)) return sequence;
   const tracks = sequence.tracks
     .map((track: Track) => ({
       ...track,
@@ -56,6 +57,7 @@ export function moveClips(
   deltaMs: number,
   maxDurationMs?: number,
 ): Sequence {
+  if (areAnyClipsOnLockedTrack(sequence, clipIds)) return sequence;
   // Find minimum startMs among selected clips to prevent going below 0
   let minStart = Infinity;
   let maxEnd = 0;
@@ -127,6 +129,11 @@ export function addClipFromAsset(
   maxDurationMs?: number,
   targetTrackId?: string,
 ): Sequence {
+  // Reject if target track is locked
+  if (targetTrackId) {
+    const target = sequence.tracks.find((t: Track) => t.id === targetTrackId);
+    if (target?.locked) return sequence;
+  }
   const tracks = sequence.tracks.map((t: Track) => ({ ...t, clips: [...t.clips] }));
   const descriptor = assetKindRegistry.get(asset.kind);
   let track: Track | undefined;
@@ -177,6 +184,7 @@ export function addClipFromAsset(
 }
 
 export function removeClip(sequence: Sequence, clipId: string): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
   const tracks = sequence.tracks
     .map((track: Track) => ({
       ...track,
@@ -256,6 +264,12 @@ export function moveClip(
   maxDurationMs?: number,
   targetTrackId?: string,
 ): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
+  // Also reject if target track is locked
+  if (targetTrackId) {
+    const target = sequence.tracks.find((t: Track) => t.id === targetTrackId);
+    if (target?.locked) return sequence;
+  }
   let startMs = Math.max(0, Math.round(newStartMs));
 
   // Find the clip and its source track
@@ -335,6 +349,50 @@ export function removeTrack(sequence: Sequence, trackId: string): Sequence {
   return { ...sequence, tracks };
 }
 
+/**
+ * Set the locked state of a track.
+ */
+export function setTrackLocked(sequence: Sequence, trackId: string, locked: boolean): Sequence {
+  const tracks = sequence.tracks.map((t: Track) =>
+    t.id === trackId ? { ...t, locked } : t,
+  );
+  return { ...sequence, tracks };
+}
+
+/**
+ * Set the muted state of a track.
+ */
+export function setTrackMuted(sequence: Sequence, trackId: string, muted: boolean): Sequence {
+  const tracks = sequence.tracks.map((t: Track) =>
+    t.id === trackId ? { ...t, muted } : t,
+  );
+  return { ...sequence, tracks };
+}
+
+/**
+ * Check if a clip belongs to a locked track.
+ */
+export function isClipOnLockedTrack(sequence: Sequence, clipId: string): boolean {
+  for (const track of sequence.tracks) {
+    if (track.clips.some((c: Clip) => c.id === clipId)) {
+      return track.locked === true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Check if any of the given clip IDs are on a locked track.
+ */
+export function areAnyClipsOnLockedTrack(sequence: Sequence, clipIds: ReadonlySet<string>): boolean {
+  for (const track of sequence.tracks) {
+    if (track.locked && track.clips.some((c: Clip) => clipIds.has(c.id))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function addTextClip(
   sequence: Sequence,
   startMs: number,
@@ -343,6 +401,11 @@ export function addTextClip(
   maxDurationMs?: number,
   targetTrackId?: string,
 ): Sequence {
+  // Reject if target track is locked
+  if (targetTrackId) {
+    const target = sequence.tracks.find((t: Track) => t.id === targetTrackId);
+    if (target?.locked) return sequence;
+  }
   // Reject if start is beyond the limit
   if (maxDurationMs != null && startMs >= maxDurationMs) {
     return sequence;
@@ -389,6 +452,11 @@ export function addEmptyClip(
   targetTrackId?: string,
   text?: ClipText,
 ): Sequence {
+  // Reject if target track is locked
+  if (targetTrackId) {
+    const target = sequence.tracks.find((t: Track) => t.id === targetTrackId);
+    if (target?.locked) return sequence;
+  }
   // Reject if start is beyond the limit
   if (maxDurationMs != null && startMs >= maxDurationMs) {
     return sequence;
@@ -463,6 +531,7 @@ export function updateClip(
   clipId: string,
   updates: Partial<Clip>,
 ): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
   const tracks = sequence.tracks.map((track: Track) => ({
     ...track,
     clips: track.clips.map((c: Clip) =>
@@ -482,6 +551,7 @@ export function setTransition(
   clipId: string,
   transition: ClipTransition,
 ): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
   // Find the clip and its track
   let targetTrack: Track | undefined;
   let clipIdx = -1;
@@ -531,6 +601,7 @@ export function removeTransition(
   sequence: Sequence,
   clipId: string,
 ): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
   let targetTrack: Track | undefined;
   for (const track of sequence.tracks) {
     if (track.clips.some((c) => c.id === clipId)) {
@@ -561,6 +632,7 @@ export function splitClip(
   clipId: string,
   splitTimeMs: number,
 ): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
   // Find the clip and its track
   let targetTrack: Track | undefined;
   let clipIdx = -1;
@@ -620,6 +692,7 @@ export function splitClip(
  * to fill the gap. If the track becomes empty, remove it.
  */
 export function rippleDelete(sequence: Sequence, clipId: string): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
   // Find the clip and its track
   let targetTrack: Track | undefined;
   let targetClip: Clip | undefined;
@@ -676,6 +749,7 @@ export function rippleTrim(
   maxSourceDurationMs?: number,
   maxTimelineDurationMs?: number,
 ): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
   // Find the clip before trimming
   let oldClip: Clip | undefined;
   let trackId: string | undefined;
@@ -739,6 +813,7 @@ export function duplicateClip(
   clipId: string,
   maxDurationMs: number,
 ): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
   let targetTrack: Track | undefined;
   let originalClip: Clip | undefined;
   for (const track of sequence.tracks) {
@@ -799,6 +874,9 @@ export function pasteClip(
   targetTrackId: string,
   maxDurationMs: number,
 ): Sequence {
+  // Reject if target track is locked
+  const targetCheck = sequence.tracks.find((t: Track) => t.id === targetTrackId);
+  if (targetCheck?.locked) return sequence;
   const startMs = Math.max(0, Math.round(pasteTimeMs));
 
   // Reject if start is beyond the limit
@@ -870,6 +948,7 @@ export function trimClip(
   maxSourceDurationMs?: number,
   maxTimelineDurationMs?: number,
 ): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
   const tracks = sequence.tracks.map((track: Track) => ({
     ...track,
     clips: track.clips.map((c: Clip) => {
