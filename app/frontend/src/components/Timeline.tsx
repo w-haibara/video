@@ -26,6 +26,11 @@ type Props = {
   onAddEmptyClip?: (clipKind: string, startMs: number, trackId: string) => void;
   onSplitClip?: (clipId: string, splitTimeMs: number) => void;
   toolMode?: "select" | "razor";
+  onCopyClip?: () => void;
+  onPasteClip?: () => void;
+  onDuplicateClip?: () => void;
+  onPasteAttributes?: () => void;
+  hasClipboard?: boolean;
 };
 
 function getTimelineDuration(project: Project): number {
@@ -49,6 +54,11 @@ export function Timeline({
   onAddEmptyClip,
   onSplitClip,
   toolMode = "select",
+  onCopyClip,
+  onPasteClip,
+  onDuplicateClip,
+  onPasteAttributes,
+  hasClipboard,
 }: Props) {
   const { msToPx, pxToMs, zoomIn, zoomOut } = useTimelineZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -336,6 +346,41 @@ export function Timeline({
           position={{ x: contextMenu.x, y: contextMenu.y }}
           onClose={() => setContextMenu(null)}
           items={[
+            ...(onCopyClip
+              ? [{
+                  label: "Copy (Ctrl+C)",
+                  onClick: () => {
+                    onSelectClip(contextMenu.clipId);
+                    onCopyClip();
+                  },
+                }]
+              : []),
+            ...(onPasteClip && hasClipboard
+              ? [{
+                  label: "Paste (Ctrl+V)",
+                  onClick: () => {
+                    onPasteClip();
+                  },
+                }]
+              : []),
+            ...(onDuplicateClip
+              ? [{
+                  label: "Duplicate (Ctrl+D)",
+                  onClick: () => {
+                    onSelectClip(contextMenu.clipId);
+                    onDuplicateClip();
+                  },
+                }]
+              : []),
+            ...(onPasteAttributes && hasClipboard
+              ? [{
+                  label: "Paste Attributes",
+                  onClick: () => {
+                    onSelectClip(contextMenu.clipId);
+                    onPasteAttributes();
+                  },
+                }]
+              : []),
             {
               label: "Delete",
               onClick: () => {

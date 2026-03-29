@@ -108,6 +108,27 @@ export function useProjectEditor(
     [sequence, project.assets, pushState, maxDurationMs],
   );
 
+  const duplicateClip = useCallback(
+    (clipId: string) => {
+      pushState(SeqOps.duplicateClip(sequence, clipId, maxDurationMs));
+    },
+    [sequence, pushState, maxDurationMs],
+  );
+
+  const pasteClip = useCallback(
+    (clip: Clip, pasteTimeMs: number, targetTrackId: string) => {
+      pushState(SeqOps.pasteClip(sequence, clip, pasteTimeMs, targetTrackId, maxDurationMs));
+    },
+    [sequence, pushState, maxDurationMs],
+  );
+
+  const pasteAttributes = useCallback(
+    (sourceClip: Clip, targetClipId: string) => {
+      pushState(SeqOps.pasteAttributes(sequence, sourceClip, targetClipId));
+    },
+    [sequence, pushState],
+  );
+
   const setTransition = useCallback(
     (clipId: string, transition: ClipTransition | undefined) => {
       if (transition) {
@@ -131,5 +152,8 @@ export function useProjectEditor(
     setTransition,
     rippleDelete,
     rippleTrim,
+    duplicateClip,
+    pasteClip,
+    pasteAttributes,
   };
 }

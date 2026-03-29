@@ -16,6 +16,9 @@ import {
   setTransition,
   rippleDelete,
   rippleTrim,
+  duplicateClip,
+  pasteClip,
+  pasteAttributes,
 } from "./sequence-ops";
 
 const videoAsset: Asset = {
@@ -821,6 +824,109 @@ describe("editor operation regression", () => {
 
     // Delete B — C should shift by net duration
     seq = rippleDelete(seq, clipBId);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: duplicate video clip", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 20000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = duplicateClip(seq, clipId, 20000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: duplicate clip clamped by maxDuration", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 7000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = duplicateClip(seq, clipId, 7000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: paste clip at playhead on same track", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 20000);
+    const clip = seq.tracks[0].clips[0];
+    const trackId = seq.tracks[0].id;
+    seq = pasteClip(seq, clip, 6000, trackId, 20000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: paste clip on different track", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 20000);
+    seq = addTextClip(seq, 0, 2000, {
+      value: "Overlay",
+      fontSize: 20,
+      color: "white",
+    }, 20000);
+
+    const clip = seq.tracks[0].clips[0];
+    const targetTrackId = seq.tracks[1].id;
+    seq = pasteClip(seq, clip, 3000, targetTrackId, 20000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: paste attributes from styled clip to plain clip", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 20000);
+    seq = addClipFromAsset(seq, imageAsset, 20000);
+
+    const srcClipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, srcClipId, {
+      transform: { x: 10, y: -5, scale: 1.5, rotation: 30 },
+      blendMode: "screen",
+      crop: { x: 0, y: 0, width: 160, height: 90 },
+    });
+
+    const srcClip = seq.tracks[0].clips[0];
+    const tgtClipId = seq.tracks[0].clips[1].id;
+    seq = pasteAttributes(seq, srcClip, tgtClipId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: duplicate then move the duplicate", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = duplicateClip(seq, clipId, 30000);
+
+    // Move the duplicate further
+    const dupId = seq.tracks[0].clips[1].id;
+    seq = moveClip(seq, dupId, 15000, 30000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: copy-paste with transform + blend attributes", () => {
+    let seq: Sequence = { tracks: [] };
+
+    seq = addClipFromAsset(seq, videoAsset, 20000);
+    seq = addClipFromAsset(seq, imageAsset, 20000);
+
+    // Style first clip
+    const srcClipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, srcClipId, {
+      transform: { x: 50, y: 50, scale: 2, rotation: 90 },
+      blendMode: "overlay",
+    });
+
+    // Paste the clip at 8000ms
+    const srcClip = seq.tracks[0].clips[0];
+    const trackId = seq.tracks[0].id;
+    seq = pasteClip(seq, srcClip, 8000, trackId, 20000);
+
     expect(stabilize(seq)).toMatchSnapshot();
   });
 

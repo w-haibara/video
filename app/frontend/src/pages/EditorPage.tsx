@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
-import type { Project, ProjectSettings } from "@video/shared";
+import type { Project, ProjectSettings, Clip } from "@video/shared";
 import { generateId } from "@video/shared";
 import { useProject, useUpdateProject } from "../api/projects";
 import { useExport } from "../api/exports";
@@ -110,8 +110,11 @@ function EditorPageLoaded({
     project.sequence,
   );
 
-  const { addClipFromAsset, removeClip, moveClip, trimClip, splitClip, addTextClip, addEmptyClip, updateClip, setTransition, rippleDelete, rippleTrim } =
+  const { addClipFromAsset, removeClip, moveClip, trimClip, splitClip, addTextClip, addEmptyClip, updateClip, setTransition, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes } =
     useProjectEditor(project, sequence, pushState);
+
+  // Internal clipboard for copy/paste
+  const [clipboardClip, setClipboardClip] = useState<Clip | null>(null);
 
   type ToolMode = "select" | "razor";
   const [toolMode, setToolMode] = useState<ToolMode>("select");
@@ -206,6 +209,40 @@ function EditorPageLoaded({
     handleSelectClip(null);
   }, [rippleDelete, handleSelectClip]);
 
+  // Copy: store the selected clip in clipboard
+  const handleCopy = useCallback(() => {
+    if (!selectedClipId) return;
+    for (const track of sequence.tracks) {
+      const clip = track.clips.find((c: Clip) => c.id === selectedClipId);
+      if (clip) {
+        setClipboardClip({ ...clip });
+        return;
+      }
+    }
+  }, [selectedClipId, sequence.tracks]);
+
+  // Paste: insert clipboard clip at playhead on the selected track (or same track)
+  const handlePaste = useCallback(() => {
+    if (!clipboardClip) return;
+    const targetTrackId = selectedTrackId
+      ?? sequence.tracks.find((t) => t.clips.some((c) => c.id === clipboardClip.id))?.id
+      ?? sequence.tracks[0]?.id;
+    if (!targetTrackId) return;
+    pasteClip(clipboardClip, currentTimeMs, targetTrackId);
+  }, [clipboardClip, selectedTrackId, sequence.tracks, pasteClip, currentTimeMs]);
+
+  // Duplicate: duplicate selected clip in place
+  const handleDuplicate = useCallback(() => {
+    if (!selectedClipId) return;
+    duplicateClip(selectedClipId);
+  }, [selectedClipId, duplicateClip]);
+
+  // Paste attributes: paste only visual properties from clipboard to selected clip
+  const handlePasteAttributes = useCallback(() => {
+    if (!clipboardClip || !selectedClipId) return;
+    pasteAttributes(clipboardClip, selectedClipId);
+  }, [clipboardClip, selectedClipId, pasteAttributes]);
+
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
 
   // Compute frame time from export preset fps (default 30)
@@ -246,6 +283,9 @@ function EditorPageLoaded({
     onStepBackward: () => onSeek(Math.max(0, currentTimeMs - frameTimeMs)),
     onSplitAtPlayhead: handleSplitAtPlayhead,
     onToggleShortcutsHelp: () => setShowShortcutsHelp((v) => !v),
+    onCopy: handleCopy,
+    onPaste: handlePaste,
+    onDuplicate: handleDuplicate,
   });
 
   return (
@@ -460,6 +500,11 @@ function EditorPageLoaded({
           onDeleteTrack={handleDeleteTrack}
           onSetTransition={setTransition}
           onAddEmptyClip={handleAddEmptyClip}
+          onCopyClip={handleCopy}
+          onPasteClip={handlePaste}
+          onDuplicateClip={handleDuplicate}
+          onPasteAttributes={handlePasteAttributes}
+          hasClipboard={clipboardClip !== null}
         />
       }
     />

@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
 import { inferTrackKind } from "@video/shared";
-import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim } from "./sequence-ops";
+import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -1174,5 +1174,160 @@ describe("rippleTrim with transitions", () => {
     const result = rippleTrim(seq, clipAId, "right", -1000);
     const clipBAfter = result.tracks[0].clips[1];
     expect(clipBAfter.startMs).toBe(clipBBefore.startMs - 1000);
+  });
+});
+
+describe("duplicateClip", () => {
+  test("duplicates clip immediately after original", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const clipId = seq.tracks[0].clips[0].id;
+    const result = duplicateClip(seq, clipId, 20000);
+    expect(result.tracks[0].clips.length).toBe(2);
+    const dup = result.tracks[0].clips[1];
+    expect(dup.startMs).toBe(5000); // right after 0+5000
+    expect(dup.durationMs).toBe(5000);
+    expect(dup.id).not.toBe(clipId);
+    expect(dup.assetId).toBe("v1");
+    expect(dup.transition).toBeUndefined();
+  });
+
+  test("clamps duration to maxDurationMs", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const clipId = seq.tracks[0].clips[0].id;
+    // maxDuration = 7000, so duplicate at 5000 with 5000ms duration -> clamped to 2000
+    const result = duplicateClip(seq, clipId, 7000);
+    expect(result.tracks[0].clips.length).toBe(2);
+    expect(result.tracks[0].clips[1].durationMs).toBe(2000);
+  });
+
+  test("rejects when start is beyond maxDurationMs", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const clipId = seq.tracks[0].clips[0].id;
+    const result = duplicateClip(seq, clipId, 5000); // exactly at the limit
+    expect(result.tracks[0].clips.length).toBe(1); // no duplicate
+  });
+
+  test("rejects when overlapping existing clip", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    seq = addClipFromAsset(seq, imageAsset); // at 5000
+    const clipId = seq.tracks[0].clips[0].id;
+    // Duplicate of first clip would go to 5000 but image is already there
+    const result = duplicateClip(seq, clipId, 20000);
+    expect(result.tracks[0].clips.length).toBe(2); // no duplicate added
+  });
+
+  test("returns unchanged sequence for nonexistent clip", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const result = duplicateClip(seq, "nonexistent", 20000);
+    expect(result.tracks[0].clips.length).toBe(1);
+  });
+});
+
+describe("pasteClip", () => {
+  test("pastes clip at specified time on target track", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const clip = seq.tracks[0].clips[0];
+    const trackId = seq.tracks[0].id;
+    const result = pasteClip(seq, clip, 6000, trackId, 20000);
+    expect(result.tracks[0].clips.length).toBe(2);
+    const pasted = result.tracks[0].clips[1];
+    expect(pasted.startMs).toBe(6000);
+    expect(pasted.durationMs).toBe(5000);
+    expect(pasted.id).not.toBe(clip.id);
+    expect(pasted.transition).toBeUndefined();
+  });
+
+  test("clamps duration to maxDurationMs", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const clip = seq.tracks[0].clips[0];
+    const trackId = seq.tracks[0].id;
+    const result = pasteClip(seq, clip, 6000, trackId, 8000);
+    expect(result.tracks[0].clips[1].durationMs).toBe(2000);
+  });
+
+  test("rejects paste beyond maxDurationMs", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const clip = seq.tracks[0].clips[0];
+    const trackId = seq.tracks[0].id;
+    const result = pasteClip(seq, clip, 20000, trackId, 10000);
+    expect(result.tracks[0].clips.length).toBe(1);
+  });
+
+  test("rejects paste when overlapping", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const clip = seq.tracks[0].clips[0];
+    const trackId = seq.tracks[0].id;
+    // Paste at 2000 overlaps with existing clip at 0-5000
+    const result = pasteClip(seq, clip, 2000, trackId, 20000);
+    expect(result.tracks[0].clips.length).toBe(1);
+  });
+
+  test("creates new track if target does not exist", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    const clip = seq.tracks[0].clips[0];
+    const result = pasteClip(seq, clip, 0, "nonexistent-track", 20000);
+    expect(result.tracks.length).toBe(2);
+    expect(result.tracks[1].clips.length).toBe(1);
+    expect(result.tracks[1].clips[0].startMs).toBe(0);
+  });
+});
+
+describe("pasteAttributes", () => {
+  test("copies transform and blendMode from source to target", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    seq = addClipFromAsset(seq, imageAsset);
+    const srcClipId = seq.tracks[0].clips[0].id;
+    const tgtClipId = seq.tracks[0].clips[1].id;
+
+    // Add attributes to source
+    seq = updateClip(seq, srcClipId, {
+      transform: { x: 10, y: 20, scale: 2, rotation: 45 },
+      blendMode: "multiply",
+      crop: { x: 5, y: 5, width: 100, height: 100 },
+    });
+
+    const source = seq.tracks[0].clips[0];
+    const result = pasteAttributes(seq, source, tgtClipId);
+
+    const target = result.tracks[0].clips[1];
+    expect(target.transform).toEqual({ x: 10, y: 20, scale: 2, rotation: 45 });
+    expect(target.blendMode).toBe("multiply");
+    expect(target.crop).toEqual({ x: 5, y: 5, width: 100, height: 100 });
+  });
+
+  test("does not copy transition", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    seq = addClipFromAsset(seq, imageAsset);
+    seq = addClipFromAsset(seq, videoAsset);
+
+    const clipBId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, clipBId, { type: "fade", durationMs: 500 });
+
+    const source = seq.tracks[0].clips[1];
+    expect(source.transition).toBeDefined();
+
+    const clipCId = seq.tracks[0].clips[2].id;
+    const result = pasteAttributes(seq, source, clipCId);
+    const target = result.tracks[0].clips[2];
+    expect(target.transition).toBeUndefined();
+  });
+
+  test("only copies defined attributes", () => {
+    let seq = addClipFromAsset(emptySeq, videoAsset);
+    seq = addClipFromAsset(seq, imageAsset);
+
+    // Source has no special attributes
+    const source = seq.tracks[0].clips[0];
+    const tgtClipId = seq.tracks[0].clips[1].id;
+
+    // Give target a transform first
+    seq = updateClip(seq, tgtClipId, {
+      transform: { x: 99, y: 99 },
+    });
+
+    const result = pasteAttributes(seq, source, tgtClipId);
+    const target = result.tracks[0].clips[1];
+    // Source had no transform, so target keeps its own
+    expect(target.transform).toEqual({ x: 99, y: 99 });
   });
 });
