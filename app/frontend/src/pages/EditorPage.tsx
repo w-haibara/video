@@ -108,8 +108,11 @@ function EditorPageLoaded({
     project.sequence,
   );
 
-  const { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, addEmptyClip, updateClip, setTransition } =
+  const { addClipFromAsset, removeClip, moveClip, trimClip, splitClip, addTextClip, addEmptyClip, updateClip, setTransition } =
     useProjectEditor(project, sequence, pushState);
+
+  type ToolMode = "select" | "razor";
+  const [toolMode, setToolMode] = useState<ToolMode>("select");
 
   const { saveStatus } = useAutoSave(project.id, sequence);
 
@@ -196,7 +199,7 @@ function EditorPageLoaded({
     handleSelectClip(null);
   }, [removeClip, handleSelectClip]);
 
-  // Keyboard shortcuts for undo/redo
+  // Keyboard shortcuts for undo/redo and tool modes
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -211,6 +214,12 @@ function EditorPageLoaded({
       ) {
         e.preventDefault();
         redo();
+      } else if (e.key === "v" || e.key === "V") {
+        setToolMode("select");
+      } else if (e.key === "c" || e.key === "C") {
+        if (!e.ctrlKey && !e.metaKey) {
+          setToolMode("razor");
+        }
       }
     };
     document.addEventListener("keydown", handleKeyDown);
@@ -220,13 +229,49 @@ function EditorPageLoaded({
   return (
     <EditorLayout
       toolbar={
-        <SaveIndicator
-          status={saveStatus}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          onUndo={undo}
-          onRedo={redo}
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+            <button
+              onClick={() => setToolMode("select")}
+              title="Select tool (V)"
+              style={{
+                background: toolMode === "select" ? theme.bgHover : "none",
+                border: `1px solid ${toolMode === "select" ? theme.border : "transparent"}`,
+                color: toolMode === "select" ? theme.text : theme.textMuted,
+                padding: "2px 8px",
+                cursor: "pointer",
+                borderRadius: "3px",
+                fontSize: "12px",
+                fontWeight: toolMode === "select" ? "bold" : "normal",
+              }}
+            >
+              V
+            </button>
+            <button
+              onClick={() => setToolMode("razor")}
+              title="Razor tool (C)"
+              style={{
+                background: toolMode === "razor" ? theme.bgHover : "none",
+                border: `1px solid ${toolMode === "razor" ? theme.border : "transparent"}`,
+                color: toolMode === "razor" ? theme.text : theme.textMuted,
+                padding: "2px 8px",
+                cursor: "pointer",
+                borderRadius: "3px",
+                fontSize: "12px",
+                fontWeight: toolMode === "razor" ? "bold" : "normal",
+              }}
+            >
+              C
+            </button>
+          </div>
+          <SaveIndicator
+            status={saveStatus}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={undo}
+            onRedo={redo}
+          />
+        </div>
       }
       preview={
         <>
@@ -384,6 +429,8 @@ function EditorPageLoaded({
           onDeleteClip={handleDeleteClip}
           onMoveClip={moveClip}
           onTrimClip={trimClip}
+          onSplitClip={splitClip}
+          toolMode={toolMode}
           onAddTrack={handleAddTrack}
           onDeleteTrack={handleDeleteTrack}
           onSetTransition={setTransition}

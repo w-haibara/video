@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import type { Project, Asset, Clip, ClipText, ClipTransition, Sequence } from "@video/shared";
 import { theme } from "../theme";
 import * as SeqOps from "../lib/sequence-ops";
+import { assetKindRegistry } from "../lib/asset-kind-registry";
 
 export function useProjectEditor(
   project: Project,
@@ -39,8 +40,8 @@ export function useProjectEditor(
         const clip = track.clips.find((c: Clip) => c.id === clipId);
         if (clip) {
           const asset = project.assets.find((a: Asset) => a.id === clip.assetId);
-          // Only constrain video/audio clips with known duration (not images)
-          if (asset && asset.kind !== "image" && asset.durationMs) {
+          // Only constrain clips whose asset kind has duration (not images)
+          if (asset && (assetKindRegistry.get(asset.kind)?.hasDuration ?? false) && asset.durationMs) {
             maxSourceDurationMs = asset.durationMs;
           }
           break;
@@ -75,6 +76,13 @@ export function useProjectEditor(
     [sequence, pushState],
   );
 
+  const splitClip = useCallback(
+    (clipId: string, splitTimeMs: number) => {
+      pushState(SeqOps.splitClip(sequence, clipId, splitTimeMs));
+    },
+    [sequence, pushState],
+  );
+
   const setTransition = useCallback(
     (clipId: string, transition: ClipTransition | undefined) => {
       if (transition) {
@@ -91,6 +99,7 @@ export function useProjectEditor(
     removeClip,
     moveClip,
     trimClip,
+    splitClip,
     addTextClip,
     addEmptyClip,
     updateClip,

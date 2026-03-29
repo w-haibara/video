@@ -23,6 +23,8 @@ type Props = {
   onDragTrackChange?: (targetTrackId: string | null) => void;
   onSetTransition?: (clipId: string, transition: ClipTransition | undefined) => void;
   onTrackDoubleClick?: (trackId: string, timeMs: number, position: { x: number; y: number }) => void;
+  onSplitClip?: (clipId: string, splitTimeMs: number) => void;
+  toolMode?: "select" | "razor";
 };
 
 export function TimelineTrack({
@@ -44,6 +46,8 @@ export function TimelineTrack({
   onDragTrackChange,
   onSetTransition,
   onTrackDoubleClick,
+  onSplitClip,
+  toolMode = "select",
 }: Props) {
   const assetMap = new Map(assets.map((a) => [a.id, a]));
   const sortedClips = useMemo(
@@ -114,6 +118,8 @@ export function TimelineTrack({
             trackId={track.id}
             allTrackIds={allTrackIds}
             onDragTrackChange={onDragTrackChange}
+            onSplitClip={onSplitClip}
+            toolMode={toolMode}
           />
         ))}
 
