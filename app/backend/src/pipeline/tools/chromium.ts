@@ -245,14 +245,20 @@ export const chromiumTool: ChromiumTool = {
     }
 
     // Discover the first page target via the /json endpoint
-    const debugPort = new URL(browserWsUrl).port;
-    const targetsRes = await fetch(`http://127.0.0.1:${debugPort}/json`);
-    const targets: { type: string; webSocketDebuggerUrl: string }[] =
-      await targetsRes.json();
-    const pageTarget = targets.find((t) => t.type === "page");
-    if (!pageTarget) throw new Error("No page target found");
-
-    const ws = await openWebSocket(pageTarget.webSocketDebuggerUrl);
+    let ws: WebSocket;
+    try {
+      const debugPort = new URL(browserWsUrl).port;
+      const targetsRes = await fetch(`http://127.0.0.1:${debugPort}/json`);
+      const targets: { type: string; webSocketDebuggerUrl: string }[] =
+        await targetsRes.json();
+      const pageTarget = targets.find((t) => t.type === "page");
+      if (!pageTarget) throw new Error("No page target found");
+      ws = await openWebSocket(pageTarget.webSocketDebuggerUrl);
+    } catch (err) {
+      proc.kill();
+      await rm(userDataDir, { recursive: true, force: true }).catch(() => {});
+      throw err;
+    }
     const cdp = createCdpConnection(ws);
 
     // Enable Page domain
@@ -263,7 +269,15 @@ export const chromiumTool: ChromiumTool = {
     // -----------------------------------------------------------------------
 
     const navigate = async (url: string): Promise<void> => {
-      const loadPromise = cdp.once("Page.loadEventFired");
+      const loadPromise = Promise.race([
+        cdp.once("Page.loadEventFired"),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`navigate timed out: ${url}`)),
+            CDP_RESPONSE_TIMEOUT_MS,
+          ),
+        ),
+      ]);
       await cdp.send("Page.navigate", { url });
       await loadPromise;
     };
@@ -307,9 +321,16 @@ export const chromiumTool: ChromiumTool = {
             result.exceptionDetails.text;
           throw new Error(`captureFrames render failed at frame ${i}: ${desc}`);
         }
-        const dataUrl = result.result.value as string;
-        // Convert data URL to Buffer
-        const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
+        const dataUrl = result.result.value;
+        if (
+          typeof dataUrl !== "string" ||
+          !dataUrl.startsWith("data:image/png;base64,")
+        ) {
+          throw new Error(
+            `captureFrames: expected PNG data URL at frame ${i}, got: ${String(dataUrl).slice(0, 80)}`,
+          );
+        }
+        const base64 = dataUrl.slice("data:image/png;base64,".length);
         yield Buffer.from(base64, "base64");
         opts.onProgress?.((i + 1) / opts.totalFrames);
       }
