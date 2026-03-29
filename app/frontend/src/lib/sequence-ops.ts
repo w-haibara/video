@@ -370,6 +370,26 @@ export function setTrackMuted(sequence: Sequence, trackId: string, muted: boolea
 }
 
 /**
+ * Set the name of a track.
+ */
+export function setTrackName(sequence: Sequence, trackId: string, name: string): Sequence {
+  const tracks = sequence.tracks.map((t: Track) =>
+    t.id === trackId ? { ...t, name: name || undefined } : t,
+  );
+  return { ...sequence, tracks };
+}
+
+/**
+ * Set the color of a track.
+ */
+export function setTrackColor(sequence: Sequence, trackId: string, color: string | undefined): Sequence {
+  const tracks = sequence.tracks.map((t: Track) =>
+    t.id === trackId ? { ...t, color } : t,
+  );
+  return { ...sequence, tracks };
+}
+
+/**
  * Check if a clip belongs to a locked track.
  */
 export function isClipOnLockedTrack(sequence: Sequence, clipId: string): boolean {

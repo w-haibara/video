@@ -6,6 +6,13 @@ export type ProjectSettings = {
   canvasHeight: number; // キャンバス高さ (px)
 };
 
+export type Marker = {
+  id: string;
+  timeMs: number;
+  label?: string;
+  color?: string;
+};
+
 export type Project = {
   id: string;
   name: string;
@@ -15,6 +22,7 @@ export type Project = {
   sequence: Sequence;
   settings: ProjectSettings;
   exportPreset?: ExportPreset;
+  markers?: Marker[];
 };
 
 export type Sequence = {

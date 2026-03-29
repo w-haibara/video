@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useMemo } from "react";
-import type { Project, Track, ClipTransition } from "@video/shared";
+import type { Project, Track, ClipTransition, Marker } from "@video/shared";
 import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTrack } from "./TimelineTrack";
+import { TimelineMarkers } from "./TimelineMarkers";
 import { Playhead } from "./Playhead";
 import { ContextMenu } from "./ContextMenu";
 import type { MenuItem } from "./ContextMenu";
@@ -13,6 +14,18 @@ import { theme } from "../theme";
 
 /** Snap threshold in pixels. Converted to ms using pxToMs at runtime. */
 const SNAP_THRESHOLD_PX = 10;
+
+/** Preset track colors for the color submenu. */
+const TRACK_COLOR_PRESETS = [
+  { label: "Red", value: "#DC322F" },
+  { label: "Orange", value: "#CB4B16" },
+  { label: "Yellow", value: "#B58900" },
+  { label: "Green", value: "#859900" },
+  { label: "Cyan", value: "#2AA198" },
+  { label: "Blue", value: "#268BD2" },
+  { label: "Violet", value: "#6C71C4" },
+  { label: "Magenta", value: "#D33682" },
+];
 
 type Props = {
   project: Project;
@@ -40,6 +53,13 @@ type Props = {
   onToggleSnap?: () => void;
   onToggleTrackLocked?: (trackId: string, locked: boolean) => void;
   onToggleTrackMuted?: (trackId: string, muted: boolean) => void;
+  onSetTrackName?: (trackId: string, name: string) => void;
+  onSetTrackColor?: (trackId: string, color: string | undefined) => void;
+  markers?: Marker[];
+  selectedMarkerId?: string | null;
+  onSelectMarker?: (markerId: string | null) => void;
+  onDeleteMarker?: (markerId: string) => void;
+  onUpdateMarker?: (markerId: string, updates: { label?: string }) => void;
 };
 
 function getTimelineDuration(project: Project): number {
@@ -72,6 +92,13 @@ export function Timeline({
   onToggleSnap,
   onToggleTrackLocked,
   onToggleTrackMuted,
+  onSetTrackName,
+  onSetTrackColor,
+  markers = [],
+  selectedMarkerId = null,
+  onSelectMarker,
+  onDeleteMarker,
+  onUpdateMarker,
 }: Props) {
   const { msToPx, pxToMs, zoomIn, zoomOut } = useTimelineZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -93,6 +120,7 @@ export function Timeline({
     y: number;
   } | null>(null);
   const [confirmDeleteTrackId, setConfirmDeleteTrackId] = useState<string | null>(null);
+  const [renamingTrackId, setRenamingTrackId] = useState<string | null>(null);
   const [clipKindPopup, setClipKindPopup] = useState<{
     trackId: string;
     timeMs: number;
@@ -142,8 +170,8 @@ export function Timeline({
       if (!ruler) return;
       const rect = ruler.getBoundingClientRect();
       const scrollLeft = scrollRef.current?.scrollLeft ?? 0;
-      // Subtract 32px paddingLeft (track label area)
-      const x = clientX - rect.left + scrollLeft - 32;
+      // Subtract 80px paddingLeft (track label area)
+      const x = clientX - rect.left + scrollLeft - 80;
       const ms = Math.max(0, pxToMs(x));
       onSeek(ms);
     },
@@ -286,14 +314,24 @@ export function Timeline({
         ref={scrollRef}
         style={{ flex: 1, overflowX: "auto", overflowY: "auto" }}
       >
-        <div style={{ position: "relative", minWidth: `${totalWidth + 32}px`, display: "flex", flexDirection: "column" as const, minHeight: "100%" }}>
+        <div style={{ position: "relative", minWidth: `${totalWidth + 80}px`, display: "flex", flexDirection: "column" as const, minHeight: "100%" }}>
           {/* Ruler */}
           <div
             ref={rulerRef}
             onMouseDown={handleRulerMouseDown}
-            style={{ cursor: "col-resize", paddingLeft: "32px" }}
+            style={{ cursor: "col-resize", paddingLeft: "80px", position: "relative" }}
           >
             <TimelineRuler durationMs={durationMs} msToPx={msToPx} />
+            {markers.length > 0 && onSelectMarker && onDeleteMarker && onUpdateMarker && (
+              <TimelineMarkers
+                markers={markers}
+                msToPx={msToPx}
+                selectedMarkerId={selectedMarkerId}
+                onSelectMarker={onSelectMarker}
+                onDeleteMarker={onDeleteMarker}
+                onUpdateMarker={onUpdateMarker}
+              />
+            )}
           </div>
 
           {/* Seek bar + Tracks wrapper (shared position parent for Playhead) */}
@@ -309,7 +347,7 @@ export function Timeline({
                 background: theme.bgHover,
                 borderBottom: `1px solid ${theme.border}`,
                 cursor: "col-resize",
-                paddingLeft: "32px",
+                paddingLeft: "80px",
               }}
             />
 
@@ -318,7 +356,7 @@ export function Timeline({
               <div
                 style={{
                   color: theme.textMuted,
-                  padding: "16px 32px",
+                  padding: "16px 80px",
                   fontSize: "13px",
                 }}
               >
@@ -351,6 +389,10 @@ export function Timeline({
                   toolMode={toolMode}
                   onToggleLocked={onToggleTrackLocked}
                   onToggleMuted={onToggleTrackMuted}
+                  onSetTrackName={onSetTrackName}
+                  onSetTrackColor={onSetTrackColor}
+                  isRenaming={renamingTrackId === track.id}
+                  onFinishRename={() => setRenamingTrackId(null)}
                 />
               ))
             )}
@@ -371,7 +413,7 @@ export function Timeline({
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
                   style={{
-                    width: "32px",
+                    width: "80px",
                     height: "40px",
                     background: "none",
                     border: "none",
@@ -400,7 +442,7 @@ export function Timeline({
             <div
               style={{
                 position: "absolute",
-                left: `${msToPx(project.settings.durationMs) + 32}px`,
+                left: `${msToPx(project.settings.durationMs) + 80}px`,
                 top: 0,
                 bottom: 0,
                 borderLeft: `2px dashed ${theme.error}80`,
@@ -414,7 +456,7 @@ export function Timeline({
               <div
                 style={{
                   position: "absolute",
-                  left: `${msToPx(snapLineMs) + 32}px`,
+                  left: `${msToPx(snapLineMs) + 80}px`,
                   top: 0,
                   bottom: 0,
                   width: "1px",
@@ -426,7 +468,7 @@ export function Timeline({
             )}
 
             {/* Playhead (spans seek bar + tracks) */}
-            <Playhead positionPx={playheadPx + 32} />
+            <Playhead positionPx={playheadPx + 80} />
           </div>
         </div>
       </div>
@@ -533,6 +575,34 @@ export function Timeline({
           items={(() => {
             const trk = project.sequence.tracks.find((t: Track) => t.id === trackContextMenu.trackId);
             const items: MenuItem[] = [];
+            if (onSetTrackName) {
+              items.push({
+                label: "Rename Track",
+                onClick: () => {
+                  setRenamingTrackId(trackContextMenu.trackId);
+                  setTrackContextMenu(null);
+                },
+              });
+            }
+            if (onSetTrackColor) {
+              for (const preset of TRACK_COLOR_PRESETS) {
+                items.push({
+                  label: `${trk?.color === preset.value ? "\u2713 " : "  "}${preset.label}`,
+                  onClick: () => {
+                    onSetTrackColor(trackContextMenu.trackId, preset.value);
+                  },
+                });
+              }
+              items.push({
+                label: `${!trk?.color ? "\u2713 " : "  "}No Color`,
+                onClick: () => {
+                  onSetTrackColor(trackContextMenu.trackId, undefined);
+                },
+              });
+            }
+            if (items.length > 0) {
+              items.push({ type: "separator" });
+            }
             if (onToggleTrackLocked) {
               items.push({
                 label: trk?.locked ? "Unlock Track" : "Lock Track",
@@ -549,9 +619,7 @@ export function Timeline({
                 },
               });
             }
-            if (items.length > 0) {
-              items.push({ type: "separator" });
-            }
+            items.push({ type: "separator" });
             items.push({
               label: "Delete Track",
               onClick: () => {
