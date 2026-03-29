@@ -86,4 +86,12 @@ describe("snapClipPosition", () => {
     const result = snapClipPosition(995, 0, [1000], 10);
     expect(result).toEqual({ snappedMs: 1000, snapped: true, snapLineMs: 1000 });
   });
+
+  it("snaps to cross-track targets from two tracks", () => {
+    // Targets from track 1: 0, 3000; targets from track 2: 5000, 8000
+    // Moving a clip with start near 4995 should snap to 5000 from track 2
+    const targets = [0, 3000, 5000, 8000];
+    const result = snapClipPosition(4995, 2000, targets, 50);
+    expect(result).toEqual({ snappedMs: 5000, snapped: true, snapLineMs: 5000 });
+  });
 });

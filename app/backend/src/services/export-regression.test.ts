@@ -31,6 +31,9 @@ import {
   makeSplitClipProject,
   makeEmptyAssetMixedProject,
   makeOnlyEmptyAssetProject,
+  makeMutedTrackProject,
+  makeTransitionWithTransformProject,
+  makeTransitionMultiTrackProject,
   CANVAS_W,
   CANVAS_H,
   FPS,
@@ -215,4 +218,16 @@ describe("export regression", () => {
       buildExportArgs(project, ASSETS_DIR, "/tmp/test-output.mp4");
     }).toThrow("No video clips to export");
   });
+
+  test("muted track excluded from export", async () => {
+    await runExportRegression("muted-track", makeMutedTrackProject());
+  }, 30_000);
+
+  test("transition with transform cross-feature", async () => {
+    await runExportRegression("transition-with-transform", makeTransitionWithTransformProject());
+  }, 30_000);
+
+  test("transition + multi-track overlay", async () => {
+    await runExportRegression("transition-multi-track", makeTransitionMultiTrackProject());
+  }, 30_000);
 });

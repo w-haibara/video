@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
 import { inferTrackKind } from "@video/shared";
-import { addClipFromAsset, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, moveClips, groupClips, ungroupClips, expandGroupSelection, setTrackLocked, setTrackMuted, setTrackName, setTrackColor, isClipOnLockedTrack, areAnyClipsOnLockedTrack } from "./sequence-ops";
+import { addClipFromAsset, addEmptyClip, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, moveClips, groupClips, ungroupClips, expandGroupSelection, setTrackLocked, setTrackMuted, setTrackName, setTrackColor, isClipOnLockedTrack, areAnyClipsOnLockedTrack } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -1042,6 +1042,26 @@ describe("rippleDelete", () => {
     expect(result.tracks[0].clips[1].id).toBe("c3");
     expect(result.tracks[0].clips[1].startMs).toBe(5000); // 6000 - 1000
   });
+
+  test("rippleDelete of one clip in a group preserves groupId on remaining", () => {
+    let seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [
+          { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000, groupId: "g1" },
+          { id: "c2", clipKind: "video", assetId: "v1", startMs: 2000, durationMs: 2000, inMs: 0, outMs: 2000, groupId: "g1" },
+          { id: "c3", clipKind: "video", assetId: "v1", startMs: 4000, durationMs: 1000, inMs: 0, outMs: 1000 },
+        ],
+      }],
+    };
+    const result = rippleDelete(seq, "c1");
+    // c2 (now shifted) should still have its groupId
+    expect(result.tracks[0].clips[0].id).toBe("c2");
+    expect(result.tracks[0].clips[0].groupId).toBe("g1");
+    expect(result.tracks[0].clips[0].startMs).toBe(0); // shifted from 2000 to 0
+    // c3 shifted too
+    expect(result.tracks[0].clips[1].startMs).toBe(2000); // 4000 - 2000
+  });
 });
 
 describe("rippleTrim", () => {
@@ -1220,6 +1240,32 @@ describe("duplicateClip", () => {
     let seq = addClipFromAsset(emptySeq, videoAsset);
     const result = duplicateClip(seq, "nonexistent", 20000);
     expect(result.tracks[0].clips.length).toBe(1);
+  });
+
+  test("preserves transform, blendMode, and crop on duplicate", () => {
+    let seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [{
+          id: "c1",
+          clipKind: "video",
+          assetId: "v1",
+          startMs: 0,
+          durationMs: 2000,
+          inMs: 0,
+          outMs: 2000,
+          transform: { x: 10, y: -5, scale: 1.5, rotation: 30 },
+          blendMode: "screen",
+          crop: { x: 50, y: 50, width: 100, height: 80 },
+        }],
+      }],
+    };
+    const result = duplicateClip(seq, "c1", 20000);
+    expect(result.tracks[0].clips.length).toBe(2);
+    const dup = result.tracks[0].clips[1];
+    expect(dup.transform).toEqual({ x: 10, y: -5, scale: 1.5, rotation: 30 });
+    expect(dup.blendMode).toBe("screen");
+    expect(dup.crop).toEqual({ x: 50, y: 50, width: 100, height: 80 });
   });
 });
 
@@ -1614,6 +1660,38 @@ describe("locked track prevents editing operations", () => {
 
   test("setTransition returns unchanged sequence for locked track clip", () => {
     const result = setTransition(seq, "c2", { type: "fade", durationMs: 500 });
+    expect(result).toBe(seq);
+  });
+
+  test("removeTransition returns unchanged for locked track", () => {
+    // First set up a transition on c2 by creating an unlocked version
+    const unlockedSeq: Sequence = {
+      tracks: [
+        {
+          ...lockedTrack,
+          locked: false,
+          clips: [
+            { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000 },
+            { id: "c2", clipKind: "video", assetId: "v1", startMs: 1500, durationMs: 2000, inMs: 0, outMs: 2000,
+              transition: { type: "fade", durationMs: 500 } },
+          ],
+        },
+        unlockedTrack,
+      ],
+    };
+    const withTransition: Sequence = {
+      ...unlockedSeq,
+      tracks: [
+        { ...unlockedSeq.tracks[0], locked: true },
+        unlockedTrack,
+      ],
+    };
+    const result = removeTransition(withTransition, "c2");
+    expect(result).toBe(withTransition);
+  });
+
+  test("addEmptyClip rejects adding to locked track", () => {
+    const result = addEmptyClip(seq, "video", 5000, 2000, 30000, "t1");
     expect(result).toBe(seq);
   });
 
