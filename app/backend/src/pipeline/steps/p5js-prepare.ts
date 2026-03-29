@@ -49,8 +49,8 @@ export const p5jsPrepareStep: PipelineStep = {
   canHandle: (ctx) => ctx.asset.kind === "p5js",
 
   async execute(ctx) {
-    // Read the sketch code from the asset file
-    const sketchPath = join(ctx.projectDir, ctx.asset.originalPath);
+    // Read the sketch code from the source file (not the rendered MP4)
+    const sketchPath = join(ctx.projectDir, ctx.asset.sourcePath ?? ctx.asset.originalPath);
     const sketchCode = await readFile(sketchPath, "utf-8");
 
     // Get project dimensions (from shared context or defaults)
