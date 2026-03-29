@@ -27,6 +27,7 @@ import {
   makeOverlayBlendProject,
   makeAddProject,
   makeDifferenceProject,
+  makeP5jsProject,
   CANVAS_W,
   CANVAS_H,
   FPS,
@@ -190,5 +191,9 @@ describe("export regression", () => {
 
   test("blend: difference", async () => {
     await runExportRegression("blend-difference", makeDifferenceProject());
+  }, 30_000);
+
+  test("p5.js clip (pre-rendered)", async () => {
+    await runExportRegression("p5js-clip", makeP5jsProject());
   }, 30_000);
 });

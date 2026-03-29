@@ -25,6 +25,7 @@ import {
   makeOverlayBlendProject,
   makeAddProject,
   makeDifferenceProject,
+  makeP5jsProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -99,6 +100,7 @@ const EXPORT_TESTS: Array<{
   { name: "blend-overlay", description: "Overlay blend (contrast)", factory: makeOverlayBlendProject },
   { name: "blend-add", description: "Add blend (additive light)", factory: makeAddProject },
   { name: "blend-difference", description: "Difference blend (absolute diff)", factory: makeDifferenceProject },
+  { name: "p5js-clip", description: "p5.js sketch clip (pre-rendered)", factory: makeP5jsProject },
 ];
 
 // ── Snap parser ──
