@@ -2,14 +2,14 @@ import { theme, inputStyle } from "../../theme";
 import type { InspectorEditorContext } from "../../lib/inspector-editor-registry";
 import { transitionPreviewRegistry } from "../../lib/transition-preview-registry";
 
-const TRANSITION_TYPES = [
-  { value: "", label: "None" },
-  ...transitionPreviewRegistry.all().map((h) => ({ value: h.type, label: h.label })),
-];
-
 export function TransitionEditor({ clip, onSetTransition }: InspectorEditorContext) {
   const currentType = clip.transition?.type ?? "";
   const durationMs = clip.transition?.durationMs ?? 500;
+
+  const transitionOptions = [
+    { value: "", label: "None" },
+    ...transitionPreviewRegistry.all().map((h) => ({ value: h.type, label: h.label })),
+  ];
 
   if (!onSetTransition) return null;
 
@@ -37,7 +37,7 @@ export function TransitionEditor({ clip, onSetTransition }: InspectorEditorConte
         onChange={(e) => handleTypeChange(e.target.value)}
         style={inputStyle}
       >
-        {TRANSITION_TYPES.map((t) => (
+        {transitionOptions.map((t) => (
           <option key={t.value} value={t.value}>
             {t.label}
           </option>
