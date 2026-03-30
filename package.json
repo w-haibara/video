@@ -12,8 +12,7 @@
     "lint:fix": "oxlint --fix",
     "test": "bun test",
     "view:regression": "bun run tools/regression-viewer/index.ts",
-    "capture:regression": "bun run tools/regression-viewer/capture-screenshots.ts",
-    "catalog": "bun run tools/catalog-generator/generate.ts"
+    "capture:regression": "bun run tools/regression-viewer/capture-screenshots.ts"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
