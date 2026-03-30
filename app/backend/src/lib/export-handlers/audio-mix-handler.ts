@@ -1,6 +1,5 @@
 import type { ExportAudioHandler, ExportBuildContext } from "../export-handler-registry";
 import type { Clip } from "@video/shared";
-import path from "node:path";
 
 export const audioMixHandler: ExportAudioHandler = {
   clipKind: "audio",
@@ -65,7 +64,7 @@ export const audioMixHandler: ExportAudioHandler = {
       const bgmClip = clips[0];
       const bgmAsset = ctx.project.assets.find((a) => a.id === bgmClip.assetId);
       if (bgmAsset) {
-        const bgmPath = path.join(ctx.assetsBase, path.basename(bgmAsset.originalPath));
+        const bgmPath = ctx.resolveAssetVideoPath(bgmAsset);
         const bgmInputIdx = ctx.inputIndex;
         ctx.inputArgs.push("-i", bgmPath);
         ctx.inputIndex++;

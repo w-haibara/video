@@ -4,11 +4,13 @@ import { thumbnailStep } from "./thumbnail";
 import { proxyStep } from "./proxy";
 import { imageConvertStep } from "./image-convert";
 import { webRenderStep } from "./web-render";
-import { p5jsPrepareStep } from "./p5js-prepare";
+import { generativePrepareStep } from "./generative-prepare";
+import { webRenderCommitStep } from "./web-render-commit";
 
 registerStep(probeStep);
 registerStep(thumbnailStep);
 registerStep(proxyStep);
 registerStep(imageConvertStep);
 registerStep(webRenderStep);
-registerStep(p5jsPrepareStep);
+registerStep(generativePrepareStep);
+registerStep(webRenderCommitStep);

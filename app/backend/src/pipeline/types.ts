@@ -1,4 +1,5 @@
 import type { Asset } from "@video/shared";
+import type { RenderCacheManager } from "../services/render-cache-manager";
 
 /** Context passed to each pipeline step */
 export type PipelineContext = {
@@ -7,6 +8,7 @@ export type PipelineContext = {
   projectId: string;
   shared: Map<string, unknown>;
   reportProgress: (fraction: number) => void;
+  cacheManager?: RenderCacheManager;
 };
 
 /** Interface all steps implement */

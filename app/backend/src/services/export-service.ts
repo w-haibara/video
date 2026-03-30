@@ -1,13 +1,17 @@
-import type { Project, Clip, ExportPreset } from "@video/shared";
+import type { Project, Clip, ExportPreset, Asset } from "@video/shared";
 import type { Job } from "@video/shared";
 import { mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
-import { assetsDir, exportDir } from "../utils/paths";
+import { assetsDir, exportDir, projectDir as getProjectDir } from "../utils/paths";
 import * as jobQueue from "./job-queue";
 import * as projectService from "./project-service";
 import { exportHandlerRegistry } from "../lib/export-handler-registry";
 import { exportCompositeStrategyRegistry } from "../lib/composite-strategy-registry";
 import { transitionExportRegistry } from "../lib/transition-export-registry";
+import { generativeAssetHandlerRegistry } from "../lib/generative-asset-handler-registry";
+import { RenderCacheManager } from "./render-cache-manager";
+import { runPipeline } from "../pipeline";
+import type { PipelineContext } from "../pipeline/types";
 
 export function sanitizeColor(value: string): string {
   // Allow hex (#rgb, #rrggbb, #rrggbbaa), named colors, and color@opacity
@@ -76,6 +80,7 @@ export function buildExportArgs(
   project: Project,
   assetsBase: string,
   outputPath: string,
+  resolveAssetVideoPathOverride?: (asset: Asset) => string,
 ): string[] {
   const canvasW = project.settings.canvasWidth;
   const canvasH = project.settings.canvasHeight;
@@ -130,6 +135,9 @@ export function buildExportArgs(
   const maxEndMs = Math.max(...clampedVisualClips.map(({ clip }) => clip.startMs + clip.durationMs));
   const totalDurationSec = (projectDurationMs != null ? Math.min(maxEndMs, projectDurationMs) : maxEndMs) / 1000;
 
+  const defaultResolve = (asset: Asset) =>
+    path.join(assetsBase, path.basename(asset.originalPath));
+
   const ctx = {
     project,
     preset,
@@ -139,6 +147,7 @@ export function buildExportArgs(
     inputIndex: 0,
     clipInputIndices: new Map<string, number>(),
     clipHasTransform: new Map<string, boolean>(),
+    resolveAssetVideoPath: resolveAssetVideoPathOverride ?? defaultResolve,
   };
 
   // 1. Build inputs for each visual clip via clip handlers, sorted by track then time
@@ -351,15 +360,61 @@ export async function startExport(
     ? Math.min(maxEndMs, project.settings.durationMs)
     : maxEndMs;
 
+  // Identify generative assets that need cache warming
+  const generativeAssets = project.assets.filter((a) =>
+    generativeAssetHandlerRegistry.has(a.kind),
+  );
+
   const job = jobQueue.enqueue(projectId, "export", async (j: Job) => {
-    const args = buildExportArgs(project, assetsBase, outputPath);
+    const projDir = getProjectDir(projectId);
+
+    // Phase 1: Warm render cache for generative assets (0–20% progress)
+    let cacheManager: RenderCacheManager | undefined;
+    if (generativeAssets.length > 0) {
+      cacheManager = new RenderCacheManager(projDir);
+      await cacheManager.loadManifest();
+
+      for (let i = 0; i < generativeAssets.length; i++) {
+        const asset = generativeAssets[i];
+        const sourcePath = path.join(projDir, asset.originalPath);
+        const cached = await cacheManager.getOrNull(asset.id, sourcePath);
+
+        if (!cached) {
+          // Run the full pipeline to render this asset
+          const shared = new Map<string, unknown>();
+          shared.set("cacheManager", cacheManager);
+          const pCtx: PipelineContext = {
+            asset: { ...asset },
+            projectDir: projDir,
+            projectId,
+            shared,
+            reportProgress: () => {},
+            cacheManager,
+          };
+          await runPipeline(asset.kind, pCtx, () => {});
+        }
+
+        j.progress = ((i + 1) / generativeAssets.length) * 0.2;
+        j.updatedAt = new Date().toISOString();
+      }
+    }
+
+    // Phase 2: Build export args with resolveAssetVideoPath
+    const resolveAssetVideoPath = (asset: Asset) => {
+      if (cacheManager && generativeAssetHandlerRegistry.has(asset.kind)) {
+        return cacheManager.renderedMp4Path(asset.id);
+      }
+      return path.join(assetsBase, path.basename(asset.originalPath));
+    };
+
+    const args = buildExportArgs(project, assetsBase, outputPath, resolveAssetVideoPath);
 
     const proc = Bun.spawn(["ffmpeg", ...args], {
       stdout: "pipe",
       stderr: "pipe",
     });
 
-    // Parse progress
+    // Parse progress (20-100% range)
     if (proc.stdout) {
       const reader = proc.stdout.getReader();
       const decoder = new TextDecoder();
@@ -376,7 +431,9 @@ export async function startExport(
             if (match) {
               const us = parseInt(match[1], 10);
               const ms = us / 1000;
-              j.progress = Math.min(ms / totalDurationMs, 0.99);
+              const exportProgress = Math.min(ms / totalDurationMs, 0.99);
+              // Map export progress to 20-100% range
+              j.progress = 0.2 + exportProgress * 0.8;
               j.updatedAt = new Date().toISOString();
             }
           }

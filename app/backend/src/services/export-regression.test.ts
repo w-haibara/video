@@ -6,7 +6,7 @@ import type { Project, Asset } from "@video/shared";
 import { exportProject } from "./export-runner";
 import { extractFrames } from "../utils/frame-extract";
 import { compareFrames, listFrames } from "../utils/frame-compare";
-import { p5jsPrepareStep } from "../pipeline/steps/p5js-prepare";
+import { generativePrepareStep } from "../pipeline/steps/generative-prepare";
 import { webRenderStep } from "../pipeline/steps/web-render";
 import type { PipelineContext } from "../pipeline/types";
 import {
@@ -203,10 +203,6 @@ describe("export regression", () => {
     await runExportRegression("blend-difference", makeDifferenceProject());
   }, 30_000);
 
-  test("p5.js clip (pre-rendered)", async () => {
-    await runExportRegression("p5js-clip", makeP5jsProject());
-  }, 30_000);
-
   test("split clip (two halves of same source)", async () => {
     await runExportRegression("split-clip", makeSplitClipProject());
   }, 30_000);
@@ -245,7 +241,7 @@ describe("export regression", () => {
     await mkdir(projDir, { recursive: true });
     await writeFile(path.join(projDir, "sketch.p5.js"), sketchCode);
 
-    // 2. Run p5js pipeline: prepare → web-render
+    // 2. Run p5js pipeline: generative-prepare → web-render
     const asset: Asset = {
       id: "p5js-rendered",
       kind: "p5js",
@@ -267,10 +263,12 @@ describe("export regression", () => {
       shared,
       reportProgress: () => {},
     };
-    await p5jsPrepareStep.execute(ctx);
+    await generativePrepareStep.execute(ctx);
     await webRenderStep.execute(ctx);
 
     // 3. Build project pointing to the rendered MP4
+    //    The rendered MP4 path is stored in shared context
+    const renderedMp4Path = ctx.shared.get("renderedMp4Path") as string;
     const project: Project = {
       id: "p5js-render-test",
       name: "p5js render test",
@@ -301,7 +299,63 @@ describe("export regression", () => {
       },
     };
 
-    // 4. Export and compare frames (rendered MP4 is in projDir/assets/)
-    await runExportRegression("p5js-rendered", project, path.join(projDir, "assets"));
+    // 4. Export using a custom resolveAssetVideoPath that points to the rendered MP4
+    const { buildExportArgs } = await import("./export-service");
+    const testDir = path.join(tmpDir, "p5js-rendered");
+    const outputPath = path.join(testDir, "output.mp4");
+    const actualFramesDir = path.join(testDir, "frames");
+
+    const resolveAssetVideoPath = (a: Asset) => {
+      if (a.kind === "p5js") return renderedMp4Path;
+      return path.join(ASSETS_DIR, path.basename(a.originalPath));
+    };
+    const args = buildExportArgs(project, ASSETS_DIR, outputPath, resolveAssetVideoPath);
+
+    await mkdir(path.dirname(outputPath), { recursive: true });
+    const proc = Bun.spawn(["ffmpeg", ...args], { stdout: "pipe", stderr: "pipe" });
+    const exitCode = await proc.exited;
+    if (exitCode !== 0) {
+      const stderr = await new Response(proc.stderr).text();
+      throw new Error(`Export failed (exit ${exitCode}): ${stderr}`);
+    }
+
+    // Extract frames
+    const { extractFrames } = await import("../utils/frame-extract");
+    const frames = await extractFrames({
+      inputPath: outputPath,
+      outputDir: actualFramesDir,
+      fps: FPS,
+      width: CANVAS_W,
+      height: CANVAS_H,
+    });
+    expect(frames.length).toBeGreaterThan(0);
+
+    // Reference management
+    const refDir = path.join(REFERENCES_DIR, "p5js-rendered");
+    const updateRefs = process.env.UPDATE_REFERENCES === "1";
+
+    if (updateRefs || !(await hasReferenceFrames(refDir))) {
+      await rm(refDir, { recursive: true, force: true });
+      await mkdir(refDir, { recursive: true });
+      await Promise.all(frames.map((frame) =>
+        cp(frame, path.join(refDir, path.basename(frame)))
+      ));
+      console.log(`[regression] Generated reference frames for "p5js-rendered" (${frames.length} frames)`);
+      return;
+    }
+
+    const result = await compareFrames({
+      referenceDir: refDir,
+      actualDir: actualFramesDir,
+      threshold: 2.0,
+    });
+
+    if (!result.passed) {
+      const failures = result.perFrame
+        .filter((f) => !f.passed)
+        .map((f) => `  frame ${f.index}: ${f.diffPercent.toFixed(2)}% diff`)
+        .join("\n");
+      expect(result.passed, `Frame comparison failed for "p5js-rendered"\n${failures}`).toBe(true);
+    }
   }, 60_000);
 });

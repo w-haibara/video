@@ -6,6 +6,10 @@ import type { Asset } from "@video/shared";
 
 function getVideoMediaUrl(asset: Asset, projectId: string): string {
   if ((asset.kind === "video" || asset.kind === "p5js") && asset.proxyPath) {
+    // render-cache paths have the form "render-cache/{assetId}/proxy.mp4"
+    if (asset.proxyPath.startsWith("render-cache/")) {
+      return `/media/projects/${projectId}/${asset.proxyPath}`;
+    }
     const filename = asset.proxyPath.split("/").pop();
     return `/media/projects/${projectId}/proxies/${filename}`;
   }

@@ -5,6 +5,8 @@ import { runPipeline } from "../pipeline";
 import { assetsDir, projectDir as getProjectDir, proxyDir, thumbnailDir, resolveUnder } from "../utils/paths";
 import { getProject, saveProject } from "./project-service";
 import { enqueue } from "./job-queue";
+import { RenderCacheManager } from "./render-cache-manager";
+import { generativeAssetHandlerRegistry } from "../lib/generative-asset-handler-registry";
 import path from "node:path";
 import { mkdir, rm, readFile, writeFile } from "node:fs/promises";
 import { assetDetectorRegistry } from "../lib/asset-detector-registry";
@@ -15,12 +17,26 @@ export function createImportTask(
   asset: Asset,
 ) {
   return async (job: { progress: number }) => {
+    const isGenerative = generativeAssetHandlerRegistry.has(asset.kind);
+    let cacheManager: RenderCacheManager | undefined;
+
+    if (isGenerative) {
+      cacheManager = new RenderCacheManager(projectDir);
+      await cacheManager.loadManifest();
+    }
+
+    const shared = new Map<string, unknown>();
+    if (cacheManager) {
+      shared.set("cacheManager", cacheManager);
+    }
+
     const ctx: PipelineContext = {
       asset,
       projectDir,
       projectId,
-      shared: new Map(),
+      shared,
       reportProgress: () => {},
+      cacheManager,
     };
 
     await runPipeline(asset.kind, ctx, (overall) => {
@@ -78,9 +94,8 @@ export async function importAsset(
   return { asset, jobId: job.id };
 }
 
-function resolveAssetContentPath(projDir: string, asset: { originalPath: string; sourcePath?: string }): string {
-  const relativePath = asset.sourcePath ?? asset.originalPath;
-  const filePath = resolveUnder(projDir, relativePath);
+function resolveAssetContentPath(projDir: string, asset: { originalPath: string }): string {
+  const filePath = resolveUnder(projDir, asset.originalPath);
   if (!filePath) {
     throw new Error("Invalid asset path");
   }
@@ -114,6 +129,13 @@ export async function writeAssetContent(
   const projDir = getProjectDir(projectId);
   const filePath = resolveAssetContentPath(projDir, asset);
   await writeFile(filePath, content, "utf-8");
+
+  // Invalidate render cache after source file is modified
+  if (generativeAssetHandlerRegistry.has(asset.kind)) {
+    const cacheManager = new RenderCacheManager(projDir);
+    await cacheManager.loadManifest();
+    await cacheManager.invalidate(assetId);
+  }
 }
 
 export async function reprocessAsset(
@@ -163,6 +185,13 @@ export async function deleteAsset(
     filesToDelete.push(path.join(projDir, asset.proxyPath));
   }
   await Promise.all(filesToDelete.map((f) => rm(f, { force: true }).catch(() => {})));
+
+  // Invalidate render cache
+  if (generativeAssetHandlerRegistry.has(asset.kind)) {
+    const cacheManager = new RenderCacheManager(projDir);
+    await cacheManager.loadManifest();
+    await cacheManager.invalidate(assetId);
+  }
 
   // Remove asset from project
   project.assets = project.assets.filter((a) => a.id !== assetId);

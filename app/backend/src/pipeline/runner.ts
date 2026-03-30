@@ -10,15 +10,18 @@ export async function runPipeline(
   onProgress?: ProgressReporter,
 ): Promise<void> {
   const allSteps = getPipeline(kind);
-  const applicable = allSteps.filter((s) => s.canHandle(ctx));
-
-  for (let i = 0; i < applicable.length; i++) {
-    const step = applicable[i];
+  // Evaluate canHandle lazily before each step (not upfront) because
+  // earlier steps may populate ctx.shared with values that later steps depend on.
+  let executed = 0;
+  for (let i = 0; i < allSteps.length; i++) {
+    const step = allSteps[i];
+    if (!step.canHandle(ctx)) continue;
     ctx.reportProgress = (fraction) => {
-      onProgress?.((i + fraction) / applicable.length, step.name);
+      onProgress?.((executed + fraction) / allSteps.length, step.name);
     };
-    onProgress?.(i / applicable.length, step.name);
+    onProgress?.(executed / allSteps.length, step.name);
     await step.execute(ctx);
+    executed++;
   }
   onProgress?.(1.0, "done");
 }
