@@ -2,7 +2,7 @@
 
 ## Table of Contents
 
-### Export Regression Tests (29)
+### Export Regression Tests (52)
 
 - [single-video](#single-video) — Single 1s video clip
 - [two-clips](#two-clips) — Two sequential video clips (0-1s, 1-2s)
@@ -18,6 +18,10 @@
 - [transition-slide-right](#transition-slide-right) — Slide right (300ms)
 - [transition-slide-up](#transition-slide-up) — Slide up (300ms)
 - [transition-slide-down](#transition-slide-down) — Slide down (300ms)
+- [transition-wipe-left](#transition-wipe-left) — Wipe left (300ms)
+- [transition-wipe-up](#transition-wipe-up) — Wipe up (300ms)
+- [transition-zoom-in](#transition-zoom-in) — Zoom in (300ms)
+- [transition-push-left](#transition-push-left) — Push left (300ms)
 - [blend-opacity](#blend-opacity) — Opacity blend (50% alpha overlay)
 - [blend-multiply](#blend-multiply) — Multiply blend (darkens)
 - [blend-screen](#blend-screen) — Screen blend (lightens)
@@ -32,7 +36,26 @@
 - [blend-mode-transition](#blend-mode-transition) — Fade transition + multiply blend on clip 2
 - [crop-blend](#crop-blend) — Crop + screen blend on top clip
 - [title-font-align](#title-font-align) — Title overlay with fontFamily and align
+- [keyframe-transform-x](#keyframe-transform-x) — Keyframe animated transform.x (horizontal movement)
+- [speed-2x](#speed-2x) — Video clip at 2x speed (500ms)
+- [speed-half](#speed-half) — Video clip at 0.5x speed (2000ms)
+- [speed-multi-clip](#speed-multi-clip) — Two clips: first at 2x speed, second normal
+- [color-correction](#color-correction) — Color correction (brightness + contrast + saturation)
+- [color-correction-hue](#color-correction-hue) — Color correction (hue rotation 90deg)
+- [color-correction-transform](#color-correction-transform) — Color correction + transform (cross-feature)
+- [video-filter-blur-sepia](#video-filter-blur-sepia) — Video filter (blur + sepia)
+- [video-filter-grayscale](#video-filter-grayscale) — Video filter (grayscale)
+- [video-filter-transform](#video-filter-transform) — Video filter + transform (cross-feature)
 - [p5js-rendered](#p5js-rendered) — p5.js sketch rendered from source via Chromium pipeline
+- [chroma-key](#chroma-key) — Chroma key (green screen removal)
+- [chroma-key-transform](#chroma-key-transform) — Chroma key + transform (cross-feature)
+- [pip-corner-br](#pip-corner-br) — PiP preset: corner bottom-right (0.3x)
+- [pip-side-by-side](#pip-side-by-side) — PiP preset: side-by-side (0.5x)
+- [speed-transition](#speed-transition) — Speed 2x + fade transition (cross-feature)
+- [color-correction-video-filter](#color-correction-video-filter) — Color correction + sepia video filter stacked
+- [keyframe-color-correction](#keyframe-color-correction) — Keyframe transform.x + color correction (cross-feature)
+- [video-filter-transition](#video-filter-transition) — Video filter (grayscale) + fade transition (cross-feature)
+- [chroma-key-blend](#chroma-key-blend) — Chroma key + screen blend mode (cross-feature)
 
 ### Editor Operation Snapshots (117)
 
@@ -669,6 +692,154 @@ t1        [VVVVVVVVVVVVVVVVVVVVVVVV[IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
 
 ---
 
+### transition-wipe-left
+
+Wipe left (300ms)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 18
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+| t1 | c2 | image | img1 | 700ms | 1000ms | 0-1000ms | transition=wipe-left 300ms |
+
+**Timeline**
+
+```
+          0s                0.5s             1s                1.5s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVV[IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0012.png" width="80" title="frame 12"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0013.png" width="80" title="frame 13"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0014.png" width="80" title="frame 14"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0015.png" width="80" title="frame 15"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0016.png" width="80" title="frame 16"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0017.png" width="80" title="frame 17"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-left/frame_0018.png" width="80" title="frame 18">
+
+---
+
+### transition-wipe-up
+
+Wipe up (300ms)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 18
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+| t1 | c2 | image | img1 | 700ms | 1000ms | 0-1000ms | transition=wipe-up 300ms |
+
+**Timeline**
+
+```
+          0s                0.5s             1s                1.5s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVV[IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0012.png" width="80" title="frame 12"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0013.png" width="80" title="frame 13"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0014.png" width="80" title="frame 14"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0015.png" width="80" title="frame 15"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0016.png" width="80" title="frame 16"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0017.png" width="80" title="frame 17"> <img src="../app/backend/src/__fixtures__/export/references/transition-wipe-up/frame_0018.png" width="80" title="frame 18">
+
+---
+
+### transition-zoom-in
+
+Zoom in (300ms)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 18
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+| t1 | c2 | image | img1 | 700ms | 1000ms | 0-1000ms | transition=zoom-in 300ms |
+
+**Timeline**
+
+```
+          0s                0.5s             1s                1.5s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVV[IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0012.png" width="80" title="frame 12"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0013.png" width="80" title="frame 13"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0014.png" width="80" title="frame 14"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0015.png" width="80" title="frame 15"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0016.png" width="80" title="frame 16"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0017.png" width="80" title="frame 17"> <img src="../app/backend/src/__fixtures__/export/references/transition-zoom-in/frame_0018.png" width="80" title="frame 18">
+
+---
+
+### transition-push-left
+
+Push left (300ms)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 18
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+| t1 | c2 | image | img1 | 700ms | 1000ms | 0-1000ms | transition=push-left 300ms |
+
+**Timeline**
+
+```
+          0s                0.5s             1s                1.5s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVV[IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0012.png" width="80" title="frame 12"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0013.png" width="80" title="frame 13"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0014.png" width="80" title="frame 14"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0015.png" width="80" title="frame 15"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0016.png" width="80" title="frame 16"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0017.png" width="80" title="frame 17"> <img src="../app/backend/src/__fixtures__/export/references/transition-push-left/frame_0018.png" width="80" title="frame 18">
+
+---
+
 ### blend-opacity
 
 Opacity blend (50% alpha overlay)
@@ -1196,6 +1367,359 @@ t2        [TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT]
 
 ---
 
+### keyframe-transform-x
+
+Keyframe animated transform.x (horizontal movement)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 10
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | transform(0,0,0.5,0deg) |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/keyframe-transform-x/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-transform-x/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-transform-x/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-transform-x/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-transform-x/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-transform-x/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-transform-x/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-transform-x/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-transform-x/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-transform-x/frame_0010.png" width="80" title="frame 10">
+
+---
+
+### speed-2x
+
+Video clip at 2x speed (500ms)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 6
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 500ms | 0-500ms | - |
+
+**Timeline**
+
+```
+          0s                                                          0.5s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/speed-2x/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/speed-2x/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/speed-2x/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/speed-2x/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/speed-2x/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/speed-2x/frame_0006.png" width="80" title="frame 6">
+
+---
+
+### speed-half
+
+Video clip at 0.5x speed (2000ms)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 20
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 2000ms | 0-2000ms | - |
+
+**Timeline**
+
+```
+          0s             0.5s           1s             1.5s           2s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0012.png" width="80" title="frame 12"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0013.png" width="80" title="frame 13"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0014.png" width="80" title="frame 14"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0015.png" width="80" title="frame 15"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0016.png" width="80" title="frame 16"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0017.png" width="80" title="frame 17"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0018.png" width="80" title="frame 18"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0019.png" width="80" title="frame 19"> <img src="../app/backend/src/__fixtures__/export/references/speed-half/frame_0020.png" width="80" title="frame 20">
+
+---
+
+### speed-multi-clip
+
+Two clips: first at 2x speed, second normal
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 15
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 500ms | 0-500ms | - |
+| t1 | c2 | video | v1 | 500ms | 1000ms | 0-1000ms | - |
+
+**Timeline**
+
+```
+          0s                  0.5s                1s                  1.5s
+t1        [VVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0012.png" width="80" title="frame 12"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0013.png" width="80" title="frame 13"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0014.png" width="80" title="frame 14"> <img src="../app/backend/src/__fixtures__/export/references/speed-multi-clip/frame_0015.png" width="80" title="frame 15">
+
+---
+
+### color-correction
+
+Color correction (brightness + contrast + saturation)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 10
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/color-correction/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/color-correction/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/color-correction/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/color-correction/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/color-correction/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/color-correction/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/color-correction/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/color-correction/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/color-correction/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/color-correction/frame_0010.png" width="80" title="frame 10">
+
+---
+
+### color-correction-hue
+
+Color correction (hue rotation 90deg)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 10
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/color-correction-hue/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-hue/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-hue/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-hue/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-hue/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-hue/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-hue/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-hue/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-hue/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-hue/frame_0010.png" width="80" title="frame 10">
+
+---
+
+### color-correction-transform
+
+Color correction + transform (cross-feature)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 10
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | transform(10,-5,0.8,15deg) |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/color-correction-transform/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-transform/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-transform/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-transform/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-transform/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-transform/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-transform/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-transform/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-transform/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-transform/frame_0010.png" width="80" title="frame 10">
+
+---
+
+### video-filter-blur-sepia
+
+Video filter (blur + sepia)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 10
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/video-filter-blur-sepia/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-blur-sepia/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-blur-sepia/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-blur-sepia/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-blur-sepia/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-blur-sepia/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-blur-sepia/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-blur-sepia/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-blur-sepia/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-blur-sepia/frame_0010.png" width="80" title="frame 10">
+
+---
+
+### video-filter-grayscale
+
+Video filter (grayscale)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 10
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/video-filter-grayscale/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-grayscale/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-grayscale/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-grayscale/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-grayscale/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-grayscale/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-grayscale/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-grayscale/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-grayscale/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-grayscale/frame_0010.png" width="80" title="frame 10">
+
+---
+
+### video-filter-transform
+
+Video filter + transform (cross-feature)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 10
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | transform(10,-5,0.8,15deg) |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/video-filter-transform/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transform/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transform/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transform/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transform/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transform/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transform/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transform/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transform/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transform/frame_0010.png" width="80" title="frame 10">
+
+---
+
 ### p5js-rendered
 
 p5.js sketch rendered from source via Chromium pipeline
@@ -1295,6 +1819,337 @@ t1        [PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP]
 **Filmstrip**
 
 <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/p5js-rendered/frame_0010.png" width="80" title="frame 10">
+
+---
+
+### chroma-key
+
+Chroma key (green screen removal)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 10
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/chroma-key/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key/frame_0010.png" width="80" title="frame 10">
+
+---
+
+### chroma-key-transform
+
+Chroma key + transform (cross-feature)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 12
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | image | img1 | 0ms | 1000ms | 0-1000ms | - |
+| t2 | c2 | video | v1 | 0ms | 1000ms | 0-1000ms | transform(20,10,0.6,0deg) |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+t2        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/chroma-key-transform/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-transform/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-transform/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-transform/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-transform/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-transform/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-transform/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-transform/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-transform/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-transform/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-transform/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-transform/frame_0012.png" width="80" title="frame 12">
+
+---
+
+### pip-corner-br
+
+PiP preset: corner bottom-right (0.3x)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 12
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | image | img1 | 0ms | 1000ms | 0-1000ms | - |
+| t2 | c2 | video | v1 | 0ms | 1000ms | 0-1000ms | transform(46,21,0.3,0deg) |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+t2        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/pip-corner-br/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/pip-corner-br/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/pip-corner-br/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/pip-corner-br/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/pip-corner-br/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/pip-corner-br/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/pip-corner-br/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/pip-corner-br/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/pip-corner-br/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/pip-corner-br/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/pip-corner-br/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/pip-corner-br/frame_0012.png" width="80" title="frame 12">
+
+---
+
+### pip-side-by-side
+
+PiP preset: side-by-side (0.5x)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 12
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | image | img1 | 0ms | 1000ms | 0-1000ms | - |
+| t2 | c2 | video | v1 | 0ms | 1000ms | 0-1000ms | transform(-40,0,0.5,0deg) |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+t2        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/pip-side-by-side/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/pip-side-by-side/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/pip-side-by-side/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/pip-side-by-side/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/pip-side-by-side/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/pip-side-by-side/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/pip-side-by-side/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/pip-side-by-side/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/pip-side-by-side/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/pip-side-by-side/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/pip-side-by-side/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/pip-side-by-side/frame_0012.png" width="80" title="frame 12">
+
+---
+
+### speed-transition
+
+Speed 2x + fade transition (cross-feature)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 14
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 500ms | 0-500ms | - |
+| t1 | c2 | image | img1 | 200ms | 1000ms | 0-1000ms | transition=fade 300ms |
+
+**Timeline**
+
+```
+          0s                       0.5s                     1s
+t1        [VVVVVVVVV[IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0012.png" width="80" title="frame 12"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0013.png" width="80" title="frame 13"> <img src="../app/backend/src/__fixtures__/export/references/speed-transition/frame_0014.png" width="80" title="frame 14">
+
+---
+
+### color-correction-video-filter
+
+Color correction + sepia video filter stacked
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 10
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/color-correction-video-filter/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-video-filter/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-video-filter/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-video-filter/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-video-filter/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-video-filter/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-video-filter/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-video-filter/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-video-filter/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/color-correction-video-filter/frame_0010.png" width="80" title="frame 10">
+
+---
+
+### keyframe-color-correction
+
+Keyframe transform.x + color correction (cross-feature)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 10
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | transform(0,0,0.5,0deg) |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/keyframe-color-correction/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-color-correction/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-color-correction/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-color-correction/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-color-correction/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-color-correction/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-color-correction/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-color-correction/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-color-correction/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/keyframe-color-correction/frame_0010.png" width="80" title="frame 10">
+
+---
+
+### video-filter-transition
+
+Video filter (grayscale) + fade transition (cross-feature)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 18
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+| t1 | c2 | image | img1 | 700ms | 1000ms | 0-1000ms | transition=fade 300ms |
+
+**Timeline**
+
+```
+          0s                0.5s             1s                1.5s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVV[IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0012.png" width="80" title="frame 12"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0013.png" width="80" title="frame 13"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0014.png" width="80" title="frame 14"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0015.png" width="80" title="frame 15"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0016.png" width="80" title="frame 16"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0017.png" width="80" title="frame 17"> <img src="../app/backend/src/__fixtures__/export/references/video-filter-transition/frame_0018.png" width="80" title="frame 18">
+
+---
+
+### chroma-key-blend
+
+Chroma key + screen blend mode (cross-feature)
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 12
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | image | img1 | 0ms | 1000ms | 0-1000ms | - |
+| t2 | c2 | video | v1 | 0ms | 1000ms | 0-1000ms | blend=screen |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+t2        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/chroma-key-blend/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-blend/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-blend/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-blend/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-blend/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-blend/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-blend/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-blend/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-blend/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-blend/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-blend/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/chroma-key-blend/frame_0012.png" width="80" title="frame 12">
 
 ---
 
