@@ -244,7 +244,7 @@ export const builtinPlugin: FrontendPlugin = {
     registry.registerTickStrategy({
       assetKind: "video",
       tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
-        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded } = tickCtx;
+        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded, sourceChanging } = tickCtx;
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
         const speed = clip.clip.speed ?? 1;
         const videoReady = clip.clip.id === lastClipId;
@@ -253,18 +253,18 @@ export const builtinPlugin: FrontendPlugin = {
           return null;
         } else if (!videoReady) {
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
+        } else if (sourceChanging || videoRef.readyState < 2) {
+          // Video is loading a new source — advance by wall-clock to avoid freezing
+          return Math.min(currentTimeMs + deltaMs, clipEndMs);
         } else if (videoRef.ended || videoEnded) {
           resetVideoEnded();
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
-        } else if (videoRef.readyState >= 2 && !videoRef.paused) {
+        } else if (!videoRef.paused) {
           const videoTimeMs = videoRef.currentTime * 1000;
-          // With speed, source media progresses at speed * real time.
-          // expectedVideoTime = inMs + (elapsed timeline time) * speed
           const expectedVideoTime = clip.clip.inMs + (currentTimeMs - clip.clip.startMs) * speed;
           if (Math.abs(videoTimeMs - expectedVideoTime) > 500) {
             return Math.min(currentTimeMs + deltaMs, clipEndMs);
           }
-          // Map video time back to timeline: timelineMs = startMs + (videoTime - inMs) / speed
           const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs) / speed;
           return Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
         }
@@ -275,7 +275,7 @@ export const builtinPlugin: FrontendPlugin = {
     registry.registerTickStrategy({
       assetKind: "p5js",
       tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
-        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded } = tickCtx;
+        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded, sourceChanging } = tickCtx;
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
         const speed = clip.clip.speed ?? 1;
         const videoReady = clip.clip.id === lastClipId;
@@ -284,10 +284,13 @@ export const builtinPlugin: FrontendPlugin = {
           return null;
         } else if (!videoReady) {
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
+        } else if (sourceChanging || videoRef.readyState < 2) {
+          // Video is loading a new source — advance by wall-clock to avoid freezing
+          return Math.min(currentTimeMs + deltaMs, clipEndMs);
         } else if (videoRef.ended || videoEnded) {
           resetVideoEnded();
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
-        } else if (videoRef.readyState >= 2 && !videoRef.paused) {
+        } else if (!videoRef.paused) {
           const videoTimeMs = videoRef.currentTime * 1000;
           const expectedVideoTime = clip.clip.inMs + (currentTimeMs - clip.clip.startMs) * speed;
           if (Math.abs(videoTimeMs - expectedVideoTime) > 500) {

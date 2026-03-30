@@ -269,6 +269,7 @@ export function PreviewPlayer({
             lastClipId: lastClipIdRef.current,
             videoEnded: videoEndedRef.current,
             resetVideoEnded: () => { videoEndedRef.current = false; },
+            sourceChanging: sourceChangingRef.current,
           };
           newTime = strategy.tick(activeMedia, deltaMs, tickCtx);
         } else {

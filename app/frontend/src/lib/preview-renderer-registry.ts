@@ -40,6 +40,8 @@ export type TickContext = {
   lastClipId: string | null;
   videoEnded: boolean;
   resetVideoEnded: () => void;
+  /** True while the video element is loading a new source (src change in progress). */
+  sourceChanging: boolean;
 };
 
 export type PlaybackTickStrategy = {
