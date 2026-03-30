@@ -6,7 +6,7 @@ import type { Clip } from "@video/shared";
  * atempo supports 0.5–100.0 range per instance; for speeds below 0.5,
  * we chain multiple atempo filters.
  */
-function buildAtempoChain(speed: number): string {
+export function buildAtempoChain(speed: number): string {
   if (speed === 1) return "";
   const parts: string[] = [];
   let remaining = speed;

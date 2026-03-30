@@ -1645,6 +1645,99 @@ describe("keyframe tracks regression", () => {
     expect(stabilize(seq)).toMatchSnapshot();
   });
 
+  // ── Speed preserved through split/duplicate/paste (Gap 6) ──
+
+  test("workflow: speed preserved through split", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = setClipSpeed(seq, clipId, 2, 10000);
+    seq = splitClip(seq, clipId, 1250); // split the 2500ms (2x speed) clip
+    // Both halves should retain speed=2
+    expect(seq.tracks[0].clips[0].speed).toBe(2);
+    expect(seq.tracks[0].clips[1].speed).toBe(2);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: speed preserved through duplicate", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = setClipSpeed(seq, clipId, 2, 10000);
+    seq = duplicateClip(seq, clipId, 10000);
+    // Duplicate should also have speed=2
+    expect(seq.tracks[0].clips[1].speed).toBe(2);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: speed preserved through paste", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 20000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = setClipSpeed(seq, clipId, 2, 20000);
+    const clip = seq.tracks[0].clips[0];
+    const trackId = seq.tracks[0].id;
+    seq = pasteClip(seq, clip, 5000, trackId, 20000);
+    // Pasted clip should also have speed=2
+    expect(seq.tracks[0].clips[1].speed).toBe(2);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  // ── Chroma key preserved through move/paste (Gap 7) ──
+
+  test("workflow: chroma key preserved through move", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      chromaKey: { color: "#00ff00", similarity: 0.3, blend: 0.1 },
+    });
+    seq = moveClip(seq, clipId, 2000, 10000);
+    expect(seq.tracks[0].clips[0].chromaKey).toEqual({ color: "#00ff00", similarity: 0.3, blend: 0.1 });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: chroma key preserved through paste", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 20000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      chromaKey: { color: "#0000ff", similarity: 0.5, blend: 0.2 },
+    });
+    const clip = seq.tracks[0].clips[0];
+    const trackId = seq.tracks[0].id;
+    seq = pasteClip(seq, clip, 8000, trackId, 20000);
+    expect(seq.tracks[0].clips[1].chromaKey).toEqual({ color: "#0000ff", similarity: 0.5, blend: 0.2 });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  // ── PiP preset transform preserved through split/duplicate (Gap 9) ──
+
+  test("workflow: PiP preset transform preserved through split", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = applyPipPreset(seq, clipId, "corner-br", 1920, 1080);
+    const transformBefore = seq.tracks[0].clips[0].transform;
+    seq = splitClip(seq, clipId, 2500);
+    // Both halves should have the PiP transform
+    expect(seq.tracks[0].clips[0].transform).toEqual(transformBefore);
+    expect(seq.tracks[0].clips[1].transform).toEqual(transformBefore);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: PiP preset transform preserved through duplicate", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = applyPipPreset(seq, clipId, "corner-br", 1920, 1080);
+    const transformBefore = seq.tracks[0].clips[0].transform;
+    seq = duplicateClip(seq, clipId, 10000);
+    // Duplicate should have the same PiP transform
+    expect(seq.tracks[0].clips[1].transform).toEqual(transformBefore);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
   test("workflow: all four PiP corner presets", () => {
     let seq: Sequence = { tracks: [] };
     seq = addClipFromAsset(seq, videoAsset, 10000);

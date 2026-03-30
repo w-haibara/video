@@ -52,6 +52,11 @@ import {
   makeChromaKeyTransformProject,
   makePipCornerBrProject,
   makePipSideBySideProject,
+  makeSpeedTransitionProject,
+  makeColorCorrectionVideoFilterProject,
+  makeKeyframeColorCorrectionProject,
+  makeVideoFilterTransitionProject,
+  makeChromaKeyBlendProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -153,6 +158,11 @@ const EXPORT_TESTS: Array<{
   { name: "chroma-key-transform", description: "Chroma key + transform (cross-feature)", factory: makeChromaKeyTransformProject },
   { name: "pip-corner-br", description: "PiP preset: corner bottom-right (0.3x)", factory: makePipCornerBrProject },
   { name: "pip-side-by-side", description: "PiP preset: side-by-side (0.5x)", factory: makePipSideBySideProject },
+  { name: "speed-transition", description: "Speed 2x + fade transition (cross-feature)", factory: makeSpeedTransitionProject },
+  { name: "color-correction-video-filter", description: "Color correction + sepia video filter stacked", factory: makeColorCorrectionVideoFilterProject },
+  { name: "keyframe-color-correction", description: "Keyframe transform.x + color correction (cross-feature)", factory: makeKeyframeColorCorrectionProject },
+  { name: "video-filter-transition", description: "Video filter (grayscale) + fade transition (cross-feature)", factory: makeVideoFilterTransitionProject },
+  { name: "chroma-key-blend", description: "Chroma key + screen blend mode (cross-feature)", factory: makeChromaKeyBlendProject },
 ];
 
 // ── Snap parser ──
