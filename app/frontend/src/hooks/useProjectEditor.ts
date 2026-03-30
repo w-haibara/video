@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { Project, Asset, Clip, ClipText, ClipTransition, Sequence } from "@video/shared";
+import type { Project, Asset, Clip, ClipText, ClipTransition, Keyframe, Sequence } from "@video/shared";
 import { theme } from "../theme";
 import * as SeqOps from "../lib/sequence-ops";
 import { assetKindRegistry } from "../lib/asset-kind-registry";
@@ -196,6 +196,27 @@ export function useProjectEditor(
     [sequence, pushState],
   );
 
+  const addKeyframe = useCallback(
+    (clipId: string, property: string, keyframe: Keyframe) => {
+      pushState(SeqOps.addKeyframe(sequence, clipId, property, keyframe));
+    },
+    [sequence, pushState],
+  );
+
+  const removeKeyframe = useCallback(
+    (clipId: string, property: string, timeMs: number) => {
+      pushState(SeqOps.removeKeyframe(sequence, clipId, property, timeMs));
+    },
+    [sequence, pushState],
+  );
+
+  const updateKeyframe = useCallback(
+    (clipId: string, property: string, timeMs: number, updates: Partial<Keyframe>) => {
+      pushState(SeqOps.updateKeyframe(sequence, clipId, property, timeMs, updates));
+    },
+    [sequence, pushState],
+  );
+
   return {
     addClipFromAsset,
     removeClip,
@@ -219,5 +240,8 @@ export function useProjectEditor(
     setTrackMuted,
     setTrackName,
     setTrackColor,
+    addKeyframe,
+    removeKeyframe,
+    updateKeyframe,
   };
 }

@@ -14,6 +14,7 @@ import { AudioVolumeEditor } from "../components/editors/AudioVolumeEditor";
 import { BlendModeEditor } from "../components/editors/BlendModeEditor";
 import { TransitionEditor } from "../components/editors/TransitionEditor";
 import { P5jsEditor } from "../components/editors/P5jsEditor";
+import { KeyframeEditor } from "../components/editors/KeyframeEditor";
 import { videoClipRenderer, p5jsClipRenderer } from "../components/renderers/VideoClipRenderer";
 import { imageClipRenderer } from "../components/renderers/ImageClipRenderer";
 import { textOverlayRenderer } from "../components/renderers/TextOverlayRenderer";
@@ -176,6 +177,13 @@ export const builtinPlugin: FrontendPlugin = {
       order: 15,
       canHandle: (ctx) => ctx.clipKind === "p5js",
       Component: P5jsEditor,
+    });
+    registry.register({
+      id: "keyframe",
+      label: "Keyframes",
+      order: 50,
+      canHandle: (ctx) => ctx.clipKind === "video" || ctx.clipKind === "image" || ctx.clipKind === "audio" || ctx.clipKind === "title",
+      Component: KeyframeEditor,
     });
   },
 
