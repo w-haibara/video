@@ -34,6 +34,7 @@ import {
   makeBlendModeTransitionProject,
   makeCropBlendProject,
   makeTitleFontAlignProject,
+  makeKeyframeTransformXProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -116,6 +117,7 @@ const EXPORT_TESTS: Array<{
   { name: "blend-mode-transition", description: "Fade transition + multiply blend on clip 2", factory: makeBlendModeTransitionProject },
   { name: "crop-blend", description: "Crop + screen blend on top clip", factory: makeCropBlendProject },
   { name: "title-font-align", description: "Title overlay with fontFamily and align", factory: makeTitleFontAlignProject },
+  { name: "keyframe-transform-x", description: "Keyframe animated transform.x (horizontal movement)", factory: makeKeyframeTransformXProject },
   { name: "p5js-rendered", description: "p5.js sketch rendered from source via Chromium pipeline", factory: makeP5jsProject },
 ];
 

@@ -1,4 +1,5 @@
 import type { Project, Clip, ExportPreset, Asset } from "@video/shared";
+import { hasKeyframes, buildKeyframeFilterExpression } from "@video/shared";
 import type { Job } from "@video/shared";
 import { mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -21,18 +22,30 @@ export function sanitizeColor(value: string): string {
 }
 
 /**
- * Check whether a clip has any non-identity transform.
+ * Check whether a clip has any non-identity transform (static or animated).
  */
 export function hasClipTransform(clip: Clip): boolean {
   const tx = clip.transform?.x ?? 0;
   const ty = clip.transform?.y ?? 0;
   const scale = clip.transform?.scale ?? 1;
   const rotation = clip.transform?.rotation ?? 0;
-  return tx !== 0 || ty !== 0 || scale !== 1 || rotation !== 0;
+  const hasStaticTransform = tx !== 0 || ty !== 0 || scale !== 1 || rotation !== 0;
+  if (hasStaticTransform) return true;
+  // Check for keyframed transform properties
+  const tracks = clip.keyframeTracks;
+  if (!tracks) return false;
+  return hasKeyframes(tracks, "transform.x") ||
+    hasKeyframes(tracks, "transform.y") ||
+    hasKeyframes(tracks, "transform.scale") ||
+    hasKeyframes(tracks, "transform.rotation") ||
+    hasKeyframes(tracks, "opacity");
 }
 
 /**
  * Build FFmpeg filter segment for clip rotation/scale.
+ * NOTE: Export currently supports keyframe animation for transform.x/y only.
+ * Scale and rotation are applied as static values from clip.transform.
+ * Animated scale/rotation would require per-frame rendering (not FFmpeg expressions).
  * Position (x/y) is handled by the overlay filter, not here.
  * Returns comma-prefixed filter chain or empty string.
  */
@@ -62,13 +75,43 @@ export function buildTransformFilter(
  * Build overlay position expression for a clip.
  * Clips with transforms are centered then offset by x/y.
  * Clips without transforms use 0:0 (they are already canvas-sized).
+ * When keyframe tracks animate transform.x or transform.y, generates
+ * time-dependent FFmpeg expressions.
  */
 export function buildOverlayPosition(clip: Clip): string {
   if (!hasClipTransform(clip)) return "0:0";
-  const tx = clip.transform?.x ?? 0;
-  const ty = clip.transform?.y ?? 0;
-  const xExpr = tx === 0 ? "(W-w)/2" : `(W-w)/2+${tx}`;
-  const yExpr = ty === 0 ? "(H-h)/2" : `(H-h)/2+${ty}`;
+  const tracks = clip.keyframeTracks;
+  const staticX = clip.transform?.x ?? 0;
+  const staticY = clip.transform?.y ?? 0;
+
+  let xExpr: string;
+  let yExpr: string;
+
+  const hasAnimatedX = tracks != null && hasKeyframes(tracks, "transform.x");
+  const hasAnimatedY = tracks != null && hasKeyframes(tracks, "transform.y");
+
+  const clipStartSec = clip.startMs / 1000;
+
+  if (hasAnimatedX) {
+    const animExpr = buildKeyframeFilterExpression(tracks!, "transform.x", staticX, clip.durationMs, clipStartSec);
+    xExpr = `(W-w)/2+(${animExpr})`;
+  } else {
+    xExpr = staticX === 0 ? "(W-w)/2" : `(W-w)/2+${staticX}`;
+  }
+
+  if (hasAnimatedY) {
+    const animExpr = buildKeyframeFilterExpression(tracks!, "transform.y", staticY, clip.durationMs, clipStartSec);
+    yExpr = `(H-h)/2+(${animExpr})`;
+  } else {
+    yExpr = staticY === 0 ? "(H-h)/2" : `(H-h)/2+${staticY}`;
+  }
+
+  // When keyframe expressions contain commas, use named x='..':y='..' syntax
+  // so FFmpeg doesn't parse commas as overlay parameter separators.
+  if (hasAnimatedX || hasAnimatedY) {
+    return `x='${xExpr}':y='${yExpr}'`;
+  }
+
   return `${xExpr}:${yExpr}`;
 }
 

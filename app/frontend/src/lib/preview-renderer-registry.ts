@@ -1,5 +1,6 @@
 import type { CSSProperties, RefObject } from "react";
 import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
+import { getAnimatedValue, hasKeyframes } from "@video/shared";
 import { transitionPreviewRegistry } from "./transition-preview-registry";
 
 export type ActiveClip = {
@@ -248,7 +249,8 @@ export function mediaStyle(crop: ClipCrop | undefined, assetW: number, assetH: n
   };
 }
 
-/** Compute the absolute-positioned transform container for a media clip. */
+/** Compute the absolute-positioned transform container for a media clip.
+ *  When the clip has keyframeTracks, animated values override static transform/opacity. */
 export function computeMediaContainerStyle(
   activeClip: ActiveClip,
   canvasW: number,
@@ -256,12 +258,18 @@ export function computeMediaContainerStyle(
 ): CSSProperties {
   const assetW = activeClip.asset.width ?? canvasW;
   const assetH = activeClip.asset.height ?? canvasH;
-  const transform = activeClip.clip.transform;
-  const translateX = transform?.x ?? 0;
-  const translateY = transform?.y ?? 0;
-  const scale = transform?.scale ?? 1;
-  const rotation = transform?.rotation ?? 0;
-  const crop = activeClip.clip.crop;
+  const clip = activeClip.clip;
+  const tracks = clip.keyframeTracks;
+  const transform = clip.transform;
+
+  // Time relative to clip start for keyframe evaluation
+  const timeMs = activeClip.clipTimeMs - clip.inMs;
+
+  const translateX = getAnimatedValue(tracks, "transform.x", timeMs, transform?.x ?? 0);
+  const translateY = getAnimatedValue(tracks, "transform.y", timeMs, transform?.y ?? 0);
+  const scale = getAnimatedValue(tracks, "transform.scale", timeMs, transform?.scale ?? 1);
+  const rotation = getAnimatedValue(tracks, "transform.rotation", timeMs, transform?.rotation ?? 0);
+  const crop = clip.crop;
 
   const effectiveW = crop?.width ?? assetW;
   const effectiveH = crop?.height ?? assetH;
@@ -271,7 +279,7 @@ export function computeMediaContainerStyle(
   const offsetYPct = (translateY / canvasH) * 100;
   const rotationCss = rotation ? `rotate(${rotation}deg)` : undefined;
 
-  return {
+  const style: CSSProperties = {
     position: "absolute",
     width: `${containerWidthPct}%`,
     height: `${containerHeightPct}%`,
@@ -281,4 +289,11 @@ export function computeMediaContainerStyle(
     transformOrigin: "center center",
     overflow: crop ? "hidden" : undefined,
   };
+
+  // Apply animated opacity if keyframes exist
+  if (hasKeyframes(tracks, "opacity")) {
+    style.opacity = getAnimatedValue(tracks, "opacity", timeMs, 1.0);
+  }
+
+  return style;
 }

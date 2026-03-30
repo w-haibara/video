@@ -1163,3 +1163,97 @@ describe("track lock & mute regression", () => {
     expect(afterSplit).toBe(seq);
   });
 });
+
+describe("keyframe tracks regression", () => {
+  const keyframeTracks = [
+    {
+      property: "transform.x",
+      keyframes: [
+        { timeMs: 0, value: 0 },
+        { timeMs: 2500, value: 100 },
+        { timeMs: 5000, value: 0 },
+      ],
+    },
+    {
+      property: "opacity",
+      keyframes: [
+        { timeMs: 0, value: 0, easing: "ease-in" as const },
+        { timeMs: 1000, value: 1 },
+      ],
+    },
+  ];
+
+  test("workflow: clip with keyframeTracks preserves through move", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, { keyframeTracks });
+    seq = moveClip(seq, clipId, 5000, 30000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: clip with keyframeTracks preserves through trim", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, { keyframeTracks });
+    seq = trimClip(seq, clipId, "right", -1000, 5000, 30000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: clip with keyframeTracks preserves through split", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, { keyframeTracks });
+    seq = splitClip(seq, clipId, 2500);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: clip with keyframeTracks preserves through duplicate", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, { keyframeTracks });
+    seq = duplicateClip(seq, clipId, 30000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: clip with keyframeTracks preserves through paste", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, { keyframeTracks });
+    const clip = seq.tracks[0].clips[0];
+    const trackId = seq.tracks[0].id;
+    seq = pasteClip(seq, clip, 10000, trackId, 30000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: pasteAttributes does not copy keyframeTracks", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    seq = addClipFromAsset(seq, imageAsset, 30000);
+    const srcClipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, srcClipId, {
+      keyframeTracks,
+      transform: { x: 10, y: 5, scale: 1.5 },
+    });
+    const srcClip = seq.tracks[0].clips[0];
+    const tgtClipId = seq.tracks[0].clips[1].id;
+    seq = pasteAttributes(seq, srcClip, tgtClipId);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: clip with keyframeTracks + transform + blend", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      keyframeTracks,
+      transform: { x: 10, y: -5, scale: 0.8, rotation: 15 },
+      blendMode: "screen",
+    });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+});

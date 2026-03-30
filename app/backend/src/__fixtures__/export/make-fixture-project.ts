@@ -1,4 +1,4 @@
-import type { Project, Clip, Track, Asset } from "@video/shared";
+import type { Project, Clip, Track, Asset, KeyframeTrack } from "@video/shared";
 
 export const CANVAS_W = 160;
 export const CANVAS_H = 90;
@@ -644,6 +644,30 @@ export function makeTitleFontAlignProject(): Project {
           ],
           "t2",
         ),
+      ],
+    },
+  });
+}
+
+/** Single video clip with keyframe-animated transform.x (moves right over 1 second). */
+export function makeKeyframeTransformXProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            transform: { x: 0, y: 0, scale: 0.5, rotation: 0 },
+            keyframeTracks: [
+              {
+                property: "transform.x",
+                keyframes: [
+                  { timeMs: 0, value: -40 },
+                  { timeMs: 1000, value: 40 },
+                ],
+              },
+            ],
+          }),
+        ]),
       ],
     },
   });
