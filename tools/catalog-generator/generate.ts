@@ -418,7 +418,7 @@ function generateExportsIndexMd(tests: ExportTestCase[]): string {
   for (let i = 0; i < tests.length; i++) {
     const tc = tests[i];
     lines.push(
-      `| ${i + 1} | [${tc.name}](${tc.name}/) | ${tc.description} | ${tc.frameCount} | ${tc.settings.canvasWidth}x${tc.settings.canvasHeight} |`,
+      `| ${i + 1} | [${tc.name}](${tc.name}/index.md) | ${tc.description} | ${tc.frameCount} | ${tc.settings.canvasWidth}x${tc.settings.canvasHeight} |`,
     );
   }
   lines.push("");
@@ -454,8 +454,8 @@ function generateTopLevelIndex(
   const lines: string[] = [];
   lines.push("# Feature Catalog — Video Editor\n");
   lines.push("## Contents\n");
-  lines.push(`- [Export Regression Tests](exports/) — ${exportTests.length} tests`);
-  lines.push(`- [Editor Operation Snapshots](snapshots/) — ${snapshotCount} snapshots\n`);
+  lines.push(`- [Export Regression Tests](exports/index.md) — ${exportTests.length} tests`);
+  lines.push(`- [Editor Operation Snapshots](snapshots/index.md) — ${snapshotCount} snapshots\n`);
   return lines.join("\n");
 }
 

@@ -2,5 +2,5 @@
 
 ## Contents
 
-- [Export Regression Tests](exports/) — 52 tests
-- [Editor Operation Snapshots](snapshots/) — 117 snapshots
+- [Export Regression Tests](exports/index.md) — 52 tests
+- [Editor Operation Snapshots](snapshots/index.md) — 117 snapshots
