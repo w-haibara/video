@@ -2,11 +2,22 @@
  * Feature Catalog Generator
  *
  * Reads export regression test definitions and editor operation snapshots,
- * then generates a single Markdown file (docs/feature-catalog.md) containing
- * all content from the regression viewer as a static feature catalog.
+ * then generates a per-feature directory structure under docs/catalog/.
+ *
+ * Output:
+ *   docs/catalog/
+ *     index.md                       — Top-level TOC
+ *     exports/
+ *       index.md                     — Overview table of all export tests
+ *       {name}/
+ *         index.md                   — Feature description, settings, clips, timeline, filmstrip
+ *         frames/frame_0001.png ...  — Copies of reference frames
+ *         assets/test-video-1s.mp4   — Copies of test assets
+ *     snapshots/
+ *       index.md                     — All snapshots in one file
  */
 
-import { readdir, readFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import type { Clip, Sequence } from "../../app/shared/src/types/project";
 import { buildP5jsHtml } from "../../app/backend/src/pipeline/steps/p5js-prepare";
@@ -75,7 +86,9 @@ const REFS_DIR = path.join(
   "app/backend/src/__fixtures__/export/references",
 );
 const FIXTURES_DIR = path.join(ROOT, "app/backend/src/__fixtures__/export");
-const OUTPUT_PATH = path.join(ROOT, "docs/feature-catalog.md");
+const ASSETS_DIR = path.join(FIXTURES_DIR, "assets");
+const CATALOG_DIR = path.join(ROOT, "docs/catalog");
+const OLD_OUTPUT = path.join(ROOT, "docs/feature-catalog.md");
 
 // ── Types ──
 
@@ -308,106 +321,123 @@ function mdTimeline(seq: Sequence): string {
 
 function mdFilmstrip(tc: ExportTestCase): string {
   if (tc.frameCount === 0) return "_No reference frames_\n";
-  const refsRelPath = `../app/backend/src/__fixtures__/export/references/${tc.name}`;
   const imgs = tc.frameFiles.map(
-    (f, i) => `<img src="${refsRelPath}/${f}" width="80" title="frame ${i + 1}">`,
+    (f, i) => `<img src="frames/${f}" width="80" title="frame ${i + 1}">`,
   );
   return imgs.join(" ") + "\n";
 }
 
-async function generateExportSection(tests: ExportTestCase[]): Promise<string> {
-  const lines: string[] = [];
-  lines.push("## Export Regression Tests\n");
-
-  for (const tc of tests) {
-    lines.push(`### ${tc.name}\n`);
-    lines.push(`${tc.description}\n`);
-
-    lines.push("**Project Settings**\n");
-    lines.push(
-      `- Canvas: ${tc.settings.canvasWidth}x${tc.settings.canvasHeight}`,
-    );
-    lines.push(`- Duration: ${tc.settings.durationMs}ms`);
-    lines.push(`- Frames: ${tc.frameCount}\n`);
-
-    lines.push("**Assets**\n");
-    if (tc.assets.length === 0) {
-      lines.push("_None_\n");
-    } else {
-      for (const a of tc.assets) {
-        const dur = a.durationMs != null ? `, ${a.durationMs}ms` : "";
-        lines.push(`- \`${a.id}\` (${a.kind}${dur}) — ${a.originalPath}`);
-      }
-      lines.push("");
-      // Embed asset previews
-      const assetEmbeds: string[] = [];
-      for (const a of tc.assets) {
-        const relPath = `../app/backend/src/__fixtures__/export/${a.originalPath}`;
-        if (a.kind === "image") {
-          assetEmbeds.push(`<img src="${relPath}" width="160" title="${a.id} (${a.kind})">`);
-        } else if (a.kind === "video" || a.kind === "p5js") {
-          assetEmbeds.push(`<video src="${relPath}" width="160" controls muted title="${a.id} (${a.kind})"></video>`);
-        } else if (a.kind === "audio") {
-          assetEmbeds.push(`<audio src="${relPath}" controls title="${a.id} (${a.kind})"></audio>`);
-        }
-      }
-      if (assetEmbeds.length > 0) {
-        lines.push(assetEmbeds.join(" ") + "\n");
-      }
+function mdAssetEmbeds(tc: ExportTestCase): string[] {
+  const embeds: string[] = [];
+  for (const a of tc.assets) {
+    const filename = path.basename(a.originalPath);
+    const localPath = `assets/${filename}`;
+    if (a.kind === "image") {
+      embeds.push(`<img src="${localPath}" width="160" title="${a.id} (${a.kind})">`);
+    } else if (a.kind === "video" || a.kind === "p5js") {
+      embeds.push(`<video src="${localPath}" width="160" controls muted title="${a.id} (${a.kind})"></video>`);
+    } else if (a.kind === "audio") {
+      embeds.push(`<audio src="${localPath}" controls title="${a.id} (${a.kind})"></audio>`);
     }
-
-    // Embed p5.js sketch source code and generated HTML
-    for (const a of tc.assets) {
-      if (a.kind === "p5js" && a.originalPath.endsWith(".p5.js")) {
-        const sketchPath = path.join(FIXTURES_DIR, a.originalPath);
-        try {
-          const sketchCode = await readFile(sketchPath, "utf-8");
-          lines.push(`**p5.js Sketch** (\`${a.originalPath}\`)\n`);
-          lines.push("```javascript");
-          lines.push(sketchCode.trim());
-          lines.push("```\n");
-
-          // Show the generated HTML template
-          const html = buildP5jsHtml(sketchCode, tc.settings.canvasWidth, tc.settings.canvasHeight);
-          lines.push("<details>\n<summary><strong>Generated HTML (passed to Chromium for rendering)</strong></summary>\n");
-          lines.push("```html");
-          lines.push(html.trim());
-          lines.push("```\n");
-          lines.push("</details>\n");
-        } catch {
-          // sketch file doesn't exist — skip
-        }
-      }
-    }
-
-    lines.push("**Clip Details**\n");
-    lines.push(mdClipTable(tc.sequence));
-    lines.push("");
-
-    lines.push("**Timeline**\n");
-    lines.push(mdTimeline(tc.sequence));
-    lines.push("");
-
-    lines.push("**Filmstrip**\n");
-    lines.push(mdFilmstrip(tc));
-    lines.push("---\n");
   }
+  return embeds;
+}
+
+async function generateExportFeatureMd(tc: ExportTestCase): Promise<string> {
+  const lines: string[] = [];
+  lines.push(`# ${tc.name}\n`);
+  lines.push(`${tc.description}\n`);
+
+  lines.push("## Project Settings\n");
+  lines.push(
+    `- Canvas: ${tc.settings.canvasWidth}x${tc.settings.canvasHeight}`,
+  );
+  lines.push(`- Duration: ${tc.settings.durationMs}ms`);
+  lines.push(`- Frames: ${tc.frameCount}\n`);
+
+  lines.push("## Assets\n");
+  if (tc.assets.length === 0) {
+    lines.push("_None_\n");
+  } else {
+    for (const a of tc.assets) {
+      const dur = a.durationMs != null ? `, ${a.durationMs}ms` : "";
+      const filename = path.basename(a.originalPath);
+      lines.push(`- \`${a.id}\` (${a.kind}${dur}) — ${filename}`);
+    }
+    lines.push("");
+    const embeds = mdAssetEmbeds(tc);
+    if (embeds.length > 0) {
+      lines.push(embeds.join(" ") + "\n");
+    }
+  }
+
+  // Embed p5.js sketch source code and generated HTML
+  for (const a of tc.assets) {
+    if (a.kind === "p5js" && a.originalPath.endsWith(".p5.js")) {
+      const sketchPath = path.join(FIXTURES_DIR, a.originalPath);
+      try {
+        const sketchCode = await readFile(sketchPath, "utf-8");
+        lines.push(`## p5.js Sketch (\`${path.basename(a.originalPath)}\`)\n`);
+        lines.push("```javascript");
+        lines.push(sketchCode.trim());
+        lines.push("```\n");
+
+        // Show the generated HTML template
+        const html = buildP5jsHtml(sketchCode, tc.settings.canvasWidth, tc.settings.canvasHeight);
+        lines.push("<details>\n<summary><strong>Generated HTML (passed to Chromium for rendering)</strong></summary>\n");
+        lines.push("```html");
+        lines.push(html.trim());
+        lines.push("```\n");
+        lines.push("</details>\n");
+      } catch {
+        // sketch file doesn't exist — skip
+      }
+    }
+  }
+
+  lines.push("## Clip Details\n");
+  lines.push(mdClipTable(tc.sequence));
+  lines.push("");
+
+  lines.push("## Timeline\n");
+  lines.push(mdTimeline(tc.sequence));
+  lines.push("");
+
+  lines.push("## Filmstrip\n");
+  lines.push(mdFilmstrip(tc));
 
   return lines.join("\n");
 }
 
-function generateSnapshotSection(snapshots: Snapshot[]): string {
+function generateExportsIndexMd(tests: ExportTestCase[]): string {
   const lines: string[] = [];
-  lines.push("## Editor Operation Snapshots\n");
+  lines.push("# Export Regression Tests\n");
+  lines.push(`${tests.length} export tests.\n`);
+  lines.push("| # | Test | Description | Frames | Canvas |");
+  lines.push("|---|------|-------------|--------|--------|");
+  for (let i = 0; i < tests.length; i++) {
+    const tc = tests[i];
+    lines.push(
+      `| ${i + 1} | [${tc.name}](${tc.name}/) | ${tc.description} | ${tc.frameCount} | ${tc.settings.canvasWidth}x${tc.settings.canvasHeight} |`,
+    );
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
+function generateSnapshotsMd(snapshots: Snapshot[]): string {
+  const lines: string[] = [];
+  lines.push("# Editor Operation Snapshots\n");
+  lines.push(`${snapshots.length} snapshots.\n`);
 
   for (const snap of snapshots) {
-    lines.push(`### ${snap.name}\n`);
+    lines.push(`## ${snap.name}\n`);
 
-    lines.push("**Clip Details**\n");
+    lines.push("### Clip Details\n");
     lines.push(mdClipTable(snap.sequence));
     lines.push("");
 
-    lines.push("**Timeline**\n");
+    lines.push("### Timeline\n");
     lines.push(mdTimeline(snap.sequence));
     lines.push("");
 
@@ -417,31 +447,50 @@ function generateSnapshotSection(snapshots: Snapshot[]): string {
   return lines.join("\n");
 }
 
-function generateToc(
+function generateTopLevelIndex(
   exportTests: ExportTestCase[],
-  snapshots: Snapshot[],
+  snapshotCount: number,
 ): string {
   const lines: string[] = [];
-  lines.push("## Table of Contents\n");
-
-  lines.push(`### Export Regression Tests (${exportTests.length})\n`);
-  for (const tc of exportTests) {
-    const anchor = tc.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-    lines.push(`- [${tc.name}](#${anchor}) — ${tc.description}`);
-  }
-  lines.push("");
-
-  lines.push(`### Editor Operation Snapshots (${snapshots.length})\n`);
-  for (const snap of snapshots) {
-    const anchor = snap.name
-      .toLowerCase()
-      .replace(/[^a-z0-9 -]/g, "")
-      .replace(/\s+/g, "-");
-    lines.push(`- [${snap.name}](#${anchor})`);
-  }
-  lines.push("");
-
+  lines.push("# Feature Catalog — Video Editor\n");
+  lines.push("## Contents\n");
+  lines.push(`- [Export Regression Tests](exports/) — ${exportTests.length} tests`);
+  lines.push(`- [Editor Operation Snapshots](snapshots/) — ${snapshotCount} snapshots\n`);
   return lines.join("\n");
+}
+
+// ── File operations ──
+
+async function copyFrames(tc: ExportTestCase, destDir: string): Promise<void> {
+  if (tc.frameFiles.length === 0) return;
+  const framesDir = path.join(destDir, "frames");
+  await mkdir(framesDir, { recursive: true });
+  await Promise.all(
+    tc.frameFiles.map((f) =>
+      copyFile(path.join(REFS_DIR, tc.name, f), path.join(framesDir, f)),
+    ),
+  );
+}
+
+async function copyAssets(tc: ExportTestCase, destDir: string): Promise<void> {
+  if (tc.assets.length === 0) return;
+  const assetsDir = path.join(destDir, "assets");
+  await mkdir(assetsDir, { recursive: true });
+
+  // Deduplicate by filename (same file may appear for multiple asset IDs)
+  const seen = new Set<string>();
+  for (const a of tc.assets) {
+    const filename = path.basename(a.originalPath);
+    if (seen.has(filename)) continue;
+    seen.add(filename);
+    const src = path.join(FIXTURES_DIR, a.originalPath);
+    const dest = path.join(assetsDir, filename);
+    try {
+      await copyFile(src, dest);
+    } catch {
+      // Asset file may not exist (e.g., empty-asset)
+    }
+  }
 }
 
 // ── Main ──
@@ -458,17 +507,58 @@ async function main() {
   const snapshots = parseSnapshots(snapText);
   console.log(`  ${snapshots.length} snapshots loaded`);
 
-  const parts: string[] = [];
-  parts.push("# Feature Catalog — Video Editor\n");
-  parts.push(generateToc(exportTests, snapshots));
-  parts.push(await generateExportSection(exportTests));
-  parts.push(generateSnapshotSection(snapshots));
+  // Clean old output
+  try {
+    await rm(OLD_OUTPUT);
+    console.log("Deleted old docs/feature-catalog.md");
+  } catch {
+    // doesn't exist
+  }
+  try {
+    await rm(CATALOG_DIR, { recursive: true });
+  } catch {
+    // doesn't exist
+  }
 
-  const md = parts.join("\n");
-  await Bun.write(OUTPUT_PATH, md);
-  console.log(`\nGenerated: ${OUTPUT_PATH}`);
-  console.log(`  ${exportTests.length} export tests, ${snapshots.length} snapshots`);
-  console.log(`  ${md.length} bytes, ${md.split("\n").length} lines`);
+  // Create directory structure
+  await mkdir(path.join(CATALOG_DIR, "exports"), { recursive: true });
+  await mkdir(path.join(CATALOG_DIR, "snapshots"), { recursive: true });
+
+  // Generate per-feature directories and markdown
+  console.log("Generating export feature directories...");
+  let copiedFrames = 0;
+  let copiedAssets = 0;
+  await Promise.all(
+    exportTests.map(async (tc) => {
+      const featureDir = path.join(CATALOG_DIR, "exports", tc.name);
+      await mkdir(featureDir, { recursive: true });
+
+      // Copy frames and assets in parallel
+      await Promise.all([copyFrames(tc, featureDir), copyAssets(tc, featureDir)]);
+      copiedFrames += tc.frameFiles.length;
+      copiedAssets += tc.assets.length;
+
+      // Generate feature index.md
+      const md = await generateExportFeatureMd(tc);
+      await Bun.write(path.join(featureDir, "index.md"), md);
+    }),
+  );
+
+  // Generate exports index
+  const exportsIndex = generateExportsIndexMd(exportTests);
+  await Bun.write(path.join(CATALOG_DIR, "exports", "index.md"), exportsIndex);
+
+  // Generate snapshots index
+  const snapshotsMd = generateSnapshotsMd(snapshots);
+  await Bun.write(path.join(CATALOG_DIR, "snapshots", "index.md"), snapshotsMd);
+
+  // Generate top-level index
+  const topIndex = generateTopLevelIndex(exportTests, snapshots.length);
+  await Bun.write(path.join(CATALOG_DIR, "index.md"), topIndex);
+
+  console.log(`\nGenerated: ${CATALOG_DIR}/`);
+  console.log(`  ${exportTests.length} export features (${copiedFrames} frames, ${copiedAssets} asset refs copied)`);
+  console.log(`  ${snapshots.length} snapshots`);
 }
 
 main().catch((err) => {
