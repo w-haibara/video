@@ -15,6 +15,8 @@ export class AudioManager {
     string,
     { source: MediaElementAudioSourceNode; gain: GainNode; element: HTMLMediaElement }
   >();
+  /** Track elements that already have a MediaElementAudioSourceNode (can only create once per element). */
+  private elementSources = new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>();
   private masterGain: GainNode | null = null;
   private muted = false;
 
@@ -59,7 +61,13 @@ export class AudioManager {
       this.disconnectElement(clipId);
     }
 
-    const source = ctx.createMediaElementSource(element);
+    // Reuse existing MediaElementAudioSourceNode if element was previously connected
+    const existingSource = this.elementSources.get(element);
+    const source = existingSource ?? ctx.createMediaElementSource(element);
+    if (!existingSource) {
+      this.elementSources.set(element, source);
+    }
+
     const gain = ctx.createGain();
     gain.gain.value = volume;
 
