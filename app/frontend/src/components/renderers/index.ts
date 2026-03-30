@@ -3,11 +3,13 @@ import type { ActiveClip, TickContext } from "../../lib/preview-renderer-registr
 import { videoClipRenderer } from "./VideoClipRenderer";
 import { imageClipRenderer } from "./ImageClipRenderer";
 import { textOverlayRenderer } from "./TextOverlayRenderer";
+import { audioClipRenderer } from "./AudioClipRenderer";
 
 // Register renderers (order matters for same-zOrder: video checked before image)
 previewRendererRegistry.register(videoClipRenderer);
 previewRendererRegistry.register(imageClipRenderer);
 previewRendererRegistry.register(textOverlayRenderer);
+previewRendererRegistry.register(audioClipRenderer);
 
 // Register tick strategies
 previewRendererRegistry.registerTickStrategy({
@@ -39,6 +41,15 @@ previewRendererRegistry.registerTickStrategy({
 
 previewRendererRegistry.registerTickStrategy({
   assetKind: "image",
+  tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
+    const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
+    return Math.min(tickCtx.currentTimeMs + deltaMs, clipEndMs);
+  },
+});
+
+// Audio clips advance time like image clips (no video element to sync from)
+previewRendererRegistry.registerTickStrategy({
+  assetKind: "audio",
   tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
     const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
     return Math.min(tickCtx.currentTimeMs + deltaMs, clipEndMs);
