@@ -85,6 +85,8 @@ export function PreviewPlayer({
   const videoEndedRef = useRef(false);
   const sourceChangingRef = useRef(false);
   const sourceVersionRef = useRef(0);
+  /** Timestamp when the last source change completed (loadeddata). Used to stabilize sync. */
+  const sourceLoadedAtRef = useRef(0);
   const currentTimeMsRef = useRef(currentTimeMs);
   currentTimeMsRef.current = currentTimeMs;
 
@@ -168,6 +170,7 @@ export function PreviewPlayer({
         video.addEventListener("loadeddata", () => {
           if (sourceVersionRef.current !== version) return;
           sourceChangingRef.current = false;
+          sourceLoadedAtRef.current = performance.now();
           video.currentTime = seekTarget;
           const startPlay = () => {
             if (isPlayingRef.current) video.play().catch(() => {});
@@ -270,6 +273,7 @@ export function PreviewPlayer({
             videoEnded: videoEndedRef.current,
             resetVideoEnded: () => { videoEndedRef.current = false; },
             sourceChanging: sourceChangingRef.current,
+            sourceLoadedAt: sourceLoadedAtRef.current,
           };
           newTime = strategy.tick(activeMedia, deltaMs, tickCtx);
         } else {

@@ -42,6 +42,8 @@ export type TickContext = {
   resetVideoEnded: () => void;
   /** True while the video element is loading a new source (src change in progress). */
   sourceChanging: boolean;
+  /** performance.now() timestamp when the last source change completed. */
+  sourceLoadedAt: number;
 };
 
 export type PlaybackTickStrategy = {

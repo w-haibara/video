@@ -244,25 +244,26 @@ export const builtinPlugin: FrontendPlugin = {
     registry.registerTickStrategy({
       assetKind: "video",
       tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
-        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded, sourceChanging } = tickCtx;
+        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded, sourceChanging, sourceLoadedAt } = tickCtx;
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
         const speed = clip.clip.speed ?? 1;
         const videoReady = clip.clip.id === lastClipId;
+        // After a source change, use wall-clock for 500ms to let video stabilize
+        const stabilizing = sourceLoadedAt > 0 && (performance.now() - sourceLoadedAt) < 500;
 
         if (!videoRef) {
           return null;
-        } else if (!videoReady) {
-          return Math.min(currentTimeMs + deltaMs, clipEndMs);
-        } else if (sourceChanging || videoRef.readyState < 2) {
+        } else if (!videoReady || sourceChanging || videoRef.readyState < 2 || stabilizing) {
+          // Not ready, loading, or stabilizing — advance by wall-clock
+          if (videoRef.paused && videoRef.readyState >= 2) videoRef.play().catch(() => {});
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
         } else if (videoRef.ended || videoEnded) {
           resetVideoEnded();
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
-        } else if (videoRef.paused && videoRef.readyState >= 2) {
-          // Video is loaded but paused (React effect hasn't called play yet) — kick it
+        } else if (videoRef.paused) {
           videoRef.play().catch(() => {});
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
-        } else if (!videoRef.paused) {
+        } else {
           const videoTimeMs = videoRef.currentTime * 1000;
           const expectedVideoTime = clip.clip.inMs + (currentTimeMs - clip.clip.startMs) * speed;
           if (Math.abs(videoTimeMs - expectedVideoTime) > 500) {
@@ -271,31 +272,30 @@ export const builtinPlugin: FrontendPlugin = {
           const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs) / speed;
           return Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
         }
-        return null;
       },
     });
 
     registry.registerTickStrategy({
       assetKind: "p5js",
       tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
-        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded, sourceChanging } = tickCtx;
+        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded, sourceChanging, sourceLoadedAt } = tickCtx;
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
         const speed = clip.clip.speed ?? 1;
         const videoReady = clip.clip.id === lastClipId;
+        const stabilizing = sourceLoadedAt > 0 && (performance.now() - sourceLoadedAt) < 500;
 
         if (!videoRef) {
           return null;
-        } else if (!videoReady) {
-          return Math.min(currentTimeMs + deltaMs, clipEndMs);
-        } else if (sourceChanging || videoRef.readyState < 2) {
+        } else if (!videoReady || sourceChanging || videoRef.readyState < 2 || stabilizing) {
+          if (videoRef.paused && videoRef.readyState >= 2) videoRef.play().catch(() => {});
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
         } else if (videoRef.ended || videoEnded) {
           resetVideoEnded();
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
-        } else if (videoRef.paused && videoRef.readyState >= 2) {
+        } else if (videoRef.paused) {
           videoRef.play().catch(() => {});
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
-        } else if (!videoRef.paused) {
+        } else {
           const videoTimeMs = videoRef.currentTime * 1000;
           const expectedVideoTime = clip.clip.inMs + (currentTimeMs - clip.clip.startMs) * speed;
           if (Math.abs(videoTimeMs - expectedVideoTime) > 500) {
