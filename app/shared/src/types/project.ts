@@ -78,6 +78,12 @@ export type VideoFilter = {
   strength: number;  // 0.0 to 1.0
 };
 
+export type ClipChromaKey = {
+  color: string;       // hex color like "#00ff00"
+  similarity: number;  // 0.0 to 1.0 (tolerance)
+  blend: number;       // 0.0 to 1.0 (edge softness)
+};
+
 /** Built-in transition types. ClipTransition.type accepts any string for plugins. */
 export type BuiltinTransitionType =
   | "fade" | "fade-black" | "fade-white"
@@ -113,6 +119,7 @@ export type Clip = {
   keyframeTracks?: KeyframeTrack[];
   colorCorrection?: ClipColorCorrection;
   videoFilters?: VideoFilter[];
+  chromaKey?: ClipChromaKey;
 };
 
 export type ExportPreset = {

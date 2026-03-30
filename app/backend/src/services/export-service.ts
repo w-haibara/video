@@ -1,4 +1,4 @@
-import type { Project, Clip, ExportPreset, Asset, ClipColorCorrection, VideoFilter } from "@video/shared";
+import type { Project, Clip, ExportPreset, Asset, ClipColorCorrection, ClipChromaKey, VideoFilter } from "@video/shared";
 import { hasKeyframes, buildKeyframeFilterExpression } from "@video/shared";
 import type { Job } from "@video/shared";
 import { buildVideoFilterFfmpeg } from "../lib/video-filter-ffmpeg";
@@ -131,6 +131,22 @@ export function buildColorCorrectionFilter(cc: ClipColorCorrection | undefined):
 
   if (parts.length === 0) return "";
   return "," + parts.join(",");
+}
+
+/**
+ * Build FFmpeg filter segment for chroma key (green screen removal).
+ * Uses FFmpeg `chromakey` filter.
+ * Returns comma-prefixed filter or empty string.
+ */
+export function buildChromaKeyFilter(ck: ClipChromaKey | undefined): string {
+  if (!ck) return "";
+  // Sanitize color: must be a valid hex color
+  const color = /^#[0-9a-fA-F]{6}$/.test(ck.color) ? ck.color : "0x00ff00";
+  // Convert #rrggbb to 0xrrggbb for FFmpeg
+  const ffmpegColor = color.replace("#", "0x");
+  const similarity = Math.max(0, Math.min(1, ck.similarity));
+  const blend = Math.max(0, Math.min(1, ck.blend));
+  return `,chromakey=color=${ffmpegColor}:similarity=${similarity}:blend=${blend}`;
 }
 
 /**

@@ -18,6 +18,8 @@ import { KeyframeEditor } from "../components/editors/KeyframeEditor";
 import { SpeedEditor } from "../components/editors/SpeedEditor";
 import { ColorCorrectionEditor } from "../components/editors/ColorCorrectionEditor";
 import { VideoFilterEditor } from "../components/editors/VideoFilterEditor";
+import { ChromaKeyEditor } from "../components/editors/ChromaKeyEditor";
+import { PipPresetEditor } from "../components/editors/PipPresetEditor";
 import { videoClipRenderer, p5jsClipRenderer } from "../components/renderers/VideoClipRenderer";
 import { imageClipRenderer } from "../components/renderers/ImageClipRenderer";
 import { textOverlayRenderer } from "../components/renderers/TextOverlayRenderer";
@@ -207,6 +209,20 @@ export const builtinPlugin: FrontendPlugin = {
       order: 30,
       canHandle: (ctx) => ctx.clipKind === "video" || ctx.clipKind === "image" || ctx.clipKind === "p5js",
       Component: VideoFilterEditor,
+    });
+    registry.register({
+      id: "chroma-key",
+      label: "Chroma Key",
+      order: 31,
+      canHandle: (ctx) => ctx.clipKind === "video" || ctx.clipKind === "image" || ctx.clipKind === "p5js",
+      Component: ChromaKeyEditor,
+    });
+    registry.register({
+      id: "pip-preset",
+      label: "PiP Presets",
+      order: 22,
+      canHandle: (ctx) => ctx.clipKind === "video" || ctx.clipKind === "image" || ctx.clipKind === "p5js",
+      Component: PipPresetEditor,
     });
     registry.register({
       id: "keyframe",

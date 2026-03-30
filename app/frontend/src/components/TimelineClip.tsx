@@ -262,6 +262,26 @@ export function TimelineClip({
         {CLIP_KIND_ICONS[clip.clipKind] ?? ""}{" "}{label}
       </span>
 
+      {/* Chroma Key badge */}
+      {clip.chromaKey && (
+        <span
+          style={{
+            fontSize: "9px",
+            fontWeight: "bold",
+            background: "rgba(0,255,0,0.3)",
+            color: theme.white,
+            padding: "0 3px",
+            borderRadius: "2px",
+            marginLeft: "2px",
+            flexShrink: 0,
+            userSelect: "none",
+            pointerEvents: "none",
+          }}
+        >
+          CK
+        </span>
+      )}
+
       {/* Keyframe diamonds (shown when selected) */}
       {isSelected && clip.keyframeTracks && clip.keyframeTracks.length > 0 && (
         <div

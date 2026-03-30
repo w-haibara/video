@@ -54,6 +54,10 @@ import {
   makeVideoFilterBlurSepiaProject,
   makeVideoFilterGrayscaleProject,
   makeVideoFilterTransformProject,
+  makeChromaKeyProject,
+  makeChromaKeyTransformProject,
+  makePipCornerBrProject,
+  makePipSideBySideProject,
   CANVAS_W,
   CANVAS_H,
   FPS,
@@ -443,4 +447,20 @@ describe("export regression", () => {
       expect(result.passed, `Frame comparison failed for "p5js-rendered"\n${failures}`).toBe(true);
     }
   }, 60_000);
+
+  test("chroma key (green screen removal)", async () => {
+    await runExportRegression("chroma-key", makeChromaKeyProject());
+  }, 30_000);
+
+  test("chroma key + transform cross-feature", async () => {
+    await runExportRegression("chroma-key-transform", makeChromaKeyTransformProject());
+  }, 30_000);
+
+  test("pip preset: corner bottom-right", async () => {
+    await runExportRegression("pip-corner-br", makePipCornerBrProject());
+  }, 30_000);
+
+  test("pip preset: side-by-side", async () => {
+    await runExportRegression("pip-side-by-side", makePipSideBySideProject());
+  }, 30_000);
 });

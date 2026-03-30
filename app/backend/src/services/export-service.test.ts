@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import type { Project, Clip } from "@video/shared";
-import { buildExportArgs, buildTransformFilter, buildOverlayPosition, hasClipTransform } from "./export-service";
+import { buildExportArgs, buildTransformFilter, buildOverlayPosition, hasClipTransform, buildChromaKeyFilter } from "./export-service";
 
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {
@@ -1243,5 +1243,55 @@ describe("hasClipTransform", () => {
     expect(hasClipTransform(makeClip({ x: 10 }))).toBe(true);
     expect(hasClipTransform(makeClip({ scale: 0.5 }))).toBe(true);
     expect(hasClipTransform(makeClip({ rotation: 45 }))).toBe(true);
+  });
+});
+
+describe("buildChromaKeyFilter", () => {
+  test("returns empty string when undefined", () => {
+    expect(buildChromaKeyFilter(undefined)).toBe("");
+  });
+
+  test("returns chromakey filter with hex color", () => {
+    const result = buildChromaKeyFilter({ color: "#00ff00", similarity: 0.3, blend: 0.1 });
+    expect(result).toBe(",chromakey=color=0x00ff00:similarity=0.3:blend=0.1");
+  });
+
+  test("converts hex to 0x format", () => {
+    const result = buildChromaKeyFilter({ color: "#0000ff", similarity: 0.5, blend: 0.2 });
+    expect(result).toContain("color=0x0000ff");
+  });
+
+  test("clamps similarity and blend to 0-1 range", () => {
+    const result = buildChromaKeyFilter({ color: "#00ff00", similarity: 1.5, blend: -0.5 });
+    expect(result).toContain("similarity=1");
+    expect(result).toContain("blend=0");
+  });
+
+  test("sanitizes invalid color to default", () => {
+    const result = buildChromaKeyFilter({ color: "invalid", similarity: 0.3, blend: 0.1 });
+    expect(result).toContain("color=0x00ff00");
+  });
+
+  test("includes filter in export args when clip has chromaKey", () => {
+    const project = makeProject({
+      sequence: {
+        tracks: [{
+          id: "t1",
+          clips: [{
+            id: "c1",
+            clipKind: "video",
+            assetId: "v1",
+            startMs: 0,
+            durationMs: 5000,
+            inMs: 0,
+            outMs: 5000,
+            chromaKey: { color: "#00ff00", similarity: 0.3, blend: 0.1 },
+          }],
+        }],
+      },
+    });
+    const args = buildExportArgs(project, "/assets", "/output.mp4");
+    const filterComplex = args[args.indexOf("-filter_complex") + 1];
+    expect(filterComplex).toContain("chromakey=color=0x00ff00:similarity=0.3:blend=0.1");
   });
 });

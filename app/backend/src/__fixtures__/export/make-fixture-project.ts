@@ -853,3 +853,122 @@ export function makeOverlayTransformProject(): Project {
     },
   });
 }
+
+/** Video clip with chroma key (green screen removal). */
+export function makeChromaKeyProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            chromaKey: { color: "#00ff00", similarity: 0.3, blend: 0.1 },
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** Chroma key + transform (cross-feature). */
+export function makeChromaKeyTransformProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            id: "c1",
+            clipKind: "image",
+            assetId: "img1",
+            startMs: 0,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+          }),
+        ]),
+        makeTrack(
+          [
+            makeClip({
+              id: "c2",
+              chromaKey: { color: "#00ff00", similarity: 0.4, blend: 0.15 },
+              transform: { x: 20, y: 10, scale: 0.6, rotation: 0 },
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
+/** PiP preset: corner bottom-right (scale 0.3). */
+export function makePipCornerBrProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            id: "c1",
+            clipKind: "image",
+            assetId: "img1",
+            startMs: 0,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+          }),
+        ]),
+        makeTrack(
+          [
+            makeClip({
+              id: "c2",
+              transform: {
+                x: Math.round((CANVAS_W * 0.7) / 2 - 10),
+                y: Math.round((CANVAS_H * 0.7) / 2 - 10),
+                scale: 0.3,
+                rotation: 0,
+              },
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
+/** PiP preset: side-by-side (scale 0.5). */
+export function makePipSideBySideProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            id: "c1",
+            clipKind: "image",
+            assetId: "img1",
+            startMs: 0,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+          }),
+        ]),
+        makeTrack(
+          [
+            makeClip({
+              id: "c2",
+              transform: {
+                x: Math.round(-CANVAS_W / 4),
+                y: 0,
+                scale: 0.5,
+                rotation: 0,
+              },
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}

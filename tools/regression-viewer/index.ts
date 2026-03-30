@@ -48,6 +48,10 @@ import {
   makeVideoFilterBlurSepiaProject,
   makeVideoFilterGrayscaleProject,
   makeVideoFilterTransformProject,
+  makeChromaKeyProject,
+  makeChromaKeyTransformProject,
+  makePipCornerBrProject,
+  makePipSideBySideProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -145,6 +149,10 @@ const EXPORT_TESTS: Array<{
   { name: "video-filter-grayscale", description: "Video filter (grayscale)", factory: makeVideoFilterGrayscaleProject },
   { name: "video-filter-transform", description: "Video filter + transform (cross-feature)", factory: makeVideoFilterTransformProject },
   { name: "p5js-rendered", description: "p5.js sketch rendered from source via Chromium pipeline", factory: makeP5jsProject },
+  { name: "chroma-key", description: "Chroma key (green screen removal)", factory: makeChromaKeyProject },
+  { name: "chroma-key-transform", description: "Chroma key + transform (cross-feature)", factory: makeChromaKeyTransformProject },
+  { name: "pip-corner-br", description: "PiP preset: corner bottom-right (0.3x)", factory: makePipCornerBrProject },
+  { name: "pip-side-by-side", description: "PiP preset: side-by-side (0.5x)", factory: makePipSideBySideProject },
 ];
 
 // ── Snap parser ──
@@ -248,6 +256,12 @@ function collectClipProps(clip: Clip, verbose: boolean): string[] {
   if (clip.speed != null && clip.speed !== 1) {
     props.push(verbose ? `speed: ${clip.speed}x` : `speed=${clip.speed}x`);
   }
+  if (clip.chromaKey) {
+    const ck = clip.chromaKey;
+    props.push(verbose
+      ? `chromaKey: color=${ck.color} similarity=${ck.similarity} blend=${ck.blend}`
+      : `CK(${ck.color})`);
+  }
   return props;
 }
 
@@ -258,6 +272,7 @@ const BADGE_KEYS: Array<{ key: keyof Clip; label: string }> = [
   { key: "volume", label: "V" },
   { key: "text", label: "Tx" },
   { key: "speed", label: "S" },
+  { key: "chromaKey", label: "CK" },
 ];
 
 function clipBadges(clip: Clip): string {

@@ -1172,3 +1172,74 @@ export function setClipSpeed(
   }));
   return { ...sequence, tracks };
 }
+
+export type PipPreset =
+  | "corner-br"
+  | "corner-bl"
+  | "corner-tr"
+  | "corner-tl"
+  | "side-by-side"
+  | "top-bottom";
+
+/**
+ * Apply a Picture-in-Picture preset to a clip by setting its transform (position + scale).
+ * For corner presets: scale 0.3, position in the given corner with padding.
+ * For side-by-side: scale 0.5, left or right half.
+ * For top-bottom: scale 0.5, top or bottom half.
+ */
+export function applyPipPreset(
+  sequence: Sequence,
+  clipId: string,
+  preset: PipPreset,
+  canvasWidth: number,
+  canvasHeight: number,
+): Sequence {
+  const padding = 10;
+
+  let scale: number;
+  let x: number;
+  let y: number;
+
+  switch (preset) {
+    case "corner-br":
+      scale = 0.3;
+      x = (canvasWidth * (1 - scale)) / 2 - padding;
+      y = (canvasHeight * (1 - scale)) / 2 - padding;
+      break;
+    case "corner-bl":
+      scale = 0.3;
+      x = -(canvasWidth * (1 - scale)) / 2 + padding;
+      y = (canvasHeight * (1 - scale)) / 2 - padding;
+      break;
+    case "corner-tr":
+      scale = 0.3;
+      x = (canvasWidth * (1 - scale)) / 2 - padding;
+      y = -(canvasHeight * (1 - scale)) / 2 + padding;
+      break;
+    case "corner-tl":
+      scale = 0.3;
+      x = -(canvasWidth * (1 - scale)) / 2 + padding;
+      y = -(canvasHeight * (1 - scale)) / 2 + padding;
+      break;
+    case "side-by-side":
+      scale = 0.5;
+      x = -canvasWidth / 4;
+      y = 0;
+      break;
+    case "top-bottom":
+      scale = 0.5;
+      x = 0;
+      y = -canvasHeight / 4;
+      break;
+  }
+
+  const transform = { x: Math.round(x), y: Math.round(y), scale, rotation: 0 };
+
+  const tracks = sequence.tracks.map((track: Track) => ({
+    ...track,
+    clips: track.clips.map((c: Clip) =>
+      c.id === clipId ? { ...c, transform } : c,
+    ),
+  }));
+  return { ...sequence, tracks };
+}
