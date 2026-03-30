@@ -262,6 +262,45 @@ export function TimelineClip({
         {CLIP_KIND_ICONS[clip.clipKind] ?? ""}{" "}{label}
       </span>
 
+      {/* Keyframe diamonds (shown when selected) */}
+      {isSelected && clip.keyframeTracks && clip.keyframeTracks.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            left: `${TRIM_HANDLE_WIDTH}px`,
+            right: `${TRIM_HANDLE_WIDTH}px`,
+            bottom: "2px",
+            height: "8px",
+            pointerEvents: "none",
+          }}
+        >
+          {clip.keyframeTracks.map((track) =>
+            track.keyframes.map((kf) => {
+              const pxPos = msToPx(kf.timeMs);
+              const clipWidthInner = width - TRIM_HANDLE_WIDTH * 2;
+              if (pxPos < 0 || pxPos > clipWidthInner) return null;
+              return (
+                <div
+                  key={`${track.property}-${kf.timeMs}`}
+                  style={{
+                    position: "absolute",
+                    left: `${pxPos - 4}px`,
+                    top: 0,
+                    width: "8px",
+                    height: "8px",
+                    transform: "rotate(45deg)",
+                    background: theme.accent,
+                    border: `1px solid ${theme.white}`,
+                    borderRadius: "1px",
+                  }}
+                  title={`${track.property} @ ${(kf.timeMs / 1000).toFixed(1)}s`}
+                />
+              );
+            }),
+          )}
+        </div>
+      )}
+
       {/* Right trim handle */}
       <TrimHandle
         side="right"

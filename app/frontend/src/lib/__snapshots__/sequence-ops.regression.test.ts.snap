@@ -2573,3 +2573,296 @@ exports[`keyframe tracks regression workflow: clip with keyframeTracks + transfo
   ],
 }
 `;
+
+exports[`keyframe tracks regression workflow: addKeyframe creates track and adds keyframes 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "keyframeTracks": [
+            {
+              "keyframes": [
+                {
+                  "easing": "linear",
+                  "timeMs": 0,
+                  "value": 0,
+                },
+                {
+                  "easing": "ease-out",
+                  "timeMs": 2000,
+                  "value": 100,
+                },
+              ],
+              "property": "transform.x",
+            },
+            {
+              "keyframes": [
+                {
+                  "easing": "linear",
+                  "timeMs": 0,
+                  "value": 1,
+                },
+                {
+                  "easing": "ease-in",
+                  "timeMs": 3000,
+                  "value": 0,
+                },
+              ],
+              "property": "opacity",
+            },
+          ],
+          "outMs": 5000,
+          "startMs": 0,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: addKeyframe replaces at same time 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "keyframeTracks": [
+            {
+              "keyframes": [
+                {
+                  "easing": "ease-in-out",
+                  "timeMs": 1000,
+                  "value": 99,
+                },
+              ],
+              "property": "transform.x",
+            },
+          ],
+          "outMs": 5000,
+          "startMs": 0,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: removeKeyframe removes single keyframe 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "keyframeTracks": [
+            {
+              "keyframes": [
+                {
+                  "timeMs": 0,
+                  "value": 0,
+                },
+                {
+                  "timeMs": 2000,
+                  "value": 100,
+                },
+              ],
+              "property": "transform.x",
+            },
+          ],
+          "outMs": 5000,
+          "startMs": 0,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: removeKeyframe removes last kf cleans up track 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "keyframeTracks": undefined,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: updateKeyframe changes value and easing 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "keyframeTracks": [
+            {
+              "keyframes": [
+                {
+                  "easing": "linear",
+                  "timeMs": 0,
+                  "value": 1,
+                },
+                {
+                  "easing": "ease-in-out",
+                  "timeMs": 3000,
+                  "value": 1.5,
+                },
+              ],
+              "property": "transform.scale",
+            },
+          ],
+          "outMs": 5000,
+          "startMs": 0,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: keyframe ops combined with move and trim 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 4000,
+          "id": "clip-0",
+          "inMs": 0,
+          "keyframeTracks": [
+            {
+              "keyframes": [
+                {
+                  "timeMs": 0,
+                  "value": 0,
+                },
+                {
+                  "timeMs": 4000,
+                  "value": 200,
+                },
+              ],
+              "property": "transform.x",
+            },
+          ],
+          "outMs": 4000,
+          "startMs": 1000,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: keyframe ops with multiple properties on same clip 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "keyframeTracks": [
+            {
+              "keyframes": [
+                {
+                  "timeMs": 0,
+                  "value": 0,
+                },
+                {
+                  "timeMs": 2000,
+                  "value": 100,
+                },
+              ],
+              "property": "transform.x",
+            },
+            {
+              "keyframes": [
+                {
+                  "timeMs": 0,
+                  "value": 0,
+                },
+                {
+                  "timeMs": 2000,
+                  "value": -50,
+                },
+              ],
+              "property": "transform.y",
+            },
+            {
+              "keyframes": [
+                {
+                  "timeMs": 0,
+                  "value": 1,
+                },
+                {
+                  "timeMs": 2000,
+                  "value": 1.5,
+                },
+              ],
+              "property": "transform.scale",
+            },
+            {
+              "keyframes": [
+                {
+                  "timeMs": 0,
+                  "value": 1,
+                },
+                {
+                  "timeMs": 2000,
+                  "value": 0,
+                },
+              ],
+              "property": "volume",
+            },
+          ],
+          "outMs": 5000,
+          "startMs": 0,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;

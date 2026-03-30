@@ -28,6 +28,9 @@ import {
   setTrackMuted,
   setTrackName,
   setTrackColor,
+  addKeyframe,
+  removeKeyframe,
+  updateKeyframe,
 } from "./sequence-ops";
 
 const videoAsset: Asset = {
@@ -1254,6 +1257,82 @@ describe("keyframe tracks regression", () => {
       transform: { x: 10, y: -5, scale: 0.8, rotation: 15 },
       blendMode: "screen",
     });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: addKeyframe creates track and adds keyframes", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = addKeyframe(seq, clipId, "transform.x", { timeMs: 0, value: 0, easing: "linear" });
+    seq = addKeyframe(seq, clipId, "transform.x", { timeMs: 2000, value: 100, easing: "ease-out" });
+    seq = addKeyframe(seq, clipId, "opacity", { timeMs: 0, value: 1, easing: "linear" });
+    seq = addKeyframe(seq, clipId, "opacity", { timeMs: 3000, value: 0, easing: "ease-in" });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: addKeyframe replaces at same time", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = addKeyframe(seq, clipId, "transform.x", { timeMs: 1000, value: 50 });
+    seq = addKeyframe(seq, clipId, "transform.x", { timeMs: 1000, value: 99, easing: "ease-in-out" });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: removeKeyframe removes single keyframe", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = addKeyframe(seq, clipId, "transform.x", { timeMs: 0, value: 0 });
+    seq = addKeyframe(seq, clipId, "transform.x", { timeMs: 1000, value: 50 });
+    seq = addKeyframe(seq, clipId, "transform.x", { timeMs: 2000, value: 100 });
+    seq = removeKeyframe(seq, clipId, "transform.x", 1000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: removeKeyframe removes last kf cleans up track", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = addKeyframe(seq, clipId, "transform.x", { timeMs: 0, value: 0 });
+    seq = removeKeyframe(seq, clipId, "transform.x", 0);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: updateKeyframe changes value and easing", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = addKeyframe(seq, clipId, "transform.scale", { timeMs: 0, value: 1, easing: "linear" });
+    seq = addKeyframe(seq, clipId, "transform.scale", { timeMs: 3000, value: 2, easing: "linear" });
+    seq = updateKeyframe(seq, clipId, "transform.scale", 3000, { value: 1.5, easing: "ease-in-out" });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: keyframe ops combined with move and trim", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = addKeyframe(seq, clipId, "transform.x", { timeMs: 0, value: 0 });
+    seq = addKeyframe(seq, clipId, "transform.x", { timeMs: 4000, value: 200 });
+    seq = moveClip(seq, clipId, 1000, 10000);
+    seq = trimClip(seq, clipId, "right", -1000, 5000, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: keyframe ops with multiple properties on same clip", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = addKeyframe(seq, clipId, "transform.x", { timeMs: 0, value: 0 });
+    seq = addKeyframe(seq, clipId, "transform.x", { timeMs: 2000, value: 100 });
+    seq = addKeyframe(seq, clipId, "transform.y", { timeMs: 0, value: 0 });
+    seq = addKeyframe(seq, clipId, "transform.y", { timeMs: 2000, value: -50 });
+    seq = addKeyframe(seq, clipId, "transform.scale", { timeMs: 0, value: 1 });
+    seq = addKeyframe(seq, clipId, "transform.scale", { timeMs: 2000, value: 1.5 });
+    seq = addKeyframe(seq, clipId, "volume", { timeMs: 0, value: 1 });
+    seq = addKeyframe(seq, clipId, "volume", { timeMs: 2000, value: 0 });
     expect(stabilize(seq)).toMatchSnapshot();
   });
 });

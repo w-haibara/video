@@ -1,4 +1,4 @@
-import type { Asset, Clip, ClipText, ClipTransition, Sequence, Track } from "@video/shared";
+import type { Asset, Clip, ClipText, ClipTransition, Keyframe, KeyframeTrack, Sequence, Track } from "@video/shared";
 import { generateId, DEFAULT_IMAGE_DURATION_MS } from "@video/shared";
 
 /**
@@ -996,6 +996,115 @@ export function trimClip(
           outMs: c.inMs + newDuration,
         };
       }
+    }),
+  }));
+  return { ...sequence, tracks };
+}
+
+// ── Keyframe operations ──
+
+/**
+ * Add a keyframe to a clip's property track.
+ * If no track exists for the property, one is created.
+ * If a keyframe already exists at the same timeMs, it is replaced.
+ * Keyframes are kept sorted by timeMs.
+ */
+export function addKeyframe(
+  sequence: Sequence,
+  clipId: string,
+  property: string,
+  keyframe: Keyframe,
+): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
+  const tracks = sequence.tracks.map((track: Track) => ({
+    ...track,
+    clips: track.clips.map((c: Clip) => {
+      if (c.id !== clipId) return c;
+      const existing = c.keyframeTracks ?? [];
+      const trackIdx = existing.findIndex((t) => t.property === property);
+      let newTracks: KeyframeTrack[];
+      if (trackIdx >= 0) {
+        // Replace existing keyframe at same time, or add new one
+        const kfTrack = existing[trackIdx];
+        const kfs = kfTrack.keyframes.filter((k) => k.timeMs !== keyframe.timeMs);
+        kfs.push(keyframe);
+        kfs.sort((a, b) => a.timeMs - b.timeMs);
+        newTracks = [...existing];
+        newTracks[trackIdx] = { ...kfTrack, keyframes: kfs };
+      } else {
+        newTracks = [...existing, { property, keyframes: [keyframe] }];
+      }
+      return { ...c, keyframeTracks: newTracks };
+    }),
+  }));
+  return { ...sequence, tracks };
+}
+
+/**
+ * Remove a keyframe from a clip's property track at the given time.
+ * If the track becomes empty, it is removed.
+ */
+export function removeKeyframe(
+  sequence: Sequence,
+  clipId: string,
+  property: string,
+  timeMs: number,
+): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
+  const tracks = sequence.tracks.map((track: Track) => ({
+    ...track,
+    clips: track.clips.map((c: Clip) => {
+      if (c.id !== clipId) return c;
+      const existing = c.keyframeTracks;
+      if (!existing) return c;
+      const trackIdx = existing.findIndex((t) => t.property === property);
+      if (trackIdx < 0) return c;
+      const kfTrack = existing[trackIdx];
+      const kfs = kfTrack.keyframes.filter((k) => k.timeMs !== timeMs);
+      if (kfs.length === 0) {
+        // Remove the entire track
+        const newTracks = existing.filter((_, i) => i !== trackIdx);
+        return { ...c, keyframeTracks: newTracks.length > 0 ? newTracks : undefined };
+      }
+      const newTracks = [...existing];
+      newTracks[trackIdx] = { ...kfTrack, keyframes: kfs };
+      return { ...c, keyframeTracks: newTracks };
+    }),
+  }));
+  return { ...sequence, tracks };
+}
+
+/**
+ * Update an existing keyframe at the given time for a clip's property track.
+ * Only the specified fields in `updates` are changed.
+ */
+export function updateKeyframe(
+  sequence: Sequence,
+  clipId: string,
+  property: string,
+  timeMs: number,
+  updates: Partial<Keyframe>,
+): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
+  const tracks = sequence.tracks.map((track: Track) => ({
+    ...track,
+    clips: track.clips.map((c: Clip) => {
+      if (c.id !== clipId) return c;
+      const existing = c.keyframeTracks;
+      if (!existing) return c;
+      const trackIdx = existing.findIndex((t) => t.property === property);
+      if (trackIdx < 0) return c;
+      const kfTrack = existing[trackIdx];
+      let kfs = kfTrack.keyframes.map((k) =>
+        k.timeMs === timeMs ? { ...k, ...updates } : k,
+      );
+      // If timeMs changed, re-sort
+      if (updates.timeMs !== undefined) {
+        kfs = kfs.sort((a, b) => a.timeMs - b.timeMs);
+      }
+      const newTracks = [...existing];
+      newTracks[trackIdx] = { ...kfTrack, keyframes: kfs };
+      return { ...c, keyframeTracks: newTracks };
     }),
   }));
   return { ...sequence, tracks };
