@@ -120,6 +120,14 @@ function ManagedVideoElement({
     }
   }, [activeClip.clip.id, mediaUrl, isPlaying]);
 
+  // Playback rate sync
+  const speed = activeClip.clip.speed ?? 1;
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    video.playbackRate = speed;
+  }, [speed]);
+
   // Play/pause sync
   useEffect(() => {
     const video = ref.current;
@@ -153,8 +161,16 @@ function TopmostVideoElement({ activeClip, ctx }: { activeClip: ActiveClip; ctx:
   const assetH = activeClip.asset.height ?? ctx.canvasH;
   const volume = getClipVolume(activeClip);
   const trackMuted = ctx.project.sequence.tracks[activeClip.trackIndex]?.muted ?? false;
+  const speed = activeClip.clip.speed ?? 1;
 
   useAudioConnection(activeClip.clip.id, ctx.videoRef.current, volume, trackMuted);
+
+  // Sync playback rate for topmost video
+  useEffect(() => {
+    const video = ctx.videoRef.current;
+    if (!video) return;
+    video.playbackRate = speed;
+  }, [speed, ctx.videoRef]);
 
   return (
     <video

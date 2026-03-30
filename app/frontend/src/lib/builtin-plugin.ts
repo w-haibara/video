@@ -15,6 +15,7 @@ import { BlendModeEditor } from "../components/editors/BlendModeEditor";
 import { TransitionEditor } from "../components/editors/TransitionEditor";
 import { P5jsEditor } from "../components/editors/P5jsEditor";
 import { KeyframeEditor } from "../components/editors/KeyframeEditor";
+import { SpeedEditor } from "../components/editors/SpeedEditor";
 import { videoClipRenderer, p5jsClipRenderer } from "../components/renderers/VideoClipRenderer";
 import { imageClipRenderer } from "../components/renderers/ImageClipRenderer";
 import { textOverlayRenderer } from "../components/renderers/TextOverlayRenderer";
@@ -165,6 +166,13 @@ export const builtinPlugin: FrontendPlugin = {
       Component: TransitionEditor,
     });
     registry.register({
+      id: "speed",
+      label: "Speed",
+      order: 28,
+      canHandle: (ctx) => ctx.clipKind === "video" || ctx.clipKind === "audio",
+      Component: SpeedEditor,
+    });
+    registry.register({
       id: "audio-volume",
       label: "Volume",
       order: 30,
@@ -200,6 +208,7 @@ export const builtinPlugin: FrontendPlugin = {
       tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
         const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded } = tickCtx;
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
+        const speed = clip.clip.speed ?? 1;
         const videoReady = clip.clip.id === lastClipId;
 
         if (!videoRef) {
@@ -211,11 +220,14 @@ export const builtinPlugin: FrontendPlugin = {
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
         } else if (videoRef.readyState >= 2 && !videoRef.paused) {
           const videoTimeMs = videoRef.currentTime * 1000;
-          const expectedVideoTime = clip.clip.inMs + (currentTimeMs - clip.clip.startMs);
+          // With speed, source media progresses at speed * real time.
+          // expectedVideoTime = inMs + (elapsed timeline time) * speed
+          const expectedVideoTime = clip.clip.inMs + (currentTimeMs - clip.clip.startMs) * speed;
           if (Math.abs(videoTimeMs - expectedVideoTime) > 500) {
             return Math.min(currentTimeMs + deltaMs, clipEndMs);
           }
-          const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs);
+          // Map video time back to timeline: timelineMs = startMs + (videoTime - inMs) / speed
+          const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs) / speed;
           return Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
         }
         return null;
@@ -227,6 +239,7 @@ export const builtinPlugin: FrontendPlugin = {
       tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
         const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded } = tickCtx;
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
+        const speed = clip.clip.speed ?? 1;
         const videoReady = clip.clip.id === lastClipId;
 
         if (!videoRef) {
@@ -238,11 +251,11 @@ export const builtinPlugin: FrontendPlugin = {
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
         } else if (videoRef.readyState >= 2 && !videoRef.paused) {
           const videoTimeMs = videoRef.currentTime * 1000;
-          const expectedVideoTime = clip.clip.inMs + (currentTimeMs - clip.clip.startMs);
+          const expectedVideoTime = clip.clip.inMs + (currentTimeMs - clip.clip.startMs) * speed;
           if (Math.abs(videoTimeMs - expectedVideoTime) > 500) {
             return Math.min(currentTimeMs + deltaMs, clipEndMs);
           }
-          const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs);
+          const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs) / speed;
           return Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
         }
         return null;

@@ -1,6 +1,29 @@
 import type { ExportAudioHandler, ExportBuildContext } from "../export-handler-registry";
 import type { Clip } from "@video/shared";
 
+/**
+ * Build atempo filter chain for a given speed.
+ * atempo supports 0.5–100.0 range per instance; for speeds below 0.5,
+ * we chain multiple atempo filters.
+ */
+function buildAtempoChain(speed: number): string {
+  if (speed === 1) return "";
+  const parts: string[] = [];
+  let remaining = speed;
+  // Handle slow speeds (< 0.5) by chaining
+  while (remaining < 0.5) {
+    parts.push("atempo=0.5");
+    remaining /= 0.5;
+  }
+  // Handle fast speeds (> 100.0) by chaining — unlikely but safe
+  while (remaining > 100.0) {
+    parts.push("atempo=100.0");
+    remaining /= 100.0;
+  }
+  parts.push(`atempo=${remaining}`);
+  return "," + parts.join(",");
+}
+
 export const audioMixHandler: ExportAudioHandler = {
   clipKind: "audio",
   buildAudio(clips: Clip[], ctx: ExportBuildContext, videoClips: Clip[]): string {
@@ -27,11 +50,16 @@ export const audioMixHandler: ExportAudioHandler = {
 
       if (audioStreams.length === 1) {
         const { inputIdx, clip, asset } = audioStreams[0];
+        const speed = clip.speed ?? 1;
         const trimStart = clip.inMs / 1000;
+        // When speed != 1, we trim more/less source audio, then retime
         let dur = Math.min(clip.durationMs, clip.outMs - clip.inMs);
-        if (asset.durationMs) dur = Math.min(dur, asset.durationMs - clip.inMs);
+        const sourceDur = dur * speed;
+        let trimDur = sourceDur;
+        if (asset.durationMs) trimDur = Math.min(trimDur, asset.durationMs - clip.inMs);
 
-        let chain = `[${inputIdx}:a]atrim=start=${trimStart}:duration=${dur / 1000},asetpts=PTS-STARTPTS`;
+        let chain = `[${inputIdx}:a]atrim=start=${trimStart}:duration=${trimDur / 1000},asetpts=PTS-STARTPTS`;
+        chain += buildAtempoChain(speed);
         if (clip.startMs > 0) {
           const delayMs = Math.round(clip.startMs);
           chain += `,adelay=${delayMs}|${delayMs}`;
@@ -40,12 +68,16 @@ export const audioMixHandler: ExportAudioHandler = {
       } else {
         const labels: string[] = [];
         audioStreams.forEach(({ inputIdx, clip, asset }, i) => {
+          const speed = clip.speed ?? 1;
           const trimStart = clip.inMs / 1000;
           let dur = Math.min(clip.durationMs, clip.outMs - clip.inMs);
-          if (asset.durationMs) dur = Math.min(dur, asset.durationMs - clip.inMs);
+          const sourceDur = dur * speed;
+          let trimDur = sourceDur;
+          if (asset.durationMs) trimDur = Math.min(trimDur, asset.durationMs - clip.inMs);
           const label = `[atrk${i}]`;
 
-          let chain = `[${inputIdx}:a]atrim=start=${trimStart}:duration=${dur / 1000},asetpts=PTS-STARTPTS`;
+          let chain = `[${inputIdx}:a]atrim=start=${trimStart}:duration=${trimDur / 1000},asetpts=PTS-STARTPTS`;
+          chain += buildAtempoChain(speed);
           if (clip.startMs > 0) {
             const delayMs = Math.round(clip.startMs);
             chain += `,adelay=${delayMs}|${delayMs}`;

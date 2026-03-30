@@ -41,6 +41,9 @@ import {
   makeCropBlendProject,
   makeTitleFontAlignProject,
   makeKeyframeTransformXProject,
+  makeSpeed2xProject,
+  makeSpeedHalfProject,
+  makeSpeedMultiClipProject,
   CANVAS_W,
   CANVAS_H,
   FPS,
@@ -245,6 +248,18 @@ describe("export regression", () => {
 
   test("title with fontFamily and align", async () => {
     await runExportRegression("title-font-align", makeTitleFontAlignProject());
+  }, 30_000);
+
+  test("speed: 2x video clip", async () => {
+    await runExportRegression("speed-2x", makeSpeed2xProject());
+  }, 30_000);
+
+  test("speed: 0.5x video clip", async () => {
+    await runExportRegression("speed-half", makeSpeedHalfProject());
+  }, 30_000);
+
+  test("speed: multi-clip with speed change on first clip", async () => {
+    await runExportRegression("speed-multi-clip", makeSpeedMultiClipProject());
   }, 30_000);
 
   test("keyframe animated transform.x (horizontal movement)", async () => {

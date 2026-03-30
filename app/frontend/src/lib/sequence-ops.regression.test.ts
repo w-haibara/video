@@ -31,6 +31,7 @@ import {
   addKeyframe,
   removeKeyframe,
   updateKeyframe,
+  setClipSpeed,
 } from "./sequence-ops";
 
 const videoAsset: Asset = {
@@ -1333,6 +1334,44 @@ describe("keyframe tracks regression", () => {
     seq = addKeyframe(seq, clipId, "transform.scale", { timeMs: 2000, value: 1.5 });
     seq = addKeyframe(seq, clipId, "volume", { timeMs: 0, value: 1 });
     seq = addKeyframe(seq, clipId, "volume", { timeMs: 2000, value: 0 });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: set clip speed to 2x", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = setClipSpeed(seq, clipId, 2, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: set clip speed to 0.5x", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = setClipSpeed(seq, clipId, 0.5, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: change speed multiple times preserves source duration", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 20000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = setClipSpeed(seq, clipId, 2, 20000);
+    seq = setClipSpeed(seq, clipId, 0.5, 20000);
+    seq = setClipSpeed(seq, clipId, 1, 20000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: speed change + trim + move", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 20000);
+    seq = addClipFromAsset(seq, imageAsset, 20000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = setClipSpeed(seq, clipId, 2, 20000);
+    seq = trimClip(seq, clipId, "right", -500, undefined, 20000);
+    const imageClipId = seq.tracks[0].clips[1].id;
+    seq = moveClip(seq, imageClipId, 3000, 20000);
     expect(stabilize(seq)).toMatchSnapshot();
   });
 });

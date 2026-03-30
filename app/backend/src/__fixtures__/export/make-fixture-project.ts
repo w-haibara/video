@@ -673,6 +673,46 @@ export function makeKeyframeTransformXProject(): Project {
   });
 }
 
+/** Single video clip at 2x speed (plays in 500ms instead of 1000ms). */
+export function makeSpeed2xProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", startMs: 0, durationMs: 500, inMs: 0, outMs: 500, speed: 2 }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** Single video clip at 0.5x speed (plays in 2000ms instead of 1000ms). */
+export function makeSpeedHalfProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000, speed: 0.5 }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** Two clips: first at 2x speed, second at normal speed — cross-feature with speed + multi-clip. */
+export function makeSpeedMultiClipProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", startMs: 0, durationMs: 500, inMs: 0, outMs: 500, speed: 2 }),
+          makeClip({ id: "c2", startMs: 500, durationMs: 1000, inMs: 0, outMs: 1000 }),
+        ]),
+      ],
+    },
+  });
+}
+
 export function makeOverlayTransformProject(): Project {
   return baseProject({
     assets: [videoAsset, imageAsset],
