@@ -562,6 +562,93 @@ export function makeTransitionMultiTrackProject(): Project {
   });
 }
 
+/** Two clips on one track — clip 2 has both a fade transition and multiply blend mode. */
+export function makeBlendModeTransitionProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    settings: { durationMs: 2000, canvasWidth: CANVAS_W, canvasHeight: CANVAS_H },
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", startMs: 0, durationMs: 1000, outMs: 1000 }),
+          makeClip({
+            id: "c2",
+            clipKind: "image",
+            assetId: "img1",
+            startMs: 700,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+            transition: { type: "fade", durationMs: 300 },
+            blendMode: "multiply",
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** Two tracks — top clip has both crop and screen blend mode. */
+export function makeCropBlendProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([makeClip()]),
+        makeTrack(
+          [
+            makeClip({
+              id: "c2",
+              clipKind: "image",
+              assetId: "img1",
+              startMs: 0,
+              durationMs: 1000,
+              inMs: 0,
+              outMs: 1000,
+              crop: { x: 20, y: 10, width: 120, height: 70 },
+              blendMode: "screen",
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
+/** Video + title overlay with fontFamily and align set. */
+export function makeTitleFontAlignProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([makeClip()]),
+        makeTrack(
+          [
+            {
+              id: "tc1",
+              clipKind: "title",
+              assetId: "",
+              startMs: 0,
+              durationMs: 1000,
+              inMs: 0,
+              outMs: 1000,
+              text: {
+                value: "Styled Title",
+                fontFamily: "Noto Sans JP",
+                fontSize: 28,
+                align: "right",
+                color: "#ff0000",
+                backgroundColor: "#000000@0.8",
+              },
+            },
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
 export function makeOverlayTransformProject(): Project {
   return baseProject({
     assets: [videoAsset, imageAsset],

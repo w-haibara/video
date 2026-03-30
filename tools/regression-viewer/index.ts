@@ -31,6 +31,9 @@ import {
   makeMutedTrackProject,
   makeTransitionWithTransformProject,
   makeTransitionMultiTrackProject,
+  makeBlendModeTransitionProject,
+  makeCropBlendProject,
+  makeTitleFontAlignProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -110,6 +113,9 @@ const EXPORT_TESTS: Array<{
   { name: "muted-track", description: "Video + muted image track (muted excluded)", factory: makeMutedTrackProject },
   { name: "transition-with-transform", description: "Fade transition + transform on clip 2", factory: makeTransitionWithTransformProject },
   { name: "transition-multi-track", description: "Fade transition on track 1 + image overlay on track 2", factory: makeTransitionMultiTrackProject },
+  { name: "blend-mode-transition", description: "Fade transition + multiply blend on clip 2", factory: makeBlendModeTransitionProject },
+  { name: "crop-blend", description: "Crop + screen blend on top clip", factory: makeCropBlendProject },
+  { name: "title-font-align", description: "Title overlay with fontFamily and align", factory: makeTitleFontAlignProject },
   { name: "p5js-rendered", description: "p5.js sketch rendered from source via Chromium pipeline", factory: makeP5jsProject },
 ];
 

@@ -37,6 +37,9 @@ import {
   makeMutedTrackProject,
   makeTransitionWithTransformProject,
   makeTransitionMultiTrackProject,
+  makeBlendModeTransitionProject,
+  makeCropBlendProject,
+  makeTitleFontAlignProject,
   CANVAS_W,
   CANVAS_H,
   FPS,
@@ -229,6 +232,18 @@ describe("export regression", () => {
 
   test("transition + multi-track overlay", async () => {
     await runExportRegression("transition-multi-track", makeTransitionMultiTrackProject());
+  }, 30_000);
+
+  test("blend mode + transition cross-feature", async () => {
+    await runExportRegression("blend-mode-transition", makeBlendModeTransitionProject());
+  }, 30_000);
+
+  test("crop + blend mode cross-feature", async () => {
+    await runExportRegression("crop-blend", makeCropBlendProject());
+  }, 30_000);
+
+  test("title with fontFamily and align", async () => {
+    await runExportRegression("title-font-align", makeTitleFontAlignProject());
   }, 30_000);
 
   test("p5.js clip (rendered from sketch)", async () => {

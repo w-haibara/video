@@ -1515,6 +1515,47 @@ describe("expandGroupSelection", () => {
     expect(expanded.size).toBe(1);
     expect(expanded.has("c2")).toBe(true);
   });
+
+  test("returns empty set when given empty input", () => {
+    const seq = makeMultiClipSeq();
+    const expanded = expandGroupSelection(seq, new Set());
+    expect(expanded.size).toBe(0);
+  });
+
+  test("expands multiple groups independently", () => {
+    const seq: Sequence = {
+      tracks: [
+        { id: "t1", clips: [
+          { id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000, groupId: "gA" },
+          { id: "c2", clipKind: "video", assetId: "v1", startMs: 3000, durationMs: 2000, inMs: 0, outMs: 2000, groupId: "gA" },
+        ] },
+        { id: "t2", clips: [
+          { id: "c3", clipKind: "audio", assetId: "a1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000, groupId: "gB" },
+          { id: "c4", clipKind: "audio", assetId: "a1", startMs: 3000, durationMs: 2000, inMs: 0, outMs: 2000, groupId: "gB" },
+        ] },
+      ],
+    };
+    // Select c1 and c3 — should expand to include c2 (group gA) and c4 (group gB)
+    const expanded = expandGroupSelection(seq, new Set(["c1", "c3"]));
+    expect(expanded.size).toBe(4);
+    expect(expanded.has("c1")).toBe(true);
+    expect(expanded.has("c2")).toBe(true);
+    expect(expanded.has("c3")).toBe(true);
+    expect(expanded.has("c4")).toBe(true);
+  });
+
+  test("handles cross-track group expansion", () => {
+    const seq: Sequence = {
+      tracks: [
+        { id: "t1", clips: [{ id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000, groupId: "g1" }] },
+        { id: "t2", clips: [{ id: "c2", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 2000, inMs: 0, outMs: 2000, groupId: "g1" }] },
+      ],
+    };
+    const expanded = expandGroupSelection(seq, new Set(["c1"]));
+    expect(expanded.size).toBe(2);
+    expect(expanded.has("c1")).toBe(true);
+    expect(expanded.has("c2")).toBe(true);
+  });
 });
 
 // ────────── Track Lock & Mute ──────────
