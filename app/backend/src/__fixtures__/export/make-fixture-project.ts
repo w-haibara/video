@@ -390,6 +390,10 @@ export function makeSlideLeftTransitionProject(): Project { return makeTransitio
 export function makeSlideRightTransitionProject(): Project { return makeTransitionProject("slide-right"); }
 export function makeSlideUpTransitionProject(): Project { return makeTransitionProject("slide-up"); }
 export function makeSlideDownTransitionProject(): Project { return makeTransitionProject("slide-down"); }
+export function makeWipeLeftTransitionProject(): Project { return makeTransitionProject("wipe-left"); }
+export function makeWipeUpTransitionProject(): Project { return makeTransitionProject("wipe-up"); }
+export function makeZoomInTransitionProject(): Project { return makeTransitionProject("zoom-in"); }
+export function makePushLeftTransitionProject(): Project { return makeTransitionProject("push-left"); }
 
 /** Two tracks — top clip with crop + scale + position + rotation to reveal bottom clip.
  *  Verifies transparency compositing with all transform properties combined. */

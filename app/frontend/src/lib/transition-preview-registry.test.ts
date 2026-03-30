@@ -4,8 +4,8 @@ import { computeTransitionStyle } from "./preview-renderer-registry";
 import type { Clip, Project } from "@video/shared";
 
 describe("TransitionPreviewRegistry", () => {
-  test("all 7 transitions are registered", () => {
-    expect(transitionPreviewRegistry.all().length).toBe(7);
+  test("all 11 transitions are registered", () => {
+    expect(transitionPreviewRegistry.all().length).toBe(11);
   });
 
   describe("fade handler", () => {
@@ -111,6 +111,77 @@ describe("TransitionPreviewRegistry", () => {
 
     test("has no computeOutgoingStyle", () => {
       expect(handler.computeOutgoingStyle).toBeUndefined();
+    });
+  });
+  describe("wipe-left handler", () => {
+    const handler = transitionPreviewRegistry.get("wipe-left")!;
+
+    test("computeIncomingStyle at progress 0", () => {
+      expect(handler.computeIncomingStyle(0)).toEqual({ clipPath: "inset(0 100% 0 0)" });
+    });
+
+    test("computeIncomingStyle at progress 1", () => {
+      expect(handler.computeIncomingStyle(1)).toEqual({ clipPath: "inset(0 0% 0 0)" });
+    });
+
+    test("has no computeOutgoingStyle", () => {
+      expect(handler.computeOutgoingStyle).toBeUndefined();
+    });
+  });
+
+  describe("wipe-up handler", () => {
+    const handler = transitionPreviewRegistry.get("wipe-up")!;
+
+    test("computeIncomingStyle at progress 0", () => {
+      expect(handler.computeIncomingStyle(0)).toEqual({ clipPath: "inset(100% 0 0 0)" });
+    });
+
+    test("computeIncomingStyle at progress 1", () => {
+      expect(handler.computeIncomingStyle(1)).toEqual({ clipPath: "inset(0% 0 0 0)" });
+    });
+
+    test("has no computeOutgoingStyle", () => {
+      expect(handler.computeOutgoingStyle).toBeUndefined();
+    });
+  });
+
+  describe("zoom-in handler", () => {
+    const handler = transitionPreviewRegistry.get("zoom-in")!;
+
+    test("computeIncomingStyle at progress 0", () => {
+      const style = handler.computeIncomingStyle(0);
+      expect(style.transform).toBe("scale(0.01)");
+      expect(style.opacity).toBe(0);
+    });
+
+    test("computeIncomingStyle at progress 1", () => {
+      const style = handler.computeIncomingStyle(1);
+      expect(style.transform).toBe("scale(1)");
+      expect(style.opacity).toBe(1);
+    });
+
+    test("has no computeOutgoingStyle", () => {
+      expect(handler.computeOutgoingStyle).toBeUndefined();
+    });
+  });
+
+  describe("push-left handler", () => {
+    const handler = transitionPreviewRegistry.get("push-left")!;
+
+    test("computeIncomingStyle at progress 0", () => {
+      expect(handler.computeIncomingStyle(0)).toEqual({ transform: "translateX(100%)" });
+    });
+
+    test("computeIncomingStyle at progress 1", () => {
+      expect(handler.computeIncomingStyle(1)).toEqual({ transform: "translateX(0%)" });
+    });
+
+    test("computeOutgoingStyle at progress 0", () => {
+      expect(handler.computeOutgoingStyle!(0)).toEqual({ transform: "translateX(0%)" });
+    });
+
+    test("computeOutgoingStyle at progress 1", () => {
+      expect(handler.computeOutgoingStyle!(1)).toEqual({ transform: "translateX(-100%)" });
     });
   });
 });
