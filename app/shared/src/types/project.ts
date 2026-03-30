@@ -70,6 +70,14 @@ export type ClipColorCorrection = {
   temperature?: number;  // -1.0 to 1.0 (0 = no change, warm/cool)
 };
 
+/** Built-in video filter types. VideoFilter.type accepts any string for plugins. */
+export type BuiltinVideoFilterType = "blur" | "sharpen" | "vignette" | "grain" | "sepia" | "grayscale";
+
+export type VideoFilter = {
+  type: string;      // filter type (see BuiltinVideoFilterType)
+  strength: number;  // 0.0 to 1.0
+};
+
 /** Built-in transition types. ClipTransition.type accepts any string for plugins. */
 export type BuiltinTransitionType =
   | "fade" | "fade-black" | "fade-white"
@@ -104,6 +112,7 @@ export type Clip = {
   groupId?: string; // グループID（同じgroupIdを持つクリップは一緒に選択される）
   keyframeTracks?: KeyframeTrack[];
   colorCorrection?: ClipColorCorrection;
+  videoFilters?: VideoFilter[];
 };
 
 export type ExportPreset = {

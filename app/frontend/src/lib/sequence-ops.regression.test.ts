@@ -1454,4 +1454,90 @@ describe("keyframe tracks regression", () => {
     });
     expect(stabilize(seq)).toMatchSnapshot();
   });
+
+  // ── Video Filters ──
+
+  test("workflow: add video filters to video clip", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      videoFilters: [
+        { type: "blur", strength: 0.5 },
+        { type: "sepia", strength: 0.7 },
+      ],
+    });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: video filters preserved through move", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      videoFilters: [{ type: "grayscale", strength: 1.0 }],
+    });
+    seq = moveClip(seq, clipId, 2000, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: video filters preserved through trim", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      videoFilters: [{ type: "blur", strength: 0.3 }, { type: "vignette", strength: 0.5 }],
+    });
+    seq = trimClip(seq, clipId, "right", -1000, 5000, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: video filters preserved through split", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      videoFilters: [{ type: "sharpen", strength: 0.8 }],
+    });
+    seq = splitClip(seq, clipId, 2500);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: video filters preserved through duplicate", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      videoFilters: [{ type: "grain", strength: 0.4 }, { type: "grayscale", strength: 0.6 }],
+    });
+    seq = duplicateClip(seq, clipId, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: video filters + color correction + transform combined", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      videoFilters: [{ type: "blur", strength: 0.2 }, { type: "sepia", strength: 0.5 }],
+      colorCorrection: { brightness: 0.1, contrast: 0.2 },
+      transform: { x: 10, y: -5, scale: 0.8, rotation: 15 },
+      blendMode: "multiply",
+    });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: reset video filters (set to undefined)", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      videoFilters: [{ type: "blur", strength: 0.5 }],
+    });
+    seq = updateClip(seq, clipId, {
+      videoFilters: undefined,
+    });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
 });
