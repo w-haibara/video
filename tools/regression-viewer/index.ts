@@ -41,6 +41,9 @@ import {
   makeColorCorrectionProject,
   makeColorCorrectionHueProject,
   makeColorCorrectionTransformProject,
+  makeVideoFilterBlurSepiaProject,
+  makeVideoFilterGrayscaleProject,
+  makeVideoFilterTransformProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -130,6 +133,9 @@ const EXPORT_TESTS: Array<{
   { name: "color-correction", description: "Color correction (brightness + contrast + saturation)", factory: makeColorCorrectionProject },
   { name: "color-correction-hue", description: "Color correction (hue rotation 90deg)", factory: makeColorCorrectionHueProject },
   { name: "color-correction-transform", description: "Color correction + transform (cross-feature)", factory: makeColorCorrectionTransformProject },
+  { name: "video-filter-blur-sepia", description: "Video filter (blur + sepia)", factory: makeVideoFilterBlurSepiaProject },
+  { name: "video-filter-grayscale", description: "Video filter (grayscale)", factory: makeVideoFilterGrayscaleProject },
+  { name: "video-filter-transform", description: "Video filter + transform (cross-feature)", factory: makeVideoFilterTransformProject },
   { name: "p5js-rendered", description: "p5.js sketch rendered from source via Chromium pipeline", factory: makeP5jsProject },
 ];
 

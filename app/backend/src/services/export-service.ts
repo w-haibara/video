@@ -1,6 +1,8 @@
-import type { Project, Clip, ExportPreset, Asset, ClipColorCorrection } from "@video/shared";
+import type { Project, Clip, ExportPreset, Asset, ClipColorCorrection, VideoFilter } from "@video/shared";
 import { hasKeyframes, buildKeyframeFilterExpression } from "@video/shared";
 import type { Job } from "@video/shared";
+import { buildVideoFilterFfmpeg } from "../lib/video-filter-ffmpeg";
+export { buildVideoFilterFfmpeg } from "../lib/video-filter-ffmpeg";
 import { mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
 import { assetsDir, exportDir, projectDir as getProjectDir } from "../utils/paths";

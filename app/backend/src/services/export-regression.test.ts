@@ -47,6 +47,9 @@ import {
   makeColorCorrectionProject,
   makeColorCorrectionHueProject,
   makeColorCorrectionTransformProject,
+  makeVideoFilterBlurSepiaProject,
+  makeVideoFilterGrayscaleProject,
+  makeVideoFilterTransformProject,
   CANVAS_W,
   CANVAS_H,
   FPS,
@@ -279,6 +282,18 @@ describe("export regression", () => {
 
   test("color correction + transform cross-feature", async () => {
     await runExportRegression("color-correction-transform", makeColorCorrectionTransformProject());
+  }, 30_000);
+
+  test("video filter: blur + sepia", async () => {
+    await runExportRegression("video-filter-blur-sepia", makeVideoFilterBlurSepiaProject());
+  }, 30_000);
+
+  test("video filter: grayscale", async () => {
+    await runExportRegression("video-filter-grayscale", makeVideoFilterGrayscaleProject());
+  }, 30_000);
+
+  test("video filter + transform cross-feature", async () => {
+    await runExportRegression("video-filter-transform", makeVideoFilterTransformProject());
   }, 30_000);
 
   test("p5.js clip (rendered from sketch)", async () => {

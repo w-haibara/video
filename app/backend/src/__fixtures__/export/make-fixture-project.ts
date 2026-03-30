@@ -713,6 +713,56 @@ export function makeSpeedMultiClipProject(): Project {
   });
 }
 
+/** Single video clip with blur + sepia video filters. */
+export function makeVideoFilterBlurSepiaProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            videoFilters: [
+              { type: "blur", strength: 0.3 },
+              { type: "sepia", strength: 0.7 },
+            ],
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** Single video clip with grayscale video filter. */
+export function makeVideoFilterGrayscaleProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            videoFilters: [{ type: "grayscale", strength: 1.0 }],
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** Video filter + transform (cross-feature). */
+export function makeVideoFilterTransformProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            videoFilters: [{ type: "blur", strength: 0.5 }],
+            transform: { x: 10, y: -5, scale: 0.8, rotation: 15 },
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
 /** Single video clip with color correction (brightness + contrast + saturation). */
 export function makeColorCorrectionProject(): Project {
   return baseProject({

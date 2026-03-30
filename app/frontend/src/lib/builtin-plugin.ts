@@ -17,6 +17,7 @@ import { P5jsEditor } from "../components/editors/P5jsEditor";
 import { KeyframeEditor } from "../components/editors/KeyframeEditor";
 import { SpeedEditor } from "../components/editors/SpeedEditor";
 import { ColorCorrectionEditor } from "../components/editors/ColorCorrectionEditor";
+import { VideoFilterEditor } from "../components/editors/VideoFilterEditor";
 import { videoClipRenderer, p5jsClipRenderer } from "../components/renderers/VideoClipRenderer";
 import { imageClipRenderer } from "../components/renderers/ImageClipRenderer";
 import { textOverlayRenderer } from "../components/renderers/TextOverlayRenderer";
@@ -193,6 +194,13 @@ export const builtinPlugin: FrontendPlugin = {
       order: 29,
       canHandle: (ctx) => ctx.clipKind === "video" || ctx.clipKind === "image" || ctx.clipKind === "p5js",
       Component: ColorCorrectionEditor,
+    });
+    registry.register({
+      id: "video-filters",
+      label: "Video Filters",
+      order: 30,
+      canHandle: (ctx) => ctx.clipKind === "video" || ctx.clipKind === "image" || ctx.clipKind === "p5js",
+      Component: VideoFilterEditor,
     });
     registry.register({
       id: "keyframe",

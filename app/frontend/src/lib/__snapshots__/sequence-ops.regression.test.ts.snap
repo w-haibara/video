@@ -3185,3 +3185,259 @@ exports[`keyframe tracks regression workflow: reset color correction (set to und
   ],
 }
 `;
+
+exports[`keyframe tracks regression workflow: add video filters to video clip 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+          "videoFilters": [
+            {
+              "strength": 0.5,
+              "type": "blur",
+            },
+            {
+              "strength": 0.7,
+              "type": "sepia",
+            },
+          ],
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: video filters preserved through move 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 2000,
+          "videoFilters": [
+            {
+              "strength": 1,
+              "type": "grayscale",
+            },
+          ],
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: video filters preserved through trim 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 4000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 4000,
+          "startMs": 0,
+          "videoFilters": [
+            {
+              "strength": 0.3,
+              "type": "blur",
+            },
+            {
+              "strength": 0.5,
+              "type": "vignette",
+            },
+          ],
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: video filters preserved through split 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 2500,
+          "startMs": 0,
+          "videoFilters": [
+            {
+              "strength": 0.8,
+              "type": "sharpen",
+            },
+          ],
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-1",
+          "inMs": 2500,
+          "outMs": 5000,
+          "startMs": 2500,
+          "transition": undefined,
+          "videoFilters": [
+            {
+              "strength": 0.8,
+              "type": "sharpen",
+            },
+          ],
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: video filters preserved through duplicate 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+          "videoFilters": [
+            {
+              "strength": 0.4,
+              "type": "grain",
+            },
+            {
+              "strength": 0.6,
+              "type": "grayscale",
+            },
+          ],
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 5000,
+          "transition": undefined,
+          "videoFilters": [
+            {
+              "strength": 0.4,
+              "type": "grain",
+            },
+            {
+              "strength": 0.6,
+              "type": "grayscale",
+            },
+          ],
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: video filters + color correction + transform combined 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "blendMode": "multiply",
+          "clipKind": "video",
+          "colorCorrection": {
+            "brightness": 0.1,
+            "contrast": 0.2,
+          },
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+          "transform": {
+            "rotation": 15,
+            "scale": 0.8,
+            "x": 10,
+            "y": -5,
+          },
+          "videoFilters": [
+            {
+              "strength": 0.2,
+              "type": "blur",
+            },
+            {
+              "strength": 0.5,
+              "type": "sepia",
+            },
+          ],
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 5000,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: reset video filters (set to undefined) 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+          "videoFilters": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;

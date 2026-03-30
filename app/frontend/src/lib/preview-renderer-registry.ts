@@ -3,6 +3,7 @@ import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
 import { getAnimatedValue, hasKeyframes } from "@video/shared";
 import { transitionPreviewRegistry } from "./transition-preview-registry";
 import { buildColorCorrectionFilter } from "./color-correction-css";
+import { buildVideoFilterCss } from "./video-filter-css";
 
 export type ActiveClip = {
   clip: Clip;
@@ -297,9 +298,17 @@ export function computeMediaContainerStyle(
   }
 
   // Apply color correction CSS filter
+  const filterParts: string[] = [];
   const ccFilter = buildColorCorrectionFilter(clip.colorCorrection);
   if (ccFilter) {
-    style.filter = ccFilter;
+    filterParts.push(ccFilter);
+  }
+  const vfFilter = buildVideoFilterCss(clip.videoFilters);
+  if (vfFilter) {
+    filterParts.push(vfFilter);
+  }
+  if (filterParts.length > 0) {
+    style.filter = filterParts.join(" ");
   }
 
   return style;
