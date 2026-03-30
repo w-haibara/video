@@ -40,7 +40,11 @@ function findClipById(project: Project, clipId: string): Clip | null {
 }
 
 function getMediaUrl(asset: Asset, projectId: string): string {
-  if (asset.kind === "video" && asset.proxyPath) {
+  if ((asset.kind === "video" || asset.kind === "p5js") && asset.proxyPath) {
+    // render-cache paths: "render-cache/{assetId}/proxy.mp4"
+    if (asset.proxyPath.startsWith("render-cache/")) {
+      return `/media/projects/${projectId}/${asset.proxyPath}`;
+    }
     const filename = asset.proxyPath.split("/").pop();
     return `/media/projects/${projectId}/proxies/${filename}`;
   }
@@ -131,9 +135,12 @@ export function PreviewPlayer({
 
   const hasMediaContent = layers.some((l) => (l.renderer.zOrder === 0 || l.renderer.id === "empty-asset") && l.content !== null);
 
-  // Get active video clips for video element management (topmost drives playback)
+  // Get active video/p5js clips for video element management (topmost drives playback)
   const videoClips = layers.find((l) => l.renderer.id === "video-clip")?.content as ActiveClip[] | null;
-  const videoContent = videoClips ? videoClips[videoClips.length - 1] : null; // topmost
+  const p5jsClips = layers.find((l) => l.renderer.id === "p5js-clip")?.content as ActiveClip[] | null;
+  // Prefer video clip; fall back to p5js clip
+  const allVideoLike = [...(videoClips ?? []), ...(p5jsClips ?? [])];
+  const videoContent = allVideoLike.length > 0 ? allVideoLike[allVideoLike.length - 1] : null; // topmost
   const hasVideoContent = videoContent !== null;
   const mediaUrl = videoContent ? getMediaUrl(videoContent.asset, project.id) : "";
 
