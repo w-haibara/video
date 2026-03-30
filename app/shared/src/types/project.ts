@@ -1,4 +1,5 @@
 import type { Asset } from "./asset";
+import type { KeyframeTrack } from "./keyframe";
 
 export type ProjectSettings = {
   durationMs: number; // 動画全体の目標尺 (ミリ秒)
@@ -92,6 +93,7 @@ export type Clip = {
   blendMode?: string; // 省略時は "cover" として扱う
   transition?: ClipTransition; // このクリップの先頭に適用されるトランジション
   groupId?: string; // グループID（同じgroupIdを持つクリップは一緒に選択される）
+  keyframeTracks?: KeyframeTrack[];
 };
 
 export type ExportPreset = {

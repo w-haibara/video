@@ -40,6 +40,7 @@ import {
   makeBlendModeTransitionProject,
   makeCropBlendProject,
   makeTitleFontAlignProject,
+  makeKeyframeTransformXProject,
   CANVAS_W,
   CANVAS_H,
   FPS,
@@ -244,6 +245,10 @@ describe("export regression", () => {
 
   test("title with fontFamily and align", async () => {
     await runExportRegression("title-font-align", makeTitleFontAlignProject());
+  }, 30_000);
+
+  test("keyframe animated transform.x (horizontal movement)", async () => {
+    await runExportRegression("keyframe-transform-x", makeKeyframeTransformXProject());
   }, 30_000);
 
   test("p5.js clip (rendered from sketch)", async () => {

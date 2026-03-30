@@ -4,6 +4,7 @@ export type { Project, ProjectSettings, Sequence, Track, Clip, BuiltinClipKind, 
 export type { Job, JobStatus } from "./types/job";
 export type { PluginManifest } from "./types/plugin";
 export type { CompositeStrategyDescriptor } from "./types/composite";
+export type { EasingType, Keyframe, KeyframeTrack } from "./types/keyframe";
 export type { TransitionDescriptor } from "./types/transition";
 export type {
   CreateProjectRequest,
@@ -15,6 +16,24 @@ export type {
   ImportAssetResponse,
   GetJobResponse,
 } from "./types/api";
+
+// Keyframe engine
+export {
+  evaluateAtTime,
+  easeLinear,
+  easeIn,
+  easeOut,
+  easeInOut,
+  getEasing,
+  hasKeyframes,
+  getAnimatedValue,
+} from "./keyframe/interpolate";
+export {
+  getStaticValue,
+} from "./keyframe/property-resolver";
+export {
+  buildKeyframeFilterExpression,
+} from "./keyframe/ffmpeg-expression";
 
 // Utils
 export { generateId } from "./utils/id";
