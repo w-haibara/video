@@ -12,7 +12,7 @@ Color correction (brightness + contrast + saturation)
 
 - `v1` (video, 1000ms) — test-video-1s.mp4
 
-<video src="assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+[v1 (video) — test-video-1s.mp4](assets/test-video-1s.mp4)
 
 ## Clip Details
 

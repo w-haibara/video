@@ -333,11 +333,11 @@ function mdAssetEmbeds(tc: ExportTestCase): string[] {
     const filename = path.basename(a.originalPath);
     const localPath = `assets/${filename}`;
     if (a.kind === "image") {
-      embeds.push(`<img src="${localPath}" width="160" title="${a.id} (${a.kind})">`);
+      embeds.push(`![${a.id} (${a.kind})](${localPath})`);
     } else if (a.kind === "video" || a.kind === "p5js") {
-      embeds.push(`<video src="${localPath}" width="160" controls muted title="${a.id} (${a.kind})"></video>`);
+      embeds.push(`[${a.id} (${a.kind}) — ${filename}](${localPath})`);
     } else if (a.kind === "audio") {
-      embeds.push(`<audio src="${localPath}" controls title="${a.id} (${a.kind})"></audio>`);
+      embeds.push(`[${a.id} (${a.kind}) — ${filename}](${localPath})`);
     }
   }
   return embeds;

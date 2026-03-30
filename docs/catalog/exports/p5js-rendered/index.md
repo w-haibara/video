@@ -12,7 +12,7 @@ p5.js sketch rendered from source via Chromium pipeline
 
 - `p5js1` (p5js, 1000ms) — test-sketch.p5.js
 
-<video src="assets/test-sketch.p5.js" width="160" controls muted title="p5js1 (p5js)"></video>
+[p5js1 (p5js) — test-sketch.p5.js](assets/test-sketch.p5.js)
 
 ## p5.js Sketch (`test-sketch.p5.js`)
 

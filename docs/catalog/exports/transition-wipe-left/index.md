@@ -13,7 +13,7 @@ Wipe left (300ms)
 - `v1` (video, 1000ms) — test-video-1s.mp4
 - `img1` (image) — test-image.png
 
-<video src="assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="assets/test-image.png" width="160" title="img1 (image)">
+[v1 (video) — test-video-1s.mp4](assets/test-video-1s.mp4) ![img1 (image)](assets/test-image.png)
 
 ## Clip Details
 

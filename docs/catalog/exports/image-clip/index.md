@@ -12,7 +12,7 @@ Single image clip displayed for 1s
 
 - `img1` (image) — test-image.png
 
-<img src="assets/test-image.png" width="160" title="img1 (image)">
+![img1 (image)](assets/test-image.png)
 
 ## Clip Details
 
