@@ -16,6 +16,7 @@ import { TransitionEditor } from "../components/editors/TransitionEditor";
 import { P5jsEditor } from "../components/editors/P5jsEditor";
 import { KeyframeEditor } from "../components/editors/KeyframeEditor";
 import { SpeedEditor } from "../components/editors/SpeedEditor";
+import { ColorCorrectionEditor } from "../components/editors/ColorCorrectionEditor";
 import { videoClipRenderer, p5jsClipRenderer } from "../components/renderers/VideoClipRenderer";
 import { imageClipRenderer } from "../components/renderers/ImageClipRenderer";
 import { textOverlayRenderer } from "../components/renderers/TextOverlayRenderer";
@@ -185,6 +186,13 @@ export const builtinPlugin: FrontendPlugin = {
       order: 15,
       canHandle: (ctx) => ctx.clipKind === "p5js",
       Component: P5jsEditor,
+    });
+    registry.register({
+      id: "color-correction",
+      label: "Color Correction",
+      order: 29,
+      canHandle: (ctx) => ctx.clipKind === "video" || ctx.clipKind === "image" || ctx.clipKind === "p5js",
+      Component: ColorCorrectionEditor,
     });
     registry.register({
       id: "keyframe",

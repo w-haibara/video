@@ -44,6 +44,9 @@ import {
   makeSpeed2xProject,
   makeSpeedHalfProject,
   makeSpeedMultiClipProject,
+  makeColorCorrectionProject,
+  makeColorCorrectionHueProject,
+  makeColorCorrectionTransformProject,
   CANVAS_W,
   CANVAS_H,
   FPS,
@@ -264,6 +267,18 @@ describe("export regression", () => {
 
   test("keyframe animated transform.x (horizontal movement)", async () => {
     await runExportRegression("keyframe-transform-x", makeKeyframeTransformXProject());
+  }, 30_000);
+
+  test("color correction (brightness + contrast + saturation)", async () => {
+    await runExportRegression("color-correction", makeColorCorrectionProject());
+  }, 30_000);
+
+  test("color correction (hue rotation)", async () => {
+    await runExportRegression("color-correction-hue", makeColorCorrectionHueProject());
+  }, 30_000);
+
+  test("color correction + transform cross-feature", async () => {
+    await runExportRegression("color-correction-transform", makeColorCorrectionTransformProject());
   }, 30_000);
 
   test("p5.js clip (rendered from sketch)", async () => {

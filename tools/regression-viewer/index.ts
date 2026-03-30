@@ -38,6 +38,9 @@ import {
   makeSpeed2xProject,
   makeSpeedHalfProject,
   makeSpeedMultiClipProject,
+  makeColorCorrectionProject,
+  makeColorCorrectionHueProject,
+  makeColorCorrectionTransformProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -124,6 +127,9 @@ const EXPORT_TESTS: Array<{
   { name: "speed-2x", description: "Video clip at 2x speed (500ms)", factory: makeSpeed2xProject },
   { name: "speed-half", description: "Video clip at 0.5x speed (2000ms)", factory: makeSpeedHalfProject },
   { name: "speed-multi-clip", description: "Two clips: first at 2x speed, second normal", factory: makeSpeedMultiClipProject },
+  { name: "color-correction", description: "Color correction (brightness + contrast + saturation)", factory: makeColorCorrectionProject },
+  { name: "color-correction-hue", description: "Color correction (hue rotation 90deg)", factory: makeColorCorrectionHueProject },
+  { name: "color-correction-transform", description: "Color correction + transform (cross-feature)", factory: makeColorCorrectionTransformProject },
   { name: "p5js-rendered", description: "p5.js sketch rendered from source via Chromium pipeline", factory: makeP5jsProject },
 ];
 

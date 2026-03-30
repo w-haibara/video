@@ -2,6 +2,7 @@ import type { CSSProperties, RefObject } from "react";
 import type { Project, Clip, Asset, ClipCrop, ClipText } from "@video/shared";
 import { getAnimatedValue, hasKeyframes } from "@video/shared";
 import { transitionPreviewRegistry } from "./transition-preview-registry";
+import { buildColorCorrectionFilter } from "./color-correction-css";
 
 export type ActiveClip = {
   clip: Clip;
@@ -293,6 +294,12 @@ export function computeMediaContainerStyle(
   // Apply animated opacity if keyframes exist
   if (hasKeyframes(tracks, "opacity")) {
     style.opacity = getAnimatedValue(tracks, "opacity", timeMs, 1.0);
+  }
+
+  // Apply color correction CSS filter
+  const ccFilter = buildColorCorrectionFilter(clip.colorCorrection);
+  if (ccFilter) {
+    style.filter = ccFilter;
   }
 
   return style;

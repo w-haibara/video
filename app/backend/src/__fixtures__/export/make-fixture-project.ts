@@ -713,6 +713,53 @@ export function makeSpeedMultiClipProject(): Project {
   });
 }
 
+/** Single video clip with color correction (brightness + contrast + saturation). */
+export function makeColorCorrectionProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            colorCorrection: { brightness: 0.3, contrast: 0.2, saturation: -0.5 },
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** Single video clip with hue rotation. */
+export function makeColorCorrectionHueProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            colorCorrection: { hue: 90 },
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** Color correction combined with transform (cross-feature). */
+export function makeColorCorrectionTransformProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            colorCorrection: { brightness: 0.2, saturation: 0.5 },
+            transform: { x: 10, y: -5, scale: 0.8, rotation: 15 },
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
 export function makeOverlayTransformProject(): Project {
   return baseProject({
     assets: [videoAsset, imageAsset],
