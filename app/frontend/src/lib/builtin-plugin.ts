@@ -44,6 +44,12 @@ import {
   slideUpPreviewHandler,
   slideDownPreviewHandler,
 } from "./transition-preview-handlers/slide-handlers";
+import {
+  wipeLeftPreviewHandler,
+  wipeUpPreviewHandler,
+} from "./transition-preview-handlers/wipe-handlers";
+import { zoomInPreviewHandler } from "./transition-preview-handlers/zoom-handlers";
+import { pushLeftPreviewHandler } from "./transition-preview-handlers/push-handlers";
 
 export const builtinPlugin: FrontendPlugin = {
   id: "builtin",
@@ -313,5 +319,9 @@ export const builtinPlugin: FrontendPlugin = {
     registry.register(slideRightPreviewHandler);
     registry.register(slideUpPreviewHandler);
     registry.register(slideDownPreviewHandler);
+    registry.register(wipeLeftPreviewHandler);
+    registry.register(wipeUpPreviewHandler);
+    registry.register(zoomInPreviewHandler);
+    registry.register(pushLeftPreviewHandler);
   },
 };

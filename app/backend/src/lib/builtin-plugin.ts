@@ -38,6 +38,12 @@ import {
   slideUpExportHandler,
   slideDownExportHandler,
 } from "./transition-export-handlers/slide-handlers";
+import {
+  wipeLeftExportHandler,
+  wipeUpExportHandler,
+} from "./transition-export-handlers/wipe-handlers";
+import { zoomInExportHandler } from "./transition-export-handlers/zoom-handlers";
+import { pushLeftExportHandler } from "./transition-export-handlers/push-handlers";
 
 export const builtinPlugin: BackendPlugin = {
   id: "builtin",
@@ -103,5 +109,9 @@ export const builtinPlugin: BackendPlugin = {
     registry.register(slideRightExportHandler);
     registry.register(slideUpExportHandler);
     registry.register(slideDownExportHandler);
+    registry.register(wipeLeftExportHandler);
+    registry.register(wipeUpExportHandler);
+    registry.register(zoomInExportHandler);
+    registry.register(pushLeftExportHandler);
   },
 };

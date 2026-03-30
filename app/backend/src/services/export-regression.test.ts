@@ -24,6 +24,10 @@ import {
   makeSlideRightTransitionProject,
   makeSlideUpTransitionProject,
   makeSlideDownTransitionProject,
+  makeWipeLeftTransitionProject,
+  makeWipeUpTransitionProject,
+  makeZoomInTransitionProject,
+  makePushLeftTransitionProject,
   makeOpacityProject,
   makeMultiplyProject,
   makeScreenProject,
@@ -190,6 +194,22 @@ describe("export regression", () => {
 
   test("transition: slide-down", async () => {
     await runExportRegression("transition-slide-down", makeSlideDownTransitionProject());
+  }, 30_000);
+
+  test("transition: wipe-left", async () => {
+    await runExportRegression("transition-wipe-left", makeWipeLeftTransitionProject());
+  }, 30_000);
+
+  test("transition: wipe-up", async () => {
+    await runExportRegression("transition-wipe-up", makeWipeUpTransitionProject());
+  }, 30_000);
+
+  test("transition: zoom-in", async () => {
+    await runExportRegression("transition-zoom-in", makeZoomInTransitionProject());
+  }, 30_000);
+
+  test("transition: push-left", async () => {
+    await runExportRegression("transition-push-left", makePushLeftTransitionProject());
   }, 30_000);
 
   test("blend: opacity", async () => {
