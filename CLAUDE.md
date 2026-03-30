@@ -7,7 +7,7 @@
 | `bun run dev` | Start dev server (backend + frontend) |
 | `bun run restart` | Restart dev server (kills both on failure) |
 | `bun run test` | Run all tests (includes snapshot & regression) |
-| `bun run view:regression` | Start regression test viewer on port 3001 |
+| `bun run catalog` | Start feature catalog on port 3001 |
 
 Frontend-specific (run from `app/frontend/`):
 
@@ -22,7 +22,7 @@ Frontend-specific (run from `app/frontend/`):
 - Aggressively add test cases. Test optimization can happen later — when working on a task, add every test case you can think of without worrying about redundancy.
 - Always add regression tests (both export regression and snapshot) for any change that affects video output or sequence operations. Do not skip regression cases.
 - For video output tests, cover not only individual features but also combinations of features (e.g., transition + transform, blend mode + crop, multi-track + transition). These cross-feature interactions are where regressions hide.
-- When snapshots are added or changed, always visually verify the additions or changes. Use `bun run view:regression` with Playwright, or use `claude -p` to take and inspect screenshots.
+- When snapshots are added or changed, always visually verify the additions or changes. Use `bun run catalog` with Playwright, or use `claude -p` to take and inspect screenshots.
 
 ## Regression testing workflow
 
@@ -31,13 +31,13 @@ After modifying `sequence-ops` or export-related code, follow this workflow:
 1. Run `bun run test` — detect regressions
 2. If snapshot diff is intentional: `cd app/frontend && bun test sequence-ops.regression --update-snapshots`
 3. If export frames changed: `UPDATE_REFERENCES=1 bun test export-regression`
-4. Start `bun run view:regression` and verify visually with playwright-cli
+4. Start `bun run catalog` and verify visually with playwright-cli
 5. Run `bun run test` again to confirm all pass, then commit (include `.snap` and `references/`)
 
 ### Adding new snapshot test cases
 
 - Add test to `sequence-ops.regression.test.ts` using `stabilize()` + `toMatchSnapshot()`
-- First run auto-generates the snapshot — verify it visually in the viewer
+- First run auto-generates the snapshot — verify it visually in the feature catalog
 - IMPORTANT: Do NOT use `--update-snapshots` while iterating on a new case. Delete the single new entry from `.snap` and re-run instead, to avoid overwriting existing correct snapshots.
 
 ### Adding new export regression test cases
@@ -45,8 +45,8 @@ After modifying `sequence-ops` or export-related code, follow this workflow:
 - Add factory function to `app/backend/src/__fixtures__/export/make-fixture-project.ts`
 - Add test case to `export-regression.test.ts`
 - First run auto-generates reference frames
-- Add entry to `EXPORT_TESTS` in `tools/regression-viewer/index.ts`
-- Verify frames visually in viewer before committing
+- Add entry to `EXPORT_TESTS` in `tools/feature-catalog/index.ts`
+- Verify frames visually in feature catalog before committing
 
 ## PR merge checklist
 
@@ -54,7 +54,7 @@ Before merging any PR, always:
 
 1. Run `bun run test` — all tests must pass
 2. Verify with Playwright by accessing the dev server
-3. If snapshots were added or changed, visually confirm via the regression viewer
+3. If snapshots were added or changed, visually confirm via the feature catalog
 
 ## Agent workflow
 

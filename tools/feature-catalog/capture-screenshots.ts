@@ -1,12 +1,11 @@
 /**
- * Capture full-page screenshots of all regression viewer pages.
+ * Capture full-page screenshots of all feature catalog pages.
  *
- * Prerequisites: regression viewer running on localhost:3001
- *   bun run view:regression &
+ * Prerequisites: feature catalog running on localhost:3001
+ *   bun run catalog &
  *
  * Usage:
- *   bunx playwright screenshot-pages   # (not used — this script is run directly)
- *   bun run tools/regression-viewer/capture-screenshots.ts
+ *   bun run catalog:capture
  */
 
 import { chromium } from "playwright";
@@ -28,7 +27,7 @@ async function main() {
       fetch(`${BASE_URL}/api/snapshots`).then((r) => r.json()) as Promise<{ name: string }[]>,
     ]);
   } catch {
-    console.error("Regression viewer is not running. Start it first: bun run view:regression");
+    console.error("Feature catalog is not running. Start it first: bun run catalog");
     process.exit(1);
   }
 

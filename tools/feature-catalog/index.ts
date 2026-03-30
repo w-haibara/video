@@ -722,7 +722,7 @@ function wrapPage(title: string, body: string, { script = "" } = {}): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)} - Regression Viewer</title>
+<title>${esc(title)} - Feature Catalog</title>
 <style>${SHARED_STYLES}</style>
 </head>
 <body>
@@ -751,15 +751,15 @@ function renderIndexPage(
   ).join("\n");
 
   return wrapPage("Index", `
-<h1>Regression Test Viewer</h1>
-<p class="page-desc">View editor operation snapshots and export regression test projects with reference frames.</p>
+<h1>Feature Catalog</h1>
+<p class="page-desc">Video editor feature catalog with export examples and editor operation references.</p>
 
-<div class="section-heading" data-testid="section-exports">Export Regression Tests (${exportTests.length})</div>
+<div class="section-heading" data-testid="section-exports">Export Features (${exportTests.length})</div>
 <div class="card">
   <ul class="case-list" data-testid="export-list">${exportRows}</ul>
 </div>
 
-<div class="section-heading" data-testid="section-snapshots">Editor Operation Snapshots (${snapshots.length})</div>
+<div class="section-heading" data-testid="section-snapshots">Editor Operations (${snapshots.length})</div>
 <div class="card">
   <ul class="case-list" data-testid="snapshot-list">${snapRows}</ul>
 </div>
@@ -769,7 +769,7 @@ function renderIndexPage(
 function renderExportPage(tc: ExportTestCase): string {
   return wrapPage(tc.name, `
 <div class="breadcrumb"><a href="/">\u2190 Index</a></div>
-<h1>Export: ${esc(tc.name)}</h1>
+<h1>Feature: ${esc(tc.name)}</h1>
 ${renderExportDetail(tc)}
   `, { script: FILMSTRIP_SCRIPT });
 }
