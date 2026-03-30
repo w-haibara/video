@@ -18,6 +18,7 @@ import { videoClipRenderer, p5jsClipRenderer } from "../components/renderers/Vid
 import { imageClipRenderer } from "../components/renderers/ImageClipRenderer";
 import { textOverlayRenderer } from "../components/renderers/TextOverlayRenderer";
 import { emptyAssetRenderer } from "../components/renderers/EmptyAssetRenderer";
+import { audioClipRenderer } from "../components/renderers/AudioClipRenderer";
 import type { ActiveClip, TickContext } from "./preview-renderer-registry";
 import { coverPreviewStrategy } from "./composite-strategies/cover-strategy";
 import { opacityPreviewStrategy } from "./composite-strategies/opacity-strategy";
@@ -166,7 +167,7 @@ export const builtinPlugin: FrontendPlugin = {
       id: "audio-volume",
       label: "Volume",
       order: 30,
-      canHandle: (ctx) => ctx.clipKind === "audio",
+      canHandle: (ctx) => ctx.clipKind === "audio" || ctx.clipKind === "video",
       Component: AudioVolumeEditor,
     });
     registry.register({
@@ -184,6 +185,7 @@ export const builtinPlugin: FrontendPlugin = {
     registry.register(imageClipRenderer);
     registry.register(textOverlayRenderer);
     registry.register(emptyAssetRenderer);
+    registry.register(audioClipRenderer);
 
     registry.registerTickStrategy({
       assetKind: "video",
@@ -241,6 +243,14 @@ export const builtinPlugin: FrontendPlugin = {
 
     registry.registerTickStrategy({
       assetKind: "image",
+      tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
+        const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
+        return Math.min(tickCtx.currentTimeMs + deltaMs, clipEndMs);
+      },
+    });
+
+    registry.registerTickStrategy({
+      assetKind: "audio",
       tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
         return Math.min(tickCtx.currentTimeMs + deltaMs, clipEndMs);

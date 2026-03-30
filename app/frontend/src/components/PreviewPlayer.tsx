@@ -1,8 +1,9 @@
-import { useRef, useEffect, useLayoutEffect, useState } from "react";
+import { useRef, useEffect, useLayoutEffect, useState, useCallback } from "react";
 import type { Project, Clip, Asset } from "@video/shared";
 import { theme, buttonStyle } from "../theme";
 import { previewRendererRegistry } from "../lib/preview-renderer-registry";
 import type { ActiveClip, PreviewRenderContext } from "../lib/preview-renderer-registry";
+import { audioManager } from "../lib/audio-manager";
 
 type Props = {
   project: Project;
@@ -63,6 +64,15 @@ export function PreviewPlayer({
   isPopout,
   onTogglePopout,
 }: Props) {
+  const [isMuted, setIsMuted] = useState(audioManager.isMuted());
+  const toggleMute = useCallback(() => {
+    // Ensure AudioContext exists (needs user gesture)
+    audioManager.ensureContext();
+    const next = !isMuted;
+    audioManager.setMasterMute(next);
+    setIsMuted(next);
+  }, [isMuted]);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number>(0);
@@ -351,11 +361,16 @@ export function PreviewPlayer({
             }}
           >
             {layers.map(({ renderer, content }) => {
-              if (!content) return null;
+              if (!content || renderer.zOrder < 0) return null;
               return <renderer.Component key={renderer.id} content={content} ctx={renderCtx} />;
             })}
           </div>
         )}
+        {/* Audio-only layers (rendered outside visual canvas so they play even without visual content) */}
+        {layers.map(({ renderer, content }) => {
+          if (!content || renderer.zOrder >= 0) return null;
+          return <renderer.Component key={renderer.id} content={content} ctx={renderCtx} />;
+        })}
       </div>
 
       {/* Transport controls */}
@@ -400,11 +415,20 @@ export function PreviewPlayer({
                 }
               }
             }
+            // Ensure AudioContext on user gesture (play button click)
+            audioManager.ensureContext();
             onPlayPause();
           }}
           style={{ ...buttonStyle.secondary, padding: "4px 16px", fontSize: "13px", minWidth: "60px" }}
         >
           {isPlaying ? "Pause" : "Play"}
+        </button>
+        <button
+          onClick={toggleMute}
+          style={{ ...buttonStyle.secondary, padding: "4px 16px", fontSize: "13px", minWidth: "36px" }}
+          title={isMuted ? "Unmute" : "Mute"}
+        >
+          {isMuted ? "\uD83D\uDD07" : "\uD83D\uDD0A"}
         </button>
         <span style={{ color: theme.textMuted, fontSize: "12px" }}>
           {formatTime(currentTimeMs)}

@@ -2,7 +2,9 @@ import { useRef, useEffect } from "react";
 import type { ActiveClip, PreviewRenderContext, PreviewLayerRenderer } from "../../lib/preview-renderer-registry";
 import { findAllActiveClips, computeMediaContainerStyle, mediaStyle, computeTransitionStyle } from "../../lib/preview-renderer-registry";
 import { compositeStrategyRegistry } from "../../lib/composite-strategy-registry";
+import { audioManager } from "../../lib/audio-manager";
 import type { Asset } from "@video/shared";
+import { getAnimatedValue, hasKeyframes } from "@video/shared";
 
 function getVideoMediaUrl(asset: Asset, projectId: string): string {
   if ((asset.kind === "video" || asset.kind === "p5js") && asset.proxyPath) {
@@ -16,6 +18,41 @@ function getVideoMediaUrl(asset: Asset, projectId: string): string {
   return "";
 }
 
+/** Compute the effective volume for a clip, evaluating keyframes if present. */
+function getClipVolume(activeClip: ActiveClip): number {
+  const clip = activeClip.clip;
+  const timeMs = activeClip.clipTimeMs - clip.inMs;
+  if (hasKeyframes(clip.keyframeTracks, "volume")) {
+    return getAnimatedValue(clip.keyframeTracks, "volume", timeMs, clip.volume ?? 1.0);
+  }
+  return clip.volume ?? 1.0;
+}
+
+/** Hook to connect/disconnect a video element to the AudioManager. */
+function useAudioConnection(
+  clipId: string,
+  element: HTMLVideoElement | null,
+  volume: number,
+  trackMuted: boolean,
+) {
+  useEffect(() => {
+    if (!element || trackMuted) {
+      audioManager.disconnectElement(clipId);
+      return;
+    }
+    audioManager.connectElement(clipId, element, volume);
+    return () => {
+      audioManager.disconnectElement(clipId);
+    };
+  }, [clipId, element, trackMuted]);
+
+  // Update volume continuously (separate effect so volume changes don't reconnect)
+  useEffect(() => {
+    if (!element || trackMuted) return;
+    audioManager.setVolume(clipId, volume);
+  }, [clipId, volume, element, trackMuted]);
+}
+
 /** Managed video element for non-topmost clips (handles its own src/seek/play). */
 function ManagedVideoElement({
   activeClip,
@@ -23,12 +60,14 @@ function ManagedVideoElement({
   isPlaying,
   canvasW,
   canvasH,
+  trackMuted,
 }: {
   activeClip: ActiveClip;
   projectId: string;
   isPlaying: boolean;
   canvasW: number;
   canvasH: number;
+  trackMuted: boolean;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
   const lastClipIdRef = useRef<string>("");
@@ -39,6 +78,10 @@ function ManagedVideoElement({
   const assetW = activeClip.asset.width ?? canvasW;
   const assetH = activeClip.asset.height ?? canvasH;
   const mediaUrl = getVideoMediaUrl(activeClip.asset, projectId);
+  const volume = getClipVolume(activeClip);
+
+  // Connect audio through AudioManager
+  useAudioConnection(activeClip.clip.id, ref.current, volume, trackMuted);
 
   // Handle source changes
   useEffect(() => {
@@ -100,7 +143,23 @@ function ManagedVideoElement({
     <video
       ref={ref}
       style={mediaStyle(activeClip.clip.crop, assetW, assetH)}
-      muted
+    />
+  );
+}
+
+/** Wrapper for the topmost video clip that connects audio via AudioManager. */
+function TopmostVideoElement({ activeClip, ctx }: { activeClip: ActiveClip; ctx: PreviewRenderContext }) {
+  const assetW = activeClip.asset.width ?? ctx.canvasW;
+  const assetH = activeClip.asset.height ?? ctx.canvasH;
+  const volume = getClipVolume(activeClip);
+  const trackMuted = ctx.project.sequence.tracks[activeClip.trackIndex]?.muted ?? false;
+
+  useAudioConnection(activeClip.clip.id, ctx.videoRef.current, volume, trackMuted);
+
+  return (
+    <video
+      ref={ctx.videoRef}
+      style={mediaStyle(activeClip.clip.crop, assetW, assetH)}
     />
   );
 }
@@ -113,10 +172,9 @@ function VideoClipComponent({ content, ctx }: { content: unknown; ctx: PreviewRe
     <>
       {activeClips.map((activeClip) => {
         const isTopmost = activeClip === topmostClip;
-        const assetW = activeClip.asset.width ?? ctx.canvasW;
-        const assetH = activeClip.asset.height ?? ctx.canvasH;
         const blendMode = activeClip.clip.blendMode ?? "cover";
         const strategy = compositeStrategyRegistry.get(blendMode);
+        const trackMuted = ctx.project.sequence.tracks[activeClip.trackIndex]?.muted ?? false;
 
         const transStyle = computeTransitionStyle(activeClip.clip, ctx.project, ctx.currentTimeMs);
         const containerStyle = {
@@ -130,11 +188,7 @@ function VideoClipComponent({ content, ctx }: { content: unknown; ctx: PreviewRe
         return (
           <div key={activeClip.clip.id} style={containerStyle}>
             {isTopmost ? (
-              <video
-                ref={ctx.videoRef}
-                style={mediaStyle(activeClip.clip.crop, assetW, assetH)}
-                muted
-              />
+              <TopmostVideoElement activeClip={activeClip} ctx={ctx} />
             ) : (
               <ManagedVideoElement
                 activeClip={activeClip}
@@ -142,6 +196,7 @@ function VideoClipComponent({ content, ctx }: { content: unknown; ctx: PreviewRe
                 isPlaying={ctx.isPlaying}
                 canvasW={ctx.canvasW}
                 canvasH={ctx.canvasH}
+                trackMuted={trackMuted}
               />
             )}
           </div>
