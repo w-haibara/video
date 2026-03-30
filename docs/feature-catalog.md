@@ -34,7 +34,7 @@
 - [title-font-align](#title-font-align) — Title overlay with fontFamily and align
 - [p5js-rendered](#p5js-rendered) — p5.js sketch rendered from source via Chromium pipeline
 
-### Editor Operation Snapshots (67)
+### Editor Operation Snapshots (117)
 
 - [editor operation regression workflow: add video → add image → move clip → trim 1](#editor-operation-regression-workflow-add-video-add-image-move-clip-trim-1)
 - [editor operation regression workflow: multi-track with text overlay 1](#editor-operation-regression-workflow-multi-track-with-text-overlay-1)
@@ -103,6 +103,56 @@
 - [editor operation regression workflow: setTrackColor 1](#editor-operation-regression-workflow-settrackcolor-1)
 - [editor operation regression workflow: duplicate clip with transition clears transition on duplicate 1](#editor-operation-regression-workflow-duplicate-clip-with-transition-clears-transition-on-duplicate-1)
 - [editor operation regression workflow: split then ripple delete one half 1](#editor-operation-regression-workflow-split-then-ripple-delete-one-half-1)
+- [keyframe tracks regression workflow: clip with keyframeTracks preserves through move 1](#keyframe-tracks-regression-workflow-clip-with-keyframetracks-preserves-through-move-1)
+- [keyframe tracks regression workflow: clip with keyframeTracks preserves through trim 1](#keyframe-tracks-regression-workflow-clip-with-keyframetracks-preserves-through-trim-1)
+- [keyframe tracks regression workflow: clip with keyframeTracks preserves through split 1](#keyframe-tracks-regression-workflow-clip-with-keyframetracks-preserves-through-split-1)
+- [keyframe tracks regression workflow: clip with keyframeTracks preserves through duplicate 1](#keyframe-tracks-regression-workflow-clip-with-keyframetracks-preserves-through-duplicate-1)
+- [keyframe tracks regression workflow: clip with keyframeTracks preserves through paste 1](#keyframe-tracks-regression-workflow-clip-with-keyframetracks-preserves-through-paste-1)
+- [keyframe tracks regression workflow: pasteAttributes does not copy keyframeTracks 1](#keyframe-tracks-regression-workflow-pasteattributes-does-not-copy-keyframetracks-1)
+- [keyframe tracks regression workflow: clip with keyframeTracks + transform + blend 1](#keyframe-tracks-regression-workflow-clip-with-keyframetracks-transform-blend-1)
+- [keyframe tracks regression workflow: addKeyframe creates track and adds keyframes 1](#keyframe-tracks-regression-workflow-addkeyframe-creates-track-and-adds-keyframes-1)
+- [keyframe tracks regression workflow: addKeyframe replaces at same time 1](#keyframe-tracks-regression-workflow-addkeyframe-replaces-at-same-time-1)
+- [keyframe tracks regression workflow: removeKeyframe removes single keyframe 1](#keyframe-tracks-regression-workflow-removekeyframe-removes-single-keyframe-1)
+- [keyframe tracks regression workflow: removeKeyframe removes last kf cleans up track 1](#keyframe-tracks-regression-workflow-removekeyframe-removes-last-kf-cleans-up-track-1)
+- [keyframe tracks regression workflow: updateKeyframe changes value and easing 1](#keyframe-tracks-regression-workflow-updatekeyframe-changes-value-and-easing-1)
+- [keyframe tracks regression workflow: keyframe ops combined with move and trim 1](#keyframe-tracks-regression-workflow-keyframe-ops-combined-with-move-and-trim-1)
+- [keyframe tracks regression workflow: keyframe ops with multiple properties on same clip 1](#keyframe-tracks-regression-workflow-keyframe-ops-with-multiple-properties-on-same-clip-1)
+- [keyframe tracks regression workflow: set clip speed to 2x 1](#keyframe-tracks-regression-workflow-set-clip-speed-to-2x-1)
+- [keyframe tracks regression workflow: set clip speed to 0.5x 1](#keyframe-tracks-regression-workflow-set-clip-speed-to-05x-1)
+- [keyframe tracks regression workflow: change speed multiple times preserves source duration 1](#keyframe-tracks-regression-workflow-change-speed-multiple-times-preserves-source-duration-1)
+- [keyframe tracks regression workflow: speed change + trim + move 1](#keyframe-tracks-regression-workflow-speed-change-trim-move-1)
+- [keyframe tracks regression workflow: add color correction to video clip 1](#keyframe-tracks-regression-workflow-add-color-correction-to-video-clip-1)
+- [keyframe tracks regression workflow: color correction preserved through move 1](#keyframe-tracks-regression-workflow-color-correction-preserved-through-move-1)
+- [keyframe tracks regression workflow: color correction preserved through trim 1](#keyframe-tracks-regression-workflow-color-correction-preserved-through-trim-1)
+- [keyframe tracks regression workflow: color correction preserved through split 1](#keyframe-tracks-regression-workflow-color-correction-preserved-through-split-1)
+- [keyframe tracks regression workflow: color correction preserved through duplicate 1](#keyframe-tracks-regression-workflow-color-correction-preserved-through-duplicate-1)
+- [keyframe tracks regression workflow: color correction + transform + blend mode combined 1](#keyframe-tracks-regression-workflow-color-correction-transform-blend-mode-combined-1)
+- [keyframe tracks regression workflow: reset color correction (set to undefined) 1](#keyframe-tracks-regression-workflow-reset-color-correction-set-to-undefined-1)
+- [keyframe tracks regression workflow: add video filters to video clip 1](#keyframe-tracks-regression-workflow-add-video-filters-to-video-clip-1)
+- [keyframe tracks regression workflow: video filters preserved through move 1](#keyframe-tracks-regression-workflow-video-filters-preserved-through-move-1)
+- [keyframe tracks regression workflow: video filters preserved through trim 1](#keyframe-tracks-regression-workflow-video-filters-preserved-through-trim-1)
+- [keyframe tracks regression workflow: video filters preserved through split 1](#keyframe-tracks-regression-workflow-video-filters-preserved-through-split-1)
+- [keyframe tracks regression workflow: video filters preserved through duplicate 1](#keyframe-tracks-regression-workflow-video-filters-preserved-through-duplicate-1)
+- [keyframe tracks regression workflow: video filters + color correction + transform combined 1](#keyframe-tracks-regression-workflow-video-filters-color-correction-transform-combined-1)
+- [keyframe tracks regression workflow: reset video filters (set to undefined) 1](#keyframe-tracks-regression-workflow-reset-video-filters-set-to-undefined-1)
+- [keyframe tracks regression workflow: set chroma key on video clip 1](#keyframe-tracks-regression-workflow-set-chroma-key-on-video-clip-1)
+- [keyframe tracks regression workflow: chroma key preserved through split 1](#keyframe-tracks-regression-workflow-chroma-key-preserved-through-split-1)
+- [keyframe tracks regression workflow: chroma key preserved through duplicate 1](#keyframe-tracks-regression-workflow-chroma-key-preserved-through-duplicate-1)
+- [keyframe tracks regression workflow: chroma key + transform combined 1](#keyframe-tracks-regression-workflow-chroma-key-transform-combined-1)
+- [keyframe tracks regression workflow: remove chroma key (set to undefined) 1](#keyframe-tracks-regression-workflow-remove-chroma-key-set-to-undefined-1)
+- [keyframe tracks regression workflow: apply PiP corner-br preset 1](#keyframe-tracks-regression-workflow-apply-pip-corner-br-preset-1)
+- [keyframe tracks regression workflow: apply PiP corner-tl preset 1](#keyframe-tracks-regression-workflow-apply-pip-corner-tl-preset-1)
+- [keyframe tracks regression workflow: apply PiP side-by-side preset 1](#keyframe-tracks-regression-workflow-apply-pip-side-by-side-preset-1)
+- [keyframe tracks regression workflow: apply PiP top-bottom preset 1](#keyframe-tracks-regression-workflow-apply-pip-top-bottom-preset-1)
+- [keyframe tracks regression workflow: PiP preset overwrites existing transform 1](#keyframe-tracks-regression-workflow-pip-preset-overwrites-existing-transform-1)
+- [keyframe tracks regression workflow: all four PiP corner presets 1](#keyframe-tracks-regression-workflow-all-four-pip-corner-presets-1)
+- [keyframe tracks regression workflow: speed preserved through split 1](#keyframe-tracks-regression-workflow-speed-preserved-through-split-1)
+- [keyframe tracks regression workflow: speed preserved through duplicate 1](#keyframe-tracks-regression-workflow-speed-preserved-through-duplicate-1)
+- [keyframe tracks regression workflow: speed preserved through paste 1](#keyframe-tracks-regression-workflow-speed-preserved-through-paste-1)
+- [keyframe tracks regression workflow: chroma key preserved through move 1](#keyframe-tracks-regression-workflow-chroma-key-preserved-through-move-1)
+- [keyframe tracks regression workflow: chroma key preserved through paste 1](#keyframe-tracks-regression-workflow-chroma-key-preserved-through-paste-1)
+- [keyframe tracks regression workflow: PiP preset transform preserved through split 1](#keyframe-tracks-regression-workflow-pip-preset-transform-preserved-through-split-1)
+- [keyframe tracks regression workflow: PiP preset transform preserved through duplicate 1](#keyframe-tracks-regression-workflow-pip-preset-transform-preserved-through-duplicate-1)
 
 ## Export Regression Tests
 
@@ -2441,6 +2491,875 @@ track-0   [VVVVVVVVVVVVVVVVVVVVVVVVV[IIIIIIIIIIIIIII][IIIIIIIIIIIIIII]
 ```
           0s         1s         2s         3s         4s         5s
 track-0   [VVVVVVVVVVVVVVVVVVVVVVVVV][IIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+```
+
+---
+
+### keyframe tracks regression workflow: clip with keyframeTracks preserves through move 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 5000ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s    1s    2s    3s    4s    5s    6s    7s    8s    9s    10s
+track-0                                 [VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: clip with keyframeTracks preserves through trim 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 4000ms | 0-4000ms | - |
+
+**Timeline**
+
+```
+          0s             1s             2s             3s             4s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: clip with keyframeTracks preserves through split 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 2500ms | 0-2500ms | - |
+| track-0 | clip-1 | video | v1 | 2500ms | 2500ms | 2500-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: clip with keyframeTracks preserves through duplicate 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+| track-0 | clip-1 | video | v1 | 5000ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s    1s    2s    3s    4s    5s    6s    7s    8s    9s    10s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: clip with keyframeTracks preserves through paste 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+| track-0 | clip-1 | video | v1 | 10000ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s      2s      4s      6s      8s      10s     12s     14s
+track-0   [VVVVVVVVVVVVVVVVVV]                    [VVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: pasteAttributes does not copy keyframeTracks 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | transform(10,5,1.5,undefineddeg) |
+| track-0 | clip-1 | image | i1 | 5000ms | 3000ms | 0-3000ms | transform(10,5,1.5,undefineddeg) |
+
+**Timeline**
+
+```
+          0s      1s     2s      3s     4s      5s     6s      7s     8s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV][IIIIIIIIIIIIIIIIIIII]
+```
+
+---
+
+### keyframe tracks regression workflow: clip with keyframeTracks + transform + blend 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | transform(10,-5,0.8,15deg), blend=screen |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: addKeyframe creates track and adds keyframes 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: addKeyframe replaces at same time 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: removeKeyframe removes single keyframe 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: removeKeyframe removes last kf cleans up track 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: updateKeyframe changes value and easing 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: keyframe ops combined with move and trim 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 1000ms | 4000ms | 0-4000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0               [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: keyframe ops with multiple properties on same clip 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: set clip speed to 2x 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 2500ms | 0-2500ms | - |
+
+**Timeline**
+
+```
+          0s          0.5s        1s          1.5s        2s          2.5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: set clip speed to 0.5x 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 10000ms | 0-10000ms | - |
+
+**Timeline**
+
+```
+          0s    1s    2s    3s    4s    5s    6s    7s    8s    9s    10s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: change speed multiple times preserves source duration 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: speed change + trim + move 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 2000ms | 0-2000ms | - |
+| track-0 | clip-1 | image | i1 | 3000ms | 3000ms | 0-3000ms | - |
+
+**Timeline**
+
+```
+          0s        1s        2s        3s        4s        5s        6s
+track-0   [VVVVVVVVVVVVVVVVVV]          [IIIIIIIIIIIIIIIIIIIIIIIIIIII]
+```
+
+---
+
+### keyframe tracks regression workflow: add color correction to video clip 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: color correction preserved through move 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 2000ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s       1s      2s       3s      4s       5s      6s       7s
+track-0                    [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: color correction preserved through trim 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 4000ms | 0-4000ms | - |
+
+**Timeline**
+
+```
+          0s             1s             2s             3s             4s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: color correction preserved through split 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 2500ms | 0-2500ms | - |
+| track-0 | clip-1 | video | v1 | 2500ms | 2500ms | 2500-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: color correction preserved through duplicate 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+| track-0 | clip-1 | video | v1 | 5000ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s    1s    2s    3s    4s    5s    6s    7s    8s    9s    10s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: color correction + transform + blend mode combined 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | transform(10,-5,0.8,15deg), blend=multiply |
+| track-0 | clip-1 | image | i1 | 5000ms | 3000ms | 0-3000ms | - |
+
+**Timeline**
+
+```
+          0s      1s     2s      3s     4s      5s     6s      7s     8s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV][IIIIIIIIIIIIIIIIIIII]
+```
+
+---
+
+### keyframe tracks regression workflow: reset color correction (set to undefined) 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: add video filters to video clip 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: video filters preserved through move 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 2000ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s       1s      2s       3s      4s       5s      6s       7s
+track-0                    [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: video filters preserved through trim 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 4000ms | 0-4000ms | - |
+
+**Timeline**
+
+```
+          0s             1s             2s             3s             4s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: video filters preserved through split 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 2500ms | 0-2500ms | - |
+| track-0 | clip-1 | video | v1 | 2500ms | 2500ms | 2500-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: video filters preserved through duplicate 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+| track-0 | clip-1 | video | v1 | 5000ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s    1s    2s    3s    4s    5s    6s    7s    8s    9s    10s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: video filters + color correction + transform combined 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | transform(10,-5,0.8,15deg), blend=multiply |
+| track-0 | clip-1 | image | i1 | 5000ms | 3000ms | 0-3000ms | - |
+
+**Timeline**
+
+```
+          0s      1s     2s      3s     4s      5s     6s      7s     8s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV][IIIIIIIIIIIIIIIIIIII]
+```
+
+---
+
+### keyframe tracks regression workflow: reset video filters (set to undefined) 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: set chroma key on video clip 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: chroma key preserved through split 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 2500ms | 0-2500ms | - |
+| track-0 | clip-1 | video | v1 | 2500ms | 2500ms | 2500-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: chroma key preserved through duplicate 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+| track-0 | clip-1 | video | v1 | 5000ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s    1s    2s    3s    4s    5s    6s    7s    8s    9s    10s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: chroma key + transform combined 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | transform(20,10,0.6,0deg) |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: remove chroma key (set to undefined) 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: apply PiP corner-br preset 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | transform(662,368,0.3,0deg) |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: apply PiP corner-tl preset 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | transform(-662,-368,0.3,0deg) |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: apply PiP side-by-side preset 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | transform(-480,0,0.5,0deg) |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: apply PiP top-bottom preset 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | transform(0,-270,0.5,0deg) |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: PiP preset overwrites existing transform 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | transform(662,368,0.3,0deg) |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: all four PiP corner presets 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | transform(662,-368,0.3,0deg) |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: speed preserved through split 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 1250ms | 0-1250ms | - |
+| track-0 | clip-1 | video | v1 | 1250ms | 1250ms | 1250-2500ms | - |
+
+**Timeline**
+
+```
+          0s          0.5s        1s          1.5s        2s          2.5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: speed preserved through duplicate 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 2500ms | 0-2500ms | - |
+| track-0 | clip-1 | video | v1 | 2500ms | 2500ms | 0-2500ms | - |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: speed preserved through paste 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 2500ms | 0-2500ms | - |
+| track-0 | clip-1 | video | v1 | 5000ms | 2500ms | 0-2500ms | - |
+
+**Timeline**
+
+```
+          0s      1s      2s      3s      4s      5s      6s      7s
+track-0   [VVVVVVVVVVVVVVVVVV]                    [VVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: chroma key preserved through move 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 2000ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s       1s      2s       3s      4s       5s      6s       7s
+track-0                    [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: chroma key preserved through paste 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+| track-0 | clip-1 | video | v1 | 8000ms | 5000ms | 0-5000ms | - |
+
+**Timeline**
+
+```
+          0s       2s       4s        6s       8s       10s      12s
+track-0   [VVVVVVVVVVVVVVVVVVVVV]              [VVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: PiP preset transform preserved through split 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 2500ms | 0-2500ms | transform(662,368,0.3,0deg) |
+| track-0 | clip-1 | video | v1 | 2500ms | 2500ms | 2500-5000ms | transform(662,368,0.3,0deg) |
+
+**Timeline**
+
+```
+          0s          1s          2s          3s          4s          5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+```
+
+---
+
+### keyframe tracks regression workflow: PiP preset transform preserved through duplicate 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | transform(662,368,0.3,0deg) |
+| track-0 | clip-1 | video | v1 | 5000ms | 5000ms | 0-5000ms | transform(662,368,0.3,0deg) |
+
+**Timeline**
+
+```
+          0s    1s    2s    3s    4s    5s    6s    7s    8s    9s    10s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVV][VVVVVVVVVVVVVVVVVVVVVVVVVVVV]
 ```
 
 ---
