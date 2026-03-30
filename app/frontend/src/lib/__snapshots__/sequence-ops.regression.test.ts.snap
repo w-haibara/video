@@ -2866,3 +2866,100 @@ exports[`keyframe tracks regression workflow: keyframe ops with multiple propert
   ],
 }
 `;
+
+exports[`keyframe tracks regression workflow: set clip speed to 2x 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 2500,
+          "speed": 2,
+          "startMs": 0,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: set clip speed to 0.5x 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 10000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 10000,
+          "speed": 0.5,
+          "startMs": 0,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: change speed multiple times preserves source duration 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "speed": 1,
+          "startMs": 0,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: speed change + trim + move 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 2000,
+          "speed": 2,
+          "startMs": 0,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 3000,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;

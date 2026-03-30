@@ -35,6 +35,9 @@ import {
   makeCropBlendProject,
   makeTitleFontAlignProject,
   makeKeyframeTransformXProject,
+  makeSpeed2xProject,
+  makeSpeedHalfProject,
+  makeSpeedMultiClipProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -118,6 +121,9 @@ const EXPORT_TESTS: Array<{
   { name: "crop-blend", description: "Crop + screen blend on top clip", factory: makeCropBlendProject },
   { name: "title-font-align", description: "Title overlay with fontFamily and align", factory: makeTitleFontAlignProject },
   { name: "keyframe-transform-x", description: "Keyframe animated transform.x (horizontal movement)", factory: makeKeyframeTransformXProject },
+  { name: "speed-2x", description: "Video clip at 2x speed (500ms)", factory: makeSpeed2xProject },
+  { name: "speed-half", description: "Video clip at 0.5x speed (2000ms)", factory: makeSpeedHalfProject },
+  { name: "speed-multi-clip", description: "Two clips: first at 2x speed, second normal", factory: makeSpeedMultiClipProject },
   { name: "p5js-rendered", description: "p5.js sketch rendered from source via Chromium pipeline", factory: makeP5jsProject },
 ];
 
@@ -219,6 +225,9 @@ function collectClipProps(clip: Clip, verbose: boolean): string[] {
   if (clip.blendMode) {
     props.push(verbose ? `blend: ${clip.blendMode}` : `blend=${clip.blendMode}`);
   }
+  if (clip.speed != null && clip.speed !== 1) {
+    props.push(verbose ? `speed: ${clip.speed}x` : `speed=${clip.speed}x`);
+  }
   return props;
 }
 
@@ -228,6 +237,7 @@ const BADGE_KEYS: Array<{ key: keyof Clip; label: string }> = [
   { key: "crop", label: "C" },
   { key: "volume", label: "V" },
   { key: "text", label: "Tx" },
+  { key: "speed", label: "S" },
 ];
 
 function clipBadges(clip: Clip): string {

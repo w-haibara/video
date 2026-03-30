@@ -92,6 +92,7 @@ export type Clip = {
   crop?: ClipCrop;
   blendMode?: string; // 省略時は "cover" として扱う
   transition?: ClipTransition; // このクリップの先頭に適用されるトランジション
+  speed?: number; // playback speed multiplier, default 1.0 (0.25–4.0)
   groupId?: string; // グループID（同じgroupIdを持つクリップは一緒に選択される）
   keyframeTracks?: KeyframeTrack[];
 };

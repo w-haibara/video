@@ -1109,3 +1109,66 @@ export function updateKeyframe(
   }));
   return { ...sequence, tracks };
 }
+
+// ── Speed control ──
+
+/** Minimum allowed speed multiplier. */
+export const MIN_SPEED = 0.25;
+/** Maximum allowed speed multiplier. */
+export const MAX_SPEED = 4.0;
+
+/**
+ * Set the playback speed of a clip.
+ * Adjusts `durationMs` and `outMs` based on the new speed relative to the
+ * original source duration (outMs − inMs at speed=1).
+ *
+ * The "source duration" is the portion of the original media that the clip
+ * uses: `outMs - inMs` when speed is 1.0. When speed changes, we compute
+ * the new timeline duration as `sourceDuration / speed`, then update
+ * `durationMs` and `outMs` accordingly.
+ */
+export function setClipSpeed(
+  sequence: Sequence,
+  clipId: string,
+  speed: number,
+  maxDurationMs?: number,
+): Sequence {
+  if (isClipOnLockedTrack(sequence, clipId)) return sequence;
+
+  // Clamp speed to valid range
+  const clampedSpeed = Math.max(MIN_SPEED, Math.min(MAX_SPEED, speed));
+
+  const tracks = sequence.tracks.map((track: Track) => ({
+    ...track,
+    clips: track.clips.map((c: Clip) => {
+      if (c.id !== clipId) return c;
+
+      // The source duration is the range of media content being used.
+      // When speed was previously set, we need the original source range.
+      const currentSpeed = c.speed ?? 1;
+      // Original source duration at speed=1:
+      // current durationMs = sourceDuration / currentSpeed
+      // so sourceDuration = current durationMs * currentSpeed
+      const sourceDurationMs = c.durationMs * currentSpeed;
+
+      // New timeline duration at the new speed
+      let newDurationMs = Math.round(sourceDurationMs / clampedSpeed);
+
+      // Clamp to maxDurationMs if needed
+      if (maxDurationMs != null && c.startMs + newDurationMs > maxDurationMs) {
+        newDurationMs = maxDurationMs - c.startMs;
+      }
+
+      // Ensure minimum duration
+      newDurationMs = Math.max(100, newDurationMs);
+
+      return {
+        ...c,
+        speed: clampedSpeed,
+        durationMs: newDurationMs,
+        outMs: c.inMs + newDurationMs,
+      };
+    }),
+  }));
+  return { ...sequence, tracks };
+}

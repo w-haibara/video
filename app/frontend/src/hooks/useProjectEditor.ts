@@ -217,6 +217,13 @@ export function useProjectEditor(
     [sequence, pushState],
   );
 
+  const setClipSpeed = useCallback(
+    (clipId: string, speed: number) => {
+      pushState(SeqOps.setClipSpeed(sequence, clipId, speed, maxDurationMs));
+    },
+    [sequence, pushState, maxDurationMs],
+  );
+
   return {
     addClipFromAsset,
     removeClip,
@@ -243,5 +250,6 @@ export function useProjectEditor(
     addKeyframe,
     removeKeyframe,
     updateKeyframe,
+    setClipSpeed,
   };
 }

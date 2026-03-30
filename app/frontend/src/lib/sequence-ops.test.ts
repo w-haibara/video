@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
 import { inferTrackKind } from "@video/shared";
-import { addClipFromAsset, addEmptyClip, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, moveClips, groupClips, ungroupClips, expandGroupSelection, setTrackLocked, setTrackMuted, setTrackName, setTrackColor, isClipOnLockedTrack, areAnyClipsOnLockedTrack } from "./sequence-ops";
+import { addClipFromAsset, addEmptyClip, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, moveClips, groupClips, ungroupClips, expandGroupSelection, setTrackLocked, setTrackMuted, setTrackName, setTrackColor, isClipOnLockedTrack, areAnyClipsOnLockedTrack, setClipSpeed, MIN_SPEED, MAX_SPEED } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -1819,5 +1819,132 @@ describe("setTrackColor", () => {
     const result = setTrackColor(multiSeq, "t2", "#859900");
     expect(result.tracks[0].color).toBe("#DC322F");
     expect(result.tracks[1].color).toBe("#859900");
+  });
+});
+
+describe("setClipSpeed", () => {
+  const makeSeq = (clip: Clip): Sequence => ({
+    tracks: [{ id: "t1", clips: [clip] }],
+  });
+
+  const baseClip: Clip = {
+    id: "c1",
+    clipKind: "video",
+    assetId: "v1",
+    startMs: 0,
+    durationMs: 5000,
+    inMs: 0,
+    outMs: 5000,
+  };
+
+  test("sets speed and adjusts durationMs for 2x speed", () => {
+    const seq = makeSeq({ ...baseClip });
+    const result = setClipSpeed(seq, "c1", 2);
+    const clip = result.tracks[0].clips[0];
+    expect(clip.speed).toBe(2);
+    expect(clip.durationMs).toBe(2500); // 5000 / 2
+    expect(clip.outMs).toBe(2500); // inMs(0) + 2500
+  });
+
+  test("sets speed and adjusts durationMs for 0.5x speed", () => {
+    const seq = makeSeq({ ...baseClip });
+    const result = setClipSpeed(seq, "c1", 0.5);
+    const clip = result.tracks[0].clips[0];
+    expect(clip.speed).toBe(0.5);
+    expect(clip.durationMs).toBe(10000); // 5000 / 0.5
+    expect(clip.outMs).toBe(10000);
+  });
+
+  test("preserves original source duration across multiple speed changes", () => {
+    const seq = makeSeq({ ...baseClip });
+    // Set to 2x first
+    const result1 = setClipSpeed(seq, "c1", 2);
+    expect(result1.tracks[0].clips[0].durationMs).toBe(2500);
+    // Then change to 0.5x (should use original 5000ms source)
+    const result2 = setClipSpeed(result1, "c1", 0.5);
+    const clip = result2.tracks[0].clips[0];
+    expect(clip.speed).toBe(0.5);
+    expect(clip.durationMs).toBe(10000);
+  });
+
+  test("clamps speed to MIN_SPEED", () => {
+    const seq = makeSeq({ ...baseClip });
+    const result = setClipSpeed(seq, "c1", 0.1);
+    expect(result.tracks[0].clips[0].speed).toBe(MIN_SPEED); // 0.25
+    expect(result.tracks[0].clips[0].durationMs).toBe(20000); // 5000 / 0.25
+  });
+
+  test("clamps speed to MAX_SPEED", () => {
+    const seq = makeSeq({ ...baseClip });
+    const result = setClipSpeed(seq, "c1", 10);
+    expect(result.tracks[0].clips[0].speed).toBe(MAX_SPEED); // 4.0
+    expect(result.tracks[0].clips[0].durationMs).toBe(1250); // 5000 / 4
+  });
+
+  test("clamps duration to maxDurationMs", () => {
+    const seq = makeSeq({ ...baseClip, startMs: 4000, durationMs: 5000 });
+    // At 0.5x speed, duration would be 10000ms, but startMs + 10000 = 14000 > maxDuration
+    const result = setClipSpeed(seq, "c1", 0.5, 8000);
+    const clip = result.tracks[0].clips[0];
+    expect(clip.durationMs).toBe(4000); // clamped to 8000 - 4000
+  });
+
+  test("does not modify clip on locked track", () => {
+    const seq: Sequence = {
+      tracks: [{ id: "t1", clips: [{ ...baseClip }], locked: true }],
+    };
+    const result = setClipSpeed(seq, "c1", 2);
+    expect(result.tracks[0].clips[0].speed).toBeUndefined();
+    expect(result.tracks[0].clips[0].durationMs).toBe(5000);
+  });
+
+  test("does not modify other clips on the same track", () => {
+    const seq: Sequence = {
+      tracks: [{
+        id: "t1",
+        clips: [
+          { ...baseClip },
+          { ...baseClip, id: "c2", startMs: 5000 },
+        ],
+      }],
+    };
+    const result = setClipSpeed(seq, "c1", 2);
+    expect(result.tracks[0].clips[0].speed).toBe(2);
+    expect(result.tracks[0].clips[1].speed).toBeUndefined();
+    expect(result.tracks[0].clips[1].durationMs).toBe(5000);
+  });
+
+  test("handles clip with non-zero inMs", () => {
+    const seq = makeSeq({ ...baseClip, inMs: 1000, outMs: 4000, durationMs: 3000 });
+    const result = setClipSpeed(seq, "c1", 2);
+    const clip = result.tracks[0].clips[0];
+    expect(clip.speed).toBe(2);
+    expect(clip.durationMs).toBe(1500); // 3000 / 2
+    expect(clip.outMs).toBe(2500); // inMs(1000) + 1500
+    expect(clip.inMs).toBe(1000); // unchanged
+  });
+
+  test("setting speed back to 1 restores original duration", () => {
+    const seq = makeSeq({ ...baseClip });
+    const result1 = setClipSpeed(seq, "c1", 2);
+    const result2 = setClipSpeed(result1, "c1", 1);
+    const clip = result2.tracks[0].clips[0];
+    expect(clip.speed).toBe(1);
+    expect(clip.durationMs).toBe(5000);
+    expect(clip.outMs).toBe(5000);
+  });
+
+  test("ensures minimum duration of 100ms", () => {
+    const seq = makeSeq({ ...baseClip, durationMs: 200 });
+    // At 4x speed: 200 / 4 = 50, should be clamped to 100
+    const result = setClipSpeed(seq, "c1", 4);
+    expect(result.tracks[0].clips[0].durationMs).toBe(100);
+  });
+
+  test("returns unchanged sequence for non-existent clip", () => {
+    const seq = makeSeq({ ...baseClip });
+    const result = setClipSpeed(seq, "nonexistent", 2);
+    expect(result.tracks[0].clips[0].durationMs).toBe(5000);
+    expect(result.tracks[0].clips[0].speed).toBeUndefined();
   });
 });
