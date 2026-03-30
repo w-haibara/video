@@ -58,6 +58,11 @@ import {
   makeChromaKeyTransformProject,
   makePipCornerBrProject,
   makePipSideBySideProject,
+  makeSpeedTransitionProject,
+  makeColorCorrectionVideoFilterProject,
+  makeKeyframeColorCorrectionProject,
+  makeVideoFilterTransitionProject,
+  makeChromaKeyBlendProject,
   CANVAS_W,
   CANVAS_H,
   FPS,
@@ -462,5 +467,25 @@ describe("export regression", () => {
 
   test("pip preset: side-by-side", async () => {
     await runExportRegression("pip-side-by-side", makePipSideBySideProject());
+  }, 30_000);
+
+  test("speed + transition combo", async () => {
+    await runExportRegression("speed-transition", makeSpeedTransitionProject());
+  }, 30_000);
+
+  test("color correction + video filter stacked", async () => {
+    await runExportRegression("color-correction-video-filter", makeColorCorrectionVideoFilterProject());
+  }, 30_000);
+
+  test("keyframe + color correction combo", async () => {
+    await runExportRegression("keyframe-color-correction", makeKeyframeColorCorrectionProject());
+  }, 30_000);
+
+  test("video filter + transition combo", async () => {
+    await runExportRegression("video-filter-transition", makeVideoFilterTransitionProject());
+  }, 30_000);
+
+  test("chroma key + blend mode combo", async () => {
+    await runExportRegression("chroma-key-blend", makeChromaKeyBlendProject());
   }, 30_000);
 });

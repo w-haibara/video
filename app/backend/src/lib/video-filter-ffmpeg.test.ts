@@ -106,6 +106,30 @@ describe("buildVideoFilterFfmpeg", () => {
     expect(buildVideoFilterFfmpeg([{ type: "unknown", strength: 0.5 }])).toBe("");
   });
 
+  test("filter order matches input array order (sepia before grayscale)", () => {
+    const result = buildVideoFilterFfmpeg([
+      { type: "sepia", strength: 0.8 },
+      { type: "grayscale", strength: 0.6 },
+    ]);
+    // Both produce colorchannelmixer; sepia should come first
+    const sepiaIdx = result.indexOf("colorchannelmixer=");
+    const grayscaleIdx = result.indexOf("colorchannelmixer=", sepiaIdx + 1);
+    expect(sepiaIdx).toBeGreaterThan(-1);
+    expect(grayscaleIdx).toBeGreaterThan(sepiaIdx);
+
+    // Reverse order: grayscale before sepia
+    const reversed = buildVideoFilterFfmpeg([
+      { type: "grayscale", strength: 1.0 },
+      { type: "sepia", strength: 1.0 },
+    ]);
+    // At full strength, grayscale has R=0.300 and sepia has R=0.393
+    const parts = reversed.split(",colorchannelmixer=");
+    // parts[0] is empty (leading comma), parts[1] is first filter, parts[2] is second
+    expect(parts.length).toBe(3);
+    expect(parts[1]).toContain("0.300"); // grayscale R weight
+    expect(parts[2]).toContain("0.393"); // sepia R weight
+  });
+
   test("all six filters combined", () => {
     const result = buildVideoFilterFfmpeg([
       { type: "blur", strength: 0.2 },

@@ -937,6 +937,130 @@ export function makePipCornerBrProject(): Project {
   });
 }
 
+/** Two clips: clip 1 at 2x speed, clip 2 has fade transition (speed + transition combo). */
+export function makeSpeedTransitionProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    settings: { durationMs: 2000, canvasWidth: CANVAS_W, canvasHeight: CANVAS_H },
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", startMs: 0, durationMs: 500, inMs: 0, outMs: 500, speed: 2 }),
+          makeClip({
+            id: "c2",
+            clipKind: "image",
+            assetId: "img1",
+            startMs: 200,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+            transition: { type: "fade", durationMs: 300 },
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** One clip with both colorCorrection and videoFilters stacked. */
+export function makeColorCorrectionVideoFilterProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            colorCorrection: { brightness: 0.3 },
+            videoFilters: [{ type: "sepia", strength: 0.5 }],
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** One clip with keyframe on transform.x AND colorCorrection. */
+export function makeKeyframeColorCorrectionProject(): Project {
+  return baseProject({
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            transform: { x: 0, y: 0, scale: 0.5, rotation: 0 },
+            colorCorrection: { brightness: 0.2, contrast: 0.1 },
+            keyframeTracks: [
+              {
+                property: "transform.x",
+                keyframes: [
+                  { timeMs: 0, value: -40 },
+                  { timeMs: 1000, value: 40 },
+                ],
+              },
+            ],
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** Two clips: clip 2 has both transition and videoFilters (grayscale). */
+export function makeVideoFilterTransitionProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    settings: { durationMs: 2000, canvasWidth: CANVAS_W, canvasHeight: CANVAS_H },
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", startMs: 0, durationMs: 1000, outMs: 1000 }),
+          makeClip({
+            id: "c2",
+            clipKind: "image",
+            assetId: "img1",
+            startMs: 700,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+            transition: { type: "fade", durationMs: 300 },
+            videoFilters: [{ type: "grayscale", strength: 1.0 }],
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** Two tracks: upper clip has chromaKey and blendMode. */
+export function makeChromaKeyBlendProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset],
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            id: "c1",
+            clipKind: "image",
+            assetId: "img1",
+            startMs: 0,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+          }),
+        ]),
+        makeTrack(
+          [
+            makeClip({
+              id: "c2",
+              chromaKey: { color: "#00ff00", similarity: 0.3, blend: 0.1 },
+              blendMode: "screen",
+            }),
+          ],
+          "t2",
+        ),
+      ],
+    },
+  });
+}
+
 /** PiP preset: side-by-side (scale 0.5). */
 export function makePipSideBySideProject(): Project {
   return baseProject({

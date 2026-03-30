@@ -3765,3 +3765,255 @@ exports[`keyframe tracks regression workflow: all four PiP corner presets 1`] = 
   ],
 }
 `;
+
+exports[`keyframe tracks regression workflow: speed preserved through split 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 1250,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 1250,
+          "speed": 2,
+          "startMs": 0,
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 1250,
+          "id": "clip-1",
+          "inMs": 1250,
+          "outMs": 2500,
+          "speed": 2,
+          "startMs": 1250,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: speed preserved through duplicate 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 2500,
+          "speed": 2,
+          "startMs": 0,
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 2500,
+          "speed": 2,
+          "startMs": 2500,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: speed preserved through paste 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 2500,
+          "speed": 2,
+          "startMs": 0,
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 2500,
+          "speed": 2,
+          "startMs": 5000,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: chroma key preserved through move 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "chromaKey": {
+            "blend": 0.1,
+            "color": "#00ff00",
+            "similarity": 0.3,
+          },
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 2000,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: chroma key preserved through paste 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "chromaKey": {
+            "blend": 0.2,
+            "color": "#0000ff",
+            "similarity": 0.5,
+          },
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "v1",
+          "chromaKey": {
+            "blend": 0.2,
+            "color": "#0000ff",
+            "similarity": 0.5,
+          },
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 8000,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: PiP preset transform preserved through split 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 2500,
+          "startMs": 0,
+          "transform": {
+            "rotation": 0,
+            "scale": 0.3,
+            "x": 662,
+            "y": 368,
+          },
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-1",
+          "inMs": 2500,
+          "outMs": 5000,
+          "startMs": 2500,
+          "transform": {
+            "rotation": 0,
+            "scale": 0.3,
+            "x": 662,
+            "y": 368,
+          },
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`keyframe tracks regression workflow: PiP preset transform preserved through duplicate 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+          "transform": {
+            "rotation": 0,
+            "scale": 0.3,
+            "x": 662,
+            "y": 368,
+          },
+        },
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 5000,
+          "transform": {
+            "rotation": 0,
+            "scale": 0.3,
+            "x": 662,
+            "y": 368,
+          },
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
