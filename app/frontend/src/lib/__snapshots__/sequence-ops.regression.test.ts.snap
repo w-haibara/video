@@ -1872,3 +1872,171 @@ exports[`editor operation regression workflow: ripple delete of one clip in a gr
   ],
 }
 `;
+
+exports[`editor operation regression workflow: removeTransition restores startMs and clears transition 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 5000,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: setTrackName 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 5000,
+        },
+      ],
+      "id": "track-0",
+      "name": "My Video Track",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: setTrackColor 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 5000,
+        },
+      ],
+      "color": "#DC322F",
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: duplicate clip with transition clears transition on duplicate 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 5000,
+          "id": "clip-0",
+          "inMs": 0,
+          "outMs": 5000,
+          "startMs": 0,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 4500,
+          "transition": {
+            "durationMs": 500,
+            "type": "fade",
+          },
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "id": "clip-2",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 7500,
+          "transition": undefined,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;
+
+exports[`editor operation regression workflow: split then ripple delete one half 1`] = `
+{
+  "tracks": [
+    {
+      "clips": [
+        {
+          "assetId": "v1",
+          "clipKind": "video",
+          "durationMs": 2500,
+          "id": "clip-0",
+          "inMs": 2500,
+          "outMs": 5000,
+          "startMs": 0,
+          "transition": undefined,
+        },
+        {
+          "assetId": "i1",
+          "clipKind": "image",
+          "durationMs": 3000,
+          "id": "clip-1",
+          "inMs": 0,
+          "outMs": 3000,
+          "startMs": 2500,
+        },
+      ],
+      "id": "track-0",
+    },
+  ],
+}
+`;

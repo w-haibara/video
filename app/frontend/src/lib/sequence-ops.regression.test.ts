@@ -14,6 +14,7 @@ import {
   removeClip,
   removeTrack,
   setTransition,
+  removeTransition,
   rippleDelete,
   rippleTrim,
   duplicateClip,
@@ -25,6 +26,8 @@ import {
   ungroupClips,
   setTrackLocked,
   setTrackMuted,
+  setTrackName,
+  setTrackColor,
 } from "./sequence-ops";
 
 const videoAsset: Asset = {
@@ -1033,6 +1036,74 @@ describe("editor operation regression", () => {
     const before = stabilize(seq);
     const afterPaste = pasteClip(seq, clip, 6000, trackId, 30000);
     expect(stabilize(afterPaste)).toEqual(before);
+  });
+
+  test("workflow: removeTransition restores startMs and clears transition", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+
+    // Set transition on image clip — this shifts startMs backward
+    const imageClipId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, imageClipId, { type: "fade", durationMs: 500 });
+
+    // Now remove it — startMs should be restored, transition cleared
+    seq = removeTransition(seq, imageClipId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: setTrackName", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+
+    const trackId = seq.tracks[0].id;
+    seq = setTrackName(seq, trackId, "My Video Track");
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: setTrackColor", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+
+    const trackId = seq.tracks[0].id;
+    seq = setTrackColor(seq, trackId, "#DC322F");
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: duplicate clip with transition clears transition on duplicate", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 30000);
+    seq = addClipFromAsset(seq, imageAsset, 30000);
+
+    // Set transition on the image clip
+    const imageClipId = seq.tracks[0].clips[1].id;
+    seq = setTransition(seq, imageClipId, { type: "fade", durationMs: 500 });
+
+    // Duplicate the clip with transition
+    seq = duplicateClip(seq, imageClipId, 30000);
+
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: split then ripple delete one half", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+
+    // Split the video clip at midpoint
+    const videoClipId = seq.tracks[0].clips[0].id;
+    seq = splitClip(seq, videoClipId, 2500);
+
+    // Ripple delete the first half — second half and image should shift left
+    const firstHalfId = seq.tracks[0].clips[0].id;
+    seq = rippleDelete(seq, firstHalfId);
+
+    expect(stabilize(seq)).toMatchSnapshot();
   });
 });
 
