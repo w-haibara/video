@@ -45,3 +45,7 @@ export function thumbnailDir(projectId: string): string {
 export function exportDir(projectId: string): string {
   return resolveWorkspacePath("projects", projectId, "exports");
 }
+
+export function renderCacheDir(projectId: string): string {
+  return resolveWorkspacePath("projects", projectId, "render-cache");
+}

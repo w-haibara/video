@@ -82,11 +82,13 @@ describe("webRenderStep", () => {
 
       await webRenderStep.execute(ctx);
 
-      // Verify asset path was updated
-      expect(ctx.asset.originalPath).toBe("assets/test-asset-rendered.mp4");
+      // Verify the rendered MP4 path is stored in shared context
+      const renderedMp4Path = ctx.shared.get("renderedMp4Path") as string;
+      expect(renderedMp4Path).toBeDefined();
 
-      // Verify the MP4 file exists
-      const outputPath = join(tmpProjectDir, ctx.asset.originalPath);
+      // Verify the MP4 file exists (in assets dir since no cacheManager)
+      const outputPath = join(tmpProjectDir, "assets", "test-asset-rendered.mp4");
+      expect(renderedMp4Path).toBe(outputPath);
       const fileStat = await stat(outputPath);
       expect(fileStat.size).toBeGreaterThan(0);
 

@@ -1,6 +1,7 @@
 import type { PipelineStep } from "../types";
+import type { RenderCacheManager } from "../../services/render-cache-manager";
 import { chromiumTool } from "../tools/chromium";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 import { writeFile, mkdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 
@@ -38,10 +39,17 @@ export const webRenderStep: PipelineStep = {
     try {
       await writeFile(tmpHtmlPath, html);
 
-      // 2. Output path in assets dir
-      const outputDir = join(ctx.projectDir, "assets");
-      await mkdir(outputDir, { recursive: true });
-      const outputPath = join(outputDir, `${ctx.asset.id}-rendered.mp4`);
+      // 2. Output path — use render-cache when cacheManager is available, otherwise assets dir
+      const cacheManager = ctx.cacheManager ?? ctx.shared.get("cacheManager") as RenderCacheManager | undefined;
+      let outputPath: string;
+      if (cacheManager) {
+        outputPath = cacheManager.renderedMp4Path(ctx.asset.id);
+        await mkdir(dirname(outputPath), { recursive: true });
+      } else {
+        const outputDir = join(ctx.projectDir, "assets");
+        await mkdir(outputDir, { recursive: true });
+        outputPath = join(outputDir, `${ctx.asset.id}-rendered.mp4`);
+      }
 
       // 3. Launch Chromium and navigate
       const session = await chromiumTool.launch({ width, height });
@@ -142,11 +150,16 @@ export const webRenderStep: PipelineStep = {
 
         ctx.reportProgress(1.0);
 
-        // 7. Preserve original source path and update originalPath to rendered MP4
-        if (!ctx.asset.sourcePath) {
-          ctx.asset.sourcePath = ctx.asset.originalPath;
+        // 7. Store rendered path in shared context for downstream steps
+        ctx.shared.set("renderedMp4Path", outputPath);
+        if (cacheManager) {
+          // Compute source hash for cache commit
+          const { createHash } = await import("node:crypto");
+          const { readFile: readFileAsync } = await import("node:fs/promises");
+          const sourceData = await readFileAsync(join(ctx.projectDir, ctx.asset.originalPath));
+          const sourceHash = createHash("sha256").update(sourceData).digest("hex");
+          ctx.shared.set("sourceHash", sourceHash);
         }
-        ctx.asset.originalPath = `assets/${ctx.asset.id}-rendered.mp4`;
       } finally {
         await session.close();
       }

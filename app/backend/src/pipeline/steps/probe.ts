@@ -8,7 +8,9 @@ export const probeStep: PipelineStep = {
   canHandle: () => true,
 
   async execute(ctx) {
-    const inputPath = join(ctx.projectDir, ctx.asset.originalPath);
+    // If a rendered MP4 is available (e.g., from web-render), probe that instead of the source
+    const renderedMp4Path = ctx.shared.get("renderedMp4Path") as string | undefined;
+    const inputPath = renderedMp4Path ?? join(ctx.projectDir, ctx.asset.originalPath);
     const result = await ffmpegTool.probe(inputPath);
 
     ctx.asset.width = result.width;

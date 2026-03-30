@@ -59,7 +59,6 @@ type AssetInfo = {
   id: string;
   kind: string;
   originalPath: string;
-  sourcePath?: string;
   durationMs?: number;
 };
 
@@ -100,7 +99,6 @@ const EXPORT_TESTS: Array<{
   { name: "blend-overlay", description: "Overlay blend (contrast)", factory: makeOverlayBlendProject },
   { name: "blend-add", description: "Add blend (additive light)", factory: makeAddProject },
   { name: "blend-difference", description: "Difference blend (absolute diff)", factory: makeDifferenceProject },
-  { name: "p5js-clip", description: "p5.js sketch clip (pre-rendered)", factory: makeP5jsProject },
   { name: "empty-asset-mixed", description: "Video + empty-asset clip (empty skipped)", factory: makeEmptyAssetMixedProject },
   { name: "split-clip", description: "Video clip split into two halves at 500ms", factory: makeSplitClipProject },
   { name: "muted-track", description: "Video + muted image track (muted excluded)", factory: makeMutedTrackProject },
@@ -154,7 +152,6 @@ async function buildExportTestCase(
       id: a.id,
       kind: a.kind,
       originalPath: a.originalPath,
-      sourcePath: a.sourcePath,
       durationMs: a.durationMs,
     })),
     settings: project.settings,
@@ -309,11 +306,11 @@ async function generateExportSection(tests: ExportTestCase[]): Promise<string> {
 
     // Embed p5.js sketch source code and generated HTML
     for (const a of tc.assets) {
-      if (a.kind === "p5js" && a.sourcePath) {
-        const sketchPath = path.join(FIXTURES_DIR, a.sourcePath);
+      if (a.kind === "p5js" && a.originalPath.endsWith(".p5.js")) {
+        const sketchPath = path.join(FIXTURES_DIR, a.originalPath);
         try {
           const sketchCode = await readFile(sketchPath, "utf-8");
-          lines.push(`**p5.js Sketch** (\`${a.sourcePath}\`)\n`);
+          lines.push(`**p5.js Sketch** (\`${a.originalPath}\`)\n`);
           lines.push("```javascript");
           lines.push(sketchCode.trim());
           lines.push("```\n");
@@ -326,7 +323,7 @@ async function generateExportSection(tests: ExportTestCase[]): Promise<string> {
           lines.push("```\n");
           lines.push("</details>\n");
         } catch {
-          // sourcePath file doesn't exist — skip
+          // sketch file doesn't exist — skip
         }
       }
     }

@@ -7,8 +7,6 @@ export type Asset = {
   id: string;
   kind: AssetKind;
   originalPath: string;
-  /** Original source file path (e.g., .p5.js sketch) preserved when originalPath is overwritten by pipeline */
-  sourcePath?: string;
   proxyPath?: string;
   thumbnailPath?: string;
   width?: number;

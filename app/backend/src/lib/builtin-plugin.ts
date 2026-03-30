@@ -3,6 +3,7 @@ import type { AssetDetectorRegistry } from "./asset-detector-registry";
 import type { ExportHandlerRegistry } from "./export-handler-registry";
 import type { CompositeStrategyRegistry } from "./composite-strategy-registry";
 import type { TransitionExportRegistry } from "./transition-export-registry";
+import type { GenerativeAssetHandlerRegistry } from "./generative-asset-handler-registry";
 import { extensionDetector } from "./asset-detectors/extension-detector";
 import { p5jsDetector } from "./asset-detectors/p5js-detector";
 import { videoClipHandler } from "./export-handlers/video-clip-handler";
@@ -13,8 +14,10 @@ import { probeStep } from "../pipeline/steps/probe";
 import { thumbnailStep } from "../pipeline/steps/thumbnail";
 import { proxyStep } from "../pipeline/steps/proxy";
 import { imageConvertStep } from "../pipeline/steps/image-convert";
-import { p5jsPrepareStep } from "../pipeline/steps/p5js-prepare";
 import { webRenderStep } from "../pipeline/steps/web-render";
+import { generativePrepareStep } from "../pipeline/steps/generative-prepare";
+import { webRenderCommitStep } from "../pipeline/steps/web-render-commit";
+import { p5jsHandler } from "./generative-asset-handlers/p5js-handler";
 import { coverExportStrategy } from "./composite-strategies/cover-strategy";
 import { opacityExportStrategy } from "./composite-strategies/opacity-strategy";
 import {
@@ -61,19 +64,25 @@ export const builtinPlugin: BackendPlugin = {
     reg.registerStep(thumbnailStep);
     reg.registerStep(proxyStep);
     reg.registerStep(imageConvertStep);
-    reg.registerStep(p5jsPrepareStep);
     reg.registerStep(webRenderStep);
+    reg.registerStep(generativePrepareStep);
+    reg.registerStep(webRenderCommitStep);
 
     reg.definePipeline("video", ["probe", "thumbnail", "proxy"]);
     reg.definePipeline("image", ["probe", "thumbnail", "image-convert"]);
     reg.definePipeline("audio", ["probe"]);
     reg.definePipeline("p5js", [
-      "p5js-prepare",
+      "generative-prepare",
       "web-render",
       "probe",
       "thumbnail",
       "proxy",
+      "web-render-commit",
     ]);
+  },
+
+  registerGenerativeAssetHandlers(registry: GenerativeAssetHandlerRegistry) {
+    registry.register(p5jsHandler);
   },
 
   registerCompositeStrategies(registry: CompositeStrategyRegistry) {

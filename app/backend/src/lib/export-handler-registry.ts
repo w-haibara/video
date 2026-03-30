@@ -9,6 +9,7 @@ export type ExportBuildContext = {
   inputIndex: number;
   clipInputIndices: Map<string, number>;
   clipHasTransform: Map<string, boolean>;
+  resolveAssetVideoPath: (asset: Asset) => string;
 };
 
 export type ExportClipHandler = {

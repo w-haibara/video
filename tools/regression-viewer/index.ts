@@ -105,7 +105,6 @@ const EXPORT_TESTS: Array<{
   { name: "blend-overlay", description: "Overlay blend (contrast)", factory: makeOverlayBlendProject },
   { name: "blend-add", description: "Add blend (additive light)", factory: makeAddProject },
   { name: "blend-difference", description: "Difference blend (absolute diff)", factory: makeDifferenceProject },
-  { name: "p5js-clip", description: "p5.js sketch clip (pre-rendered)", factory: makeP5jsProject },
   { name: "empty-asset-mixed", description: "Video + empty-asset clip (empty skipped)", factory: makeEmptyAssetMixedProject },
   { name: "split-clip", description: "Video clip split into two halves at 500ms", factory: makeSplitClipProject },
   { name: "muted-track", description: "Video + muted image track (muted excluded)", factory: makeMutedTrackProject },

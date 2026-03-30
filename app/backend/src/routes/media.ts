@@ -44,4 +44,25 @@ media.get("/projects/:projectId/:type/:filename", async (c) => {
   return new Response(file, { headers });
 });
 
+// Serve files from render-cache/{assetId}/{filename}
+media.get("/projects/:projectId/render-cache/:assetId/:filename", async (c) => {
+  const { projectId, assetId, filename } = c.req.param();
+  const filePath = resolveWorkspacePath(
+    "projects",
+    projectId,
+    "render-cache",
+    assetId,
+    filename,
+  );
+  const file = Bun.file(filePath);
+  if (!(await file.exists())) {
+    return c.json({ error: "File not found" }, 404);
+  }
+
+  const ext = path.extname(filename).toLowerCase();
+  const contentType = MIME_TYPES[ext] ?? "application/octet-stream";
+
+  return new Response(file, { headers: { "Content-Type": contentType } });
+});
+
 export { media };

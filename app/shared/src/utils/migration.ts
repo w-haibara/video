@@ -32,6 +32,19 @@ export function migrateProject(raw: unknown): Project {
 
   let needsMigration = false;
 
+  // Migrate sourcePath → originalPath for generative assets
+  if (project.assets) {
+    for (const asset of project.assets) {
+      const rawAsset = asset as Record<string, unknown>;
+      if (rawAsset.sourcePath) {
+        // sourcePath was the original source file — it should now be originalPath
+        rawAsset.originalPath = rawAsset.sourcePath;
+        delete rawAsset.sourcePath;
+        needsMigration = true;
+      }
+    }
+  }
+
   for (const track of project.sequence.tracks) {
     const trackKind = (track as Record<string, unknown>).kind as string | undefined;
 

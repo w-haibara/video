@@ -129,6 +129,41 @@ describe("migrateProject", () => {
   });
 });
 
+describe("sourcePath migration", () => {
+  test("migrates sourcePath to originalPath for assets with sourcePath", () => {
+    const raw = {
+      id: "p1",
+      name: "Test",
+      createdAt: "2025-01-01T00:00:00Z",
+      updatedAt: "2025-01-01T00:00:00Z",
+      assets: [
+        { id: "p5js1", kind: "p5js", originalPath: "assets/rendered.mp4", sourcePath: "assets/sketch.p5.js" },
+      ],
+      sequence: { tracks: [] },
+      settings: { durationMs: 30000, canvasWidth: 1920, canvasHeight: 1080 },
+    };
+    const project = migrateProject(raw);
+    expect(project.assets[0].originalPath).toBe("assets/sketch.p5.js");
+    expect((project.assets[0] as Record<string, unknown>).sourcePath).toBeUndefined();
+  });
+
+  test("does not modify assets without sourcePath", () => {
+    const raw = {
+      id: "p1",
+      name: "Test",
+      createdAt: "2025-01-01T00:00:00Z",
+      updatedAt: "2025-01-01T00:00:00Z",
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/video.mp4" },
+      ],
+      sequence: { tracks: [] },
+      settings: { durationMs: 30000, canvasWidth: 1920, canvasHeight: 1080 },
+    };
+    const project = migrateProject(raw);
+    expect(project.assets[0].originalPath).toBe("assets/video.mp4");
+  });
+});
+
 describe("Clip defaults", () => {
   test("Clip.clipKind is set during migration", () => {
     const raw = makeOldProject();

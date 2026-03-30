@@ -1,12 +1,11 @@
 import type { ExportClipHandler, ExportBuildContext } from "../export-handler-registry";
 import type { Clip, Asset } from "@video/shared";
-import path from "node:path";
 import { buildTransformFilter, hasClipTransform } from "../../services/export-service";
 
 export const videoClipHandler: ExportClipHandler = {
   assetKind: "video",
   buildInput(clip: Clip, asset: Asset, ctx: ExportBuildContext): void {
-    const assetPath = path.join(ctx.assetsBase, path.basename(asset.originalPath));
+    const assetPath = ctx.resolveAssetVideoPath(asset);
 
     let effectiveDurationMs = Math.min(clip.durationMs, clip.outMs - clip.inMs);
     if (asset.durationMs) {
