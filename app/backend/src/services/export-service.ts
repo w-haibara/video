@@ -1,4 +1,4 @@
-import type { Project, Clip, ExportPreset, Asset } from "@video/shared";
+import type { Project, Clip, ExportPreset, Asset, ClipColorCorrection } from "@video/shared";
 import { hasKeyframes, buildKeyframeFilterExpression } from "@video/shared";
 import type { Job } from "@video/shared";
 import { mkdir, readdir } from "node:fs/promises";
@@ -65,6 +65,66 @@ export function buildTransformFilter(
 
   if (scale !== 1) {
     parts.push(`scale=iw*${scale}:ih*${scale}`);
+  }
+
+  if (parts.length === 0) return "";
+  return "," + parts.join(",");
+}
+
+/**
+ * Check whether a clip has non-identity color correction.
+ */
+export function hasColorCorrection(cc: ClipColorCorrection | undefined): boolean {
+  if (!cc) return false;
+  return (
+    (cc.brightness ?? 0) !== 0 ||
+    (cc.contrast ?? 0) !== 0 ||
+    (cc.saturation ?? 0) !== 0 ||
+    (cc.hue ?? 0) !== 0 ||
+    (cc.temperature ?? 0) !== 0
+  );
+}
+
+/**
+ * Build FFmpeg filter segment for clip color correction.
+ * Uses `eq` for brightness/contrast/saturation, `hue` for hue rotation,
+ * and `colortemperature` for temperature adjustment.
+ * Returns comma-prefixed filter chain or empty string.
+ */
+export function buildColorCorrectionFilter(cc: ClipColorCorrection | undefined): string {
+  if (!cc || !hasColorCorrection(cc)) return "";
+
+  const parts: string[] = [];
+
+  // eq filter: brightness, contrast, saturation
+  const eqParts: string[] = [];
+  const brightness = cc.brightness ?? 0;
+  const contrast = cc.contrast ?? 0;
+  const saturation = cc.saturation ?? 0;
+
+  // FFmpeg eq: brightness is additive (-1..1), contrast is multiplicative (0..2 where 1=no change),
+  // saturation is multiplicative (0..3 where 1=no change)
+  if (brightness !== 0) eqParts.push(`brightness=${brightness}`);
+  if (contrast !== 0) eqParts.push(`contrast=${1 + contrast}`);
+  if (saturation !== 0) eqParts.push(`saturation=${1 + saturation}`);
+
+  if (eqParts.length > 0) {
+    parts.push(`eq=${eqParts.join(":")}`);
+  }
+
+  // hue filter for hue rotation
+  const hue = cc.hue ?? 0;
+  if (hue !== 0) {
+    parts.push(`hue=h=${hue}`);
+  }
+
+  // colortemperature filter for temperature adjustment
+  const temperature = cc.temperature ?? 0;
+  if (temperature !== 0) {
+    // Map -1..1 to ~2000K..12000K (6500K = neutral)
+    // temperature -1 -> 2000K (cool), 0 -> 6500K (neutral), 1 -> 12000K (warm)
+    const kelvin = Math.round(6500 + temperature * 5500);
+    parts.push(`colortemperature=temperature=${kelvin}`);
   }
 
   if (parts.length === 0) return "";

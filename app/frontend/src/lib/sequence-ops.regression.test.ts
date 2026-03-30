@@ -1374,4 +1374,84 @@ describe("keyframe tracks regression", () => {
     seq = moveClip(seq, imageClipId, 3000, 20000);
     expect(stabilize(seq)).toMatchSnapshot();
   });
+
+  test("workflow: add color correction to video clip", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      colorCorrection: { brightness: 0.3, contrast: -0.2, saturation: 0.5, hue: 15, temperature: 0.1 },
+    });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: color correction preserved through move", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      colorCorrection: { brightness: 0.5, contrast: 0.2 },
+    });
+    seq = moveClip(seq, clipId, 2000, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: color correction preserved through trim", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      colorCorrection: { saturation: -0.5, hue: 90 },
+    });
+    seq = trimClip(seq, clipId, "right", -1000, 5000, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: color correction preserved through split", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      colorCorrection: { brightness: 0.2, temperature: -0.3 },
+    });
+    seq = splitClip(seq, clipId, 2500);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: color correction preserved through duplicate", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      colorCorrection: { contrast: 0.8, saturation: -0.3, hue: -45 },
+    });
+    seq = duplicateClip(seq, clipId, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: color correction + transform + blend mode combined", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    seq = addClipFromAsset(seq, imageAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      colorCorrection: { brightness: 0.1, contrast: 0.2, saturation: 0.3 },
+      transform: { x: 10, y: -5, scale: 0.8, rotation: 15 },
+      blendMode: "multiply",
+    });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: reset color correction (set to undefined)", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      colorCorrection: { brightness: 0.5, contrast: 0.3 },
+    });
+    seq = updateClip(seq, clipId, {
+      colorCorrection: undefined,
+    });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
 });

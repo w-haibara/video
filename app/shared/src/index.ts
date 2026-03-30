@@ -1,6 +1,6 @@
 // Types
 export type { Asset, AssetKind, BuiltinAssetKind } from "./types/asset";
-export type { Project, ProjectSettings, Sequence, Track, Clip, BuiltinClipKind, BuiltinBlendMode, BuiltinTransitionType, ClipText, ClipTransform, ClipCrop, ClipTransition, ExportPreset, Marker } from "./types/project";
+export type { Project, ProjectSettings, Sequence, Track, Clip, BuiltinClipKind, BuiltinBlendMode, BuiltinTransitionType, ClipText, ClipTransform, ClipCrop, ClipColorCorrection, ClipTransition, ExportPreset, Marker } from "./types/project";
 export type { Job, JobStatus } from "./types/job";
 export type { PluginManifest } from "./types/plugin";
 export type { CompositeStrategyDescriptor } from "./types/composite";

@@ -62,6 +62,14 @@ export type ClipCrop = {
   height: number;
 };
 
+export type ClipColorCorrection = {
+  brightness?: number;   // -1.0 to 1.0 (0 = no change)
+  contrast?: number;     // -1.0 to 1.0 (0 = no change)
+  saturation?: number;   // -1.0 to 1.0 (0 = no change)
+  hue?: number;          // -180 to 180 degrees (0 = no change)
+  temperature?: number;  // -1.0 to 1.0 (0 = no change, warm/cool)
+};
+
 /** Built-in transition types. ClipTransition.type accepts any string for plugins. */
 export type BuiltinTransitionType =
   | "fade" | "fade-black" | "fade-white"
@@ -95,6 +103,7 @@ export type Clip = {
   speed?: number; // playback speed multiplier, default 1.0 (0.25–4.0)
   groupId?: string; // グループID（同じgroupIdを持つクリップは一緒に選択される）
   keyframeTracks?: KeyframeTrack[];
+  colorCorrection?: ClipColorCorrection;
 };
 
 export type ExportPreset = {

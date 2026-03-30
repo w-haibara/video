@@ -1,6 +1,6 @@
 import type { ExportClipHandler, ExportBuildContext } from "../export-handler-registry";
 import type { Clip, Asset } from "@video/shared";
-import { buildTransformFilter, hasClipTransform } from "../../services/export-service";
+import { buildTransformFilter, hasClipTransform, buildColorCorrectionFilter } from "../../services/export-service";
 
 export const videoClipHandler: ExportClipHandler = {
   assetKind: "video",
@@ -38,6 +38,8 @@ export const videoClipHandler: ExportClipHandler = {
     // Speed filter: setpts=PTS/{speed} retimes the video
     const speedFilter = speed !== 1 ? `,setpts=PTS/${speed}` : "";
 
+    const ccFilter = buildColorCorrectionFilter(clip.colorCorrection);
+
     let chain: string;
     if (transformed) {
       // Transform present: output at natural size, position via overlay
@@ -45,7 +47,8 @@ export const videoClipHandler: ExportClipHandler = {
         `[${i}:v]trim=start=${trimStart}:duration=${duration},setpts=PTS-STARTPTS${ptsShift}` +
         `${speedFilter}` +
         `${userCrop},format=yuva420p` +
-        buildTransformFilter(clip, ctx.preset);
+        buildTransformFilter(clip, ctx.preset) +
+        ccFilter;
     } else {
       // No transform: pad+crop to canvas size (backward compatible)
       chain =
@@ -54,7 +57,8 @@ export const videoClipHandler: ExportClipHandler = {
         `${userCrop},` +
         `format=yuva420p,` +
         `pad=w='max(iw,${ctx.preset.width})':h='max(ih,${ctx.preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black@0,` +
-        `crop=${ctx.preset.width}:${ctx.preset.height}:(iw-${ctx.preset.width})/2:(ih-${ctx.preset.height})/2`;
+        `crop=${ctx.preset.width}:${ctx.preset.height}:(iw-${ctx.preset.width})/2:(ih-${ctx.preset.height})/2` +
+        ccFilter;
     }
 
     ctx.filterParts.push(`${chain}[v${i}]`);
