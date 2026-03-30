@@ -32,6 +32,7 @@ import {
   removeKeyframe,
   updateKeyframe,
   setClipSpeed,
+  applyPipPreset,
 } from "./sequence-ops";
 
 const videoAsset: Asset = {
@@ -1538,6 +1539,118 @@ describe("keyframe tracks regression", () => {
     seq = updateClip(seq, clipId, {
       videoFilters: undefined,
     });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  // ── Chroma Key tests ──
+
+  test("workflow: set chroma key on video clip", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      chromaKey: { color: "#00ff00", similarity: 0.3, blend: 0.1 },
+    });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: chroma key preserved through split", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      chromaKey: { color: "#0000ff", similarity: 0.5, blend: 0.2 },
+    });
+    seq = splitClip(seq, clipId, 2500);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: chroma key preserved through duplicate", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      chromaKey: { color: "#00ff00", similarity: 0.4, blend: 0.15 },
+    });
+    seq = duplicateClip(seq, clipId, 10000);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: chroma key + transform combined", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      chromaKey: { color: "#00ff00", similarity: 0.3, blend: 0.1 },
+      transform: { x: 20, y: 10, scale: 0.6, rotation: 0 },
+    });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: remove chroma key (set to undefined)", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      chromaKey: { color: "#00ff00", similarity: 0.3, blend: 0.1 },
+    });
+    seq = updateClip(seq, clipId, {
+      chromaKey: undefined,
+    });
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  // ── PiP Preset tests ──
+
+  test("workflow: apply PiP corner-br preset", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = applyPipPreset(seq, clipId, "corner-br", 1920, 1080);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: apply PiP corner-tl preset", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = applyPipPreset(seq, clipId, "corner-tl", 1920, 1080);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: apply PiP side-by-side preset", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = applyPipPreset(seq, clipId, "side-by-side", 1920, 1080);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: apply PiP top-bottom preset", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = applyPipPreset(seq, clipId, "top-bottom", 1920, 1080);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: PiP preset overwrites existing transform", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+    seq = updateClip(seq, clipId, {
+      transform: { x: 100, y: 50, scale: 2, rotation: 45 },
+    });
+    seq = applyPipPreset(seq, clipId, "corner-br", 1920, 1080);
+    expect(stabilize(seq)).toMatchSnapshot();
+  });
+
+  test("workflow: all four PiP corner presets", () => {
+    let seq: Sequence = { tracks: [] };
+    seq = addClipFromAsset(seq, videoAsset, 10000);
+    const clipId = seq.tracks[0].clips[0].id;
+
+    seq = applyPipPreset(seq, clipId, "corner-tr", 1920, 1080);
     expect(stabilize(seq)).toMatchSnapshot();
   });
 });

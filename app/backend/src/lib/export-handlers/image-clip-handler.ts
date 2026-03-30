@@ -1,6 +1,6 @@
 import type { ExportClipHandler, ExportBuildContext } from "../export-handler-registry";
 import type { Clip, Asset } from "@video/shared";
-import { buildTransformFilter, hasClipTransform, buildColorCorrectionFilter, buildVideoFilterFfmpeg } from "../../services/export-service";
+import { buildTransformFilter, hasClipTransform, buildColorCorrectionFilter, buildChromaKeyFilter, buildVideoFilterFfmpeg } from "../../services/export-service";
 
 export const imageClipHandler: ExportClipHandler = {
   assetKind: "image",
@@ -18,6 +18,7 @@ export const imageClipHandler: ExportClipHandler = {
     // consume frames during the disabled period before clip.startMs.
     const ptsShift = clip.startMs > 0 ? `,setpts=PTS+${clip.startMs / 1000}/TB` : "";
 
+    const ckFilter = buildChromaKeyFilter(clip.chromaKey);
     const ccFilter = buildColorCorrectionFilter(clip.colorCorrection);
     const vfFilter = buildVideoFilterFfmpeg(clip.videoFilters);
 
@@ -25,6 +26,7 @@ export const imageClipHandler: ExportClipHandler = {
     if (transformed) {
       chain =
         `[${i}:v]${userCrop}format=yuva420p,setsar=1` +
+        ckFilter +
         buildTransformFilter(clip, ctx.preset) +
         ccFilter +
         vfFilter +
@@ -32,7 +34,8 @@ export const imageClipHandler: ExportClipHandler = {
     } else {
       chain =
         `[${i}:v]${userCrop}` +
-        `format=yuva420p,` +
+        `format=yuva420p` +
+        ckFilter + `,` +
         `pad=w='max(iw,${ctx.preset.width})':h='max(ih,${ctx.preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black@0,` +
         `crop=${ctx.preset.width}:${ctx.preset.height}:(iw-${ctx.preset.width})/2:(ih-${ctx.preset.height})/2,setsar=1` +
         ccFilter +

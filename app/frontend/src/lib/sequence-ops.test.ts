@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import type { Asset, Clip, Sequence, Track } from "@video/shared";
 import { inferTrackKind } from "@video/shared";
-import { addClipFromAsset, addEmptyClip, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, moveClips, groupClips, ungroupClips, expandGroupSelection, setTrackLocked, setTrackMuted, setTrackName, setTrackColor, isClipOnLockedTrack, areAnyClipsOnLockedTrack, setClipSpeed, MIN_SPEED, MAX_SPEED } from "./sequence-ops";
+import { addClipFromAsset, addEmptyClip, removeClip, moveClip, trimClip, addTextClip, updateClip, findNonOverlappingPosition, clampClipsToDuration, removeTrack, setTransition, removeTransition, splitClip, rippleDelete, rippleTrim, duplicateClip, pasteClip, pasteAttributes, removeClips, moveClips, groupClips, ungroupClips, expandGroupSelection, setTrackLocked, setTrackMuted, setTrackName, setTrackColor, isClipOnLockedTrack, areAnyClipsOnLockedTrack, setClipSpeed, MIN_SPEED, MAX_SPEED, applyPipPreset } from "./sequence-ops";
 
 const emptySeq: Sequence = { tracks: [] };
 
@@ -1946,5 +1946,89 @@ describe("setClipSpeed", () => {
     const result = setClipSpeed(seq, "nonexistent", 2);
     expect(result.tracks[0].clips[0].durationMs).toBe(5000);
     expect(result.tracks[0].clips[0].speed).toBeUndefined();
+  });
+});
+
+describe("applyPipPreset", () => {
+  const baseClip: Clip = {
+    id: "c1",
+    clipKind: "video",
+    assetId: "v1",
+    startMs: 0,
+    durationMs: 5000,
+    inMs: 0,
+    outMs: 5000,
+  };
+  const makeSeq = (clip: Clip): Sequence => ({
+    tracks: [{ id: "t1", clips: [clip] }],
+  });
+
+  test("corner-br sets scale 0.3 and positive x/y", () => {
+    const seq = makeSeq(baseClip);
+    const result = applyPipPreset(seq, "c1", "corner-br", 1920, 1080);
+    const t = result.tracks[0].clips[0].transform!;
+    expect(t.scale).toBe(0.3);
+    expect(t.x).toBeGreaterThan(0);
+    expect(t.y).toBeGreaterThan(0);
+    expect(t.rotation).toBe(0);
+  });
+
+  test("corner-tl sets scale 0.3 and negative x/y", () => {
+    const seq = makeSeq(baseClip);
+    const result = applyPipPreset(seq, "c1", "corner-tl", 1920, 1080);
+    const t = result.tracks[0].clips[0].transform!;
+    expect(t.scale).toBe(0.3);
+    expect(t.x).toBeLessThan(0);
+    expect(t.y).toBeLessThan(0);
+  });
+
+  test("corner-tr sets positive x, negative y", () => {
+    const seq = makeSeq(baseClip);
+    const result = applyPipPreset(seq, "c1", "corner-tr", 1920, 1080);
+    const t = result.tracks[0].clips[0].transform!;
+    expect(t.scale).toBe(0.3);
+    expect(t.x).toBeGreaterThan(0);
+    expect(t.y).toBeLessThan(0);
+  });
+
+  test("corner-bl sets negative x, positive y", () => {
+    const seq = makeSeq(baseClip);
+    const result = applyPipPreset(seq, "c1", "corner-bl", 1920, 1080);
+    const t = result.tracks[0].clips[0].transform!;
+    expect(t.scale).toBe(0.3);
+    expect(t.x).toBeLessThan(0);
+    expect(t.y).toBeGreaterThan(0);
+  });
+
+  test("side-by-side sets scale 0.5 and negative x", () => {
+    const seq = makeSeq(baseClip);
+    const result = applyPipPreset(seq, "c1", "side-by-side", 1920, 1080);
+    const t = result.tracks[0].clips[0].transform!;
+    expect(t.scale).toBe(0.5);
+    expect(t.x).toBe(-480);
+    expect(t.y).toBe(0);
+  });
+
+  test("top-bottom sets scale 0.5 and negative y", () => {
+    const seq = makeSeq(baseClip);
+    const result = applyPipPreset(seq, "c1", "top-bottom", 1920, 1080);
+    const t = result.tracks[0].clips[0].transform!;
+    expect(t.scale).toBe(0.5);
+    expect(t.x).toBe(0);
+    expect(t.y).toBe(-270);
+  });
+
+  test("overwrites existing transform", () => {
+    const seq = makeSeq({ ...baseClip, transform: { x: 100, y: 200, scale: 3, rotation: 45 } });
+    const result = applyPipPreset(seq, "c1", "corner-br", 1920, 1080);
+    const t = result.tracks[0].clips[0].transform!;
+    expect(t.scale).toBe(0.3);
+    expect(t.rotation).toBe(0);
+  });
+
+  test("returns unchanged for non-existent clip", () => {
+    const seq = makeSeq(baseClip);
+    const result = applyPipPreset(seq, "nonexistent", "corner-br", 1920, 1080);
+    expect(result.tracks[0].clips[0].transform).toBeUndefined();
   });
 });
