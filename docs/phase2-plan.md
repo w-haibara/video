@@ -71,11 +71,9 @@ Week 5-6:   A5 (#14 Video Filters) + B4 (#20 Audio Detach) + B5 (#21 Audio Effec
 Week 6:     B6 (#22 Audio Meter)
 ```
 
-## Key Design Decisions Required
+## Design Decisions (Confirmed)
 
-### 1. Keyframe Data Model (#65)
-
-The `Keyframe` type must support both numeric properties (position, opacity, volume) and potentially enum properties (filter on/off). Proposed:
+### 1. Keyframe Data Model (#65) — Dotted path
 
 ```typescript
 type Keyframe = {
@@ -85,7 +83,7 @@ type Keyframe = {
 };
 
 type KeyframeTrack = {
-  property: string;    // "transform.x", "transform.scale", "volume", "brightness"
+  property: string;    // dotted path: "transform.x", "transform.scale", "volume", "color.brightness"
   keyframes: Keyframe[];
 };
 
@@ -93,52 +91,52 @@ type KeyframeTrack = {
 keyframeTracks?: KeyframeTrack[];
 ```
 
-**Decision needed**: Property naming convention. Flat (`"positionX"`) vs. dotted (`"transform.x"`)? Dotted is more readable but requires a path resolver.
+Property naming uses **dotted path** convention (`"transform.x"`, `"color.brightness"`). A path resolver maps dotted keys to nested clip properties. Readable, extensible, and groups related properties clearly.
 
-### 2. Preview vs. Export Keyframe Evaluation
+### 2. Preview vs. Export Keyframe Evaluation — Accept differences
 
 - **Preview**: JavaScript interpolation in `computeMediaContainerStyle()`, evaluated per animation frame (~60fps)
 - **Export**: FFmpeg expressions like `'if(between(t,0,2), 100+50*t, 200)'` or per-segment filter chains
 
-**Decision needed**: Accept visual differences between preview (CSS transforms) and export (FFmpeg filters), or invest in a unified expression evaluator?
+Same interpolation math, different rendering backends. Pixel-perfect preview-export parity is impractical with CSS vs. FFmpeg. Minor visual differences are acceptable.
 
-**Recommendation**: Accept minor differences. Pixel-perfect preview-export parity is impractical with CSS vs. FFmpeg. Use the same interpolation math but different rendering backends.
+### 3. Speed Control & Duration (#13) — Auto-adjust
 
-### 3. Speed Control & Duration (#13)
+Speed change **auto-adjusts** `durationMs` and `outMs`:
+- 2x speed → `durationMs` halved, `outMs` recalculated
+- 0.5x speed → `durationMs` doubled
 
-Speed change affects clip duration on the timeline:
-- 2x speed → half the timeline duration
-- 0.5x speed → double the timeline duration
+```typescript
+// On Clip:
+speed?: number;  // default 1.0
 
-**Decision needed**: Does speed change auto-adjust `durationMs`? Or does the user manually trim?
+// When speed changes:
+clip.durationMs = originalDuration / clip.speed;
+clip.outMs = clip.inMs + clip.durationMs;
 
-**Recommendation**: Auto-adjust `durationMs` and `outMs` when speed changes. Store `speed: number` on the clip. Export uses `setpts=PTS/{speed}`.
+// Export: setpts=PTS/{speed}
+```
 
-### 4. Color Correction Approach (#12)
+### 4. Color Correction Approach (#12) — CSS filter
 
-Two options:
-- **A. CSS filters in preview, FFmpeg filters in export** — fast preview, potential visual mismatch
-- **B. Canvas-based preview with LUT** — accurate preview, more complex
+Preview uses **CSS filters**: `filter: brightness() contrast() saturate() hue-rotate()`.
+Export uses **FFmpeg `eq`/`colorbalance` filters** with equivalent parameter mapping.
 
-**Recommendation**: Option A for initial implementation. CSS `filter: brightness() contrast() saturate()` maps well to FFmpeg `eq` filter.
+Fast implementation, good visual approximation. LUT support deferred to a follow-up if needed.
 
-### 5. Audio Mixing Architecture (#66)
+### 5. Audio Mixing Architecture (#66) — Single AudioContext
 
-- **Web Audio API** for preview: `AudioContext` → `GainNode` per source → `DestinationNode`
-- **FFmpeg `amix`** for export (already implemented for audio clips)
+Single shared `AudioContext` with per-clip `GainNode`:
+- One `AudioContext` per editor session
+- Each audio/video source gets a `MediaElementSourceNode` → `GainNode` → `DestinationNode`
+- Global mute toggles the destination gain
+- Export uses existing FFmpeg `amix` filter chain
 
-**Decision needed**: Should audio preview use a single shared `AudioContext` or one per clip?
+### 6. Waveform Data (#18) — Hybrid (server peaks + client render)
 
-**Recommendation**: Single shared `AudioContext` with per-clip `GainNode`. Simpler, lower latency, easier to implement global mute.
-
-### 6. Waveform Data (#18)
-
-Waveform data extraction options:
-- **A. Server-side**: FFmpeg extracts waveform data, stores as JSON
-- **B. Client-side**: Web Audio API `decodeAudioData` + `AnalyserNode`
-- **C. Hybrid**: Server extracts downsampled peaks, client renders
-
-**Recommendation**: Option C. Server generates peak data at import time (pipeline step), client renders. Keeps waveform fast at any zoom level.
+Server generates downsampled peak data at import time (pipeline step), stored as JSON.
+Client renders peaks on a `<canvas>` synchronized with timeline zoom.
+Fast at any zoom level without re-decoding audio.
 
 ## Risks
 
