@@ -135,12 +135,12 @@ export function PreviewPlayer({
 
   const hasMediaContent = layers.some((l) => (l.renderer.zOrder === 0 || l.renderer.id === "empty-asset") && l.content !== null);
 
-  // Get active video/p5js clips for video element management (topmost drives playback)
+  // Get the primary video/p5js clip for the single <video> element.
+  // Use the first (bottom-most) active clip — this is the main track clip.
+  // Overlay PiP clips cannot be driven by the same video element.
   const videoClips = layers.find((l) => l.renderer.id === "video-clip")?.content as ActiveClip[] | null;
   const p5jsClips = layers.find((l) => l.renderer.id === "p5js-clip")?.content as ActiveClip[] | null;
-  // Prefer video clip; fall back to p5js clip
-  const allVideoLike = [...(videoClips ?? []), ...(p5jsClips ?? [])];
-  const videoContent = allVideoLike.length > 0 ? allVideoLike[allVideoLike.length - 1] : null; // topmost
+  const videoContent = (videoClips?.[0]) ?? (p5jsClips?.[0]) ?? null;
   const hasVideoContent = videoContent !== null;
   const mediaUrl = videoContent ? getMediaUrl(videoContent.asset, project.id) : "";
 
@@ -279,6 +279,13 @@ export function PreviewPlayer({
       } else {
         // No active media — advance through gap between clips
         newTime = curTime + deltaMs;
+      }
+
+      // Fallback: if strategy returned null but we have active media, advance by wall-clock
+      // to prevent permanent freeze during video source transitions.
+      if (newTime === null && activeMedia) {
+        const clipEndMs = activeMedia.clip.startMs + activeMedia.clip.durationMs;
+        newTime = Math.min(curTime + deltaMs, clipEndMs);
       }
 
       if (newTime !== null) {

@@ -254,10 +254,13 @@ export const builtinPlugin: FrontendPlugin = {
         } else if (!videoReady) {
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
         } else if (sourceChanging || videoRef.readyState < 2) {
-          // Video is loading a new source — advance by wall-clock to avoid freezing
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
         } else if (videoRef.ended || videoEnded) {
           resetVideoEnded();
+          return Math.min(currentTimeMs + deltaMs, clipEndMs);
+        } else if (videoRef.paused && videoRef.readyState >= 2) {
+          // Video is loaded but paused (React effect hasn't called play yet) — kick it
+          videoRef.play().catch(() => {});
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
         } else if (!videoRef.paused) {
           const videoTimeMs = videoRef.currentTime * 1000;
@@ -285,10 +288,12 @@ export const builtinPlugin: FrontendPlugin = {
         } else if (!videoReady) {
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
         } else if (sourceChanging || videoRef.readyState < 2) {
-          // Video is loading a new source — advance by wall-clock to avoid freezing
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
         } else if (videoRef.ended || videoEnded) {
           resetVideoEnded();
+          return Math.min(currentTimeMs + deltaMs, clipEndMs);
+        } else if (videoRef.paused && videoRef.readyState >= 2) {
+          videoRef.play().catch(() => {});
           return Math.min(currentTimeMs + deltaMs, clipEndMs);
         } else if (!videoRef.paused) {
           const videoTimeMs = videoRef.currentTime * 1000;
