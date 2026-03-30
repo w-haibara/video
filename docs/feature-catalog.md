@@ -2,7 +2,7 @@
 
 ## Table of Contents
 
-### Export Regression Tests (27)
+### Export Regression Tests (29)
 
 - [single-video](#single-video) — Single 1s video clip
 - [two-clips](#two-clips) — Two sequential video clips (0-1s, 1-2s)
@@ -24,15 +24,17 @@
 - [blend-overlay](#blend-overlay) — Overlay blend (contrast)
 - [blend-add](#blend-add) — Add blend (additive light)
 - [blend-difference](#blend-difference) — Difference blend (absolute diff)
-- [p5js-clip](#p5js-clip) — p5.js sketch clip (pre-rendered)
 - [empty-asset-mixed](#empty-asset-mixed) — Video + empty-asset clip (empty skipped)
 - [split-clip](#split-clip) — Video clip split into two halves at 500ms
 - [muted-track](#muted-track) — Video + muted image track (muted excluded)
 - [transition-with-transform](#transition-with-transform) — Fade transition + transform on clip 2
 - [transition-multi-track](#transition-multi-track) — Fade transition on track 1 + image overlay on track 2
+- [blend-mode-transition](#blend-mode-transition) — Fade transition + multiply blend on clip 2
+- [crop-blend](#crop-blend) — Crop + screen blend on top clip
+- [title-font-align](#title-font-align) — Title overlay with fontFamily and align
 - [p5js-rendered](#p5js-rendered) — p5.js sketch rendered from source via Chromium pipeline
 
-### Editor Operation Snapshots (62)
+### Editor Operation Snapshots (67)
 
 - [editor operation regression workflow: add video → add image → move clip → trim 1](#editor-operation-regression-workflow-add-video-add-image-move-clip-trim-1)
 - [editor operation regression workflow: multi-track with text overlay 1](#editor-operation-regression-workflow-multi-track-with-text-overlay-1)
@@ -96,6 +98,11 @@
 - [track lock & mute regression setTrackMuted preserves track state 1](#track-lock-mute-regression-settrackmuted-preserves-track-state-1)
 - [track lock & mute regression setTrackMuted preserves track state 2](#track-lock-mute-regression-settrackmuted-preserves-track-state-2)
 - [editor operation regression workflow: ripple delete of one clip in a group 1](#editor-operation-regression-workflow-ripple-delete-of-one-clip-in-a-group-1)
+- [editor operation regression workflow: removeTransition restores startMs and clears transition 1](#editor-operation-regression-workflow-removetransition-restores-startms-and-clears-transition-1)
+- [editor operation regression workflow: setTrackName 1](#editor-operation-regression-workflow-settrackname-1)
+- [editor operation regression workflow: setTrackColor 1](#editor-operation-regression-workflow-settrackcolor-1)
+- [editor operation regression workflow: duplicate clip with transition clears transition on duplicate 1](#editor-operation-regression-workflow-duplicate-clip-with-transition-clears-transition-on-duplicate-1)
+- [editor operation regression workflow: split then ripple delete one half 1](#editor-operation-regression-workflow-split-then-ripple-delete-one-half-1)
 
 ## Export Regression Tests
 
@@ -840,108 +847,6 @@ t2        [IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
 
 ---
 
-### p5js-clip
-
-p5.js sketch clip (pre-rendered)
-
-**Project Settings**
-
-- Canvas: 160x90
-- Duration: 2000ms
-- Frames: 10
-
-**Assets**
-
-- `p5js1` (p5js, 1000ms) — assets/test-video-1s.mp4
-
-<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="p5js1 (p5js)"></video>
-
-**p5.js Sketch** (`assets/test-sketch.p5.js`)
-
-```javascript
-// Sample p5.js sketch — blue circle on red background
-function setup() {
-  createCanvas(160, 90);
-}
-
-function draw() {
-  background(220, 40, 40);
-  fill(40, 80, 220);
-  noStroke();
-  ellipse(width / 2, height / 2, 50, 50);
-}
-```
-
-<details>
-<summary><strong>Generated HTML (passed to Chromium for rendering)</strong></summary>
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>html,body{margin:0;padding:0;overflow:hidden;}</style>
-</head>
-<body>
-<script src="file:///home/alice/ghq/github.com/w-haibara/video/app/backend/vendor/p5.min.js"></script>
-<script>
-// User sketch code
-// Sample p5.js sketch — blue circle on red background
-function setup() {
-  createCanvas(160, 90);
-}
-
-function draw() {
-  background(220, 40, 40);
-  fill(40, 80, 220);
-  noStroke();
-  ellipse(width / 2, height / 2, 50, 50);
-}
-
-
-// Rendering control API for web-render step
-(function() {
-  var _origSetup = typeof setup === 'function' ? setup : function() {};
-  var _origDraw = typeof draw === 'function' ? draw : function() {};
-
-  window.setup = function() {
-    createCanvas(160, 90);
-    _origSetup();
-    noLoop();
-    window.__ready = true;
-  };
-
-  window.__renderFrame = function(frameIndex) {
-    // Advance to the target frame by calling draw
-    _origDraw();
-  };
-})();
-</script>
-</body>
-</html>
-```
-
-</details>
-
-**Clip Details**
-
-| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
-|-------|------|------|-------|-------|----------|--------|------------|
-| t1 | c1 | p5js | p5js1 | 0ms | 1000ms | 0-1000ms | - |
-
-**Timeline**
-
-```
-          0s                            0.5s                          1s
-t1        [PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP]
-```
-
-**Filmstrip**
-
-<img src="../app/backend/src/__fixtures__/export/references/p5js-clip/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/p5js-clip/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/p5js-clip/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/p5js-clip/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/p5js-clip/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/p5js-clip/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/p5js-clip/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/p5js-clip/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/p5js-clip/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/p5js-clip/frame_0010.png" width="80" title="frame 10">
-
----
-
 ### empty-asset-mixed
 
 Video + empty-asset clip (empty skipped)
@@ -1129,6 +1034,118 @@ t2                          [IIIIIIIIIIIIIII]
 
 ---
 
+### blend-mode-transition
+
+Fade transition + multiply blend on clip 2
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 18
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+| t1 | c2 | image | img1 | 700ms | 1000ms | 0-1000ms | blend=multiply, transition=fade 300ms |
+
+**Timeline**
+
+```
+          0s                0.5s             1s                1.5s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVV[IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0012.png" width="80" title="frame 12"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0013.png" width="80" title="frame 13"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0014.png" width="80" title="frame 14"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0015.png" width="80" title="frame 15"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0016.png" width="80" title="frame 16"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0017.png" width="80" title="frame 17"> <img src="../app/backend/src/__fixtures__/export/references/blend-mode-transition/frame_0018.png" width="80" title="frame 18">
+
+---
+
+### crop-blend
+
+Crop + screen blend on top clip
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 12
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+- `img1` (image) — assets/test-image.png
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video> <img src="../app/backend/src/__fixtures__/export/assets/test-image.png" width="160" title="img1 (image)">
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+| t2 | c2 | image | img1 | 0ms | 1000ms | 0-1000ms | crop(20,10,120x70), blend=screen |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+t2        [IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/crop-blend/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/crop-blend/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/crop-blend/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/crop-blend/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/crop-blend/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/crop-blend/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/crop-blend/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/crop-blend/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/crop-blend/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/crop-blend/frame_0010.png" width="80" title="frame 10"> <img src="../app/backend/src/__fixtures__/export/references/crop-blend/frame_0011.png" width="80" title="frame 11"> <img src="../app/backend/src/__fixtures__/export/references/crop-blend/frame_0012.png" width="80" title="frame 12">
+
+---
+
+### title-font-align
+
+Title overlay with fontFamily and align
+
+**Project Settings**
+
+- Canvas: 160x90
+- Duration: 2000ms
+- Frames: 10
+
+**Assets**
+
+- `v1` (video, 1000ms) — assets/test-video-1s.mp4
+
+<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="v1 (video)"></video>
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| t1 | c1 | video | v1 | 0ms | 1000ms | 0-1000ms | - |
+| t2 | tc1 | title | - | 0ms | 1000ms | 0-1000ms | text="Styled Title" 28px #ff0000, bg=#000000@0.8 |
+
+**Timeline**
+
+```
+          0s                            0.5s                          1s
+t1        [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV]
+t2        [TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT]
+```
+
+**Filmstrip**
+
+<img src="../app/backend/src/__fixtures__/export/references/title-font-align/frame_0001.png" width="80" title="frame 1"> <img src="../app/backend/src/__fixtures__/export/references/title-font-align/frame_0002.png" width="80" title="frame 2"> <img src="../app/backend/src/__fixtures__/export/references/title-font-align/frame_0003.png" width="80" title="frame 3"> <img src="../app/backend/src/__fixtures__/export/references/title-font-align/frame_0004.png" width="80" title="frame 4"> <img src="../app/backend/src/__fixtures__/export/references/title-font-align/frame_0005.png" width="80" title="frame 5"> <img src="../app/backend/src/__fixtures__/export/references/title-font-align/frame_0006.png" width="80" title="frame 6"> <img src="../app/backend/src/__fixtures__/export/references/title-font-align/frame_0007.png" width="80" title="frame 7"> <img src="../app/backend/src/__fixtures__/export/references/title-font-align/frame_0008.png" width="80" title="frame 8"> <img src="../app/backend/src/__fixtures__/export/references/title-font-align/frame_0009.png" width="80" title="frame 9"> <img src="../app/backend/src/__fixtures__/export/references/title-font-align/frame_0010.png" width="80" title="frame 10">
+
+---
+
 ### p5js-rendered
 
 p5.js sketch rendered from source via Chromium pipeline
@@ -1141,9 +1158,9 @@ p5.js sketch rendered from source via Chromium pipeline
 
 **Assets**
 
-- `p5js1` (p5js, 1000ms) — assets/test-video-1s.mp4
+- `p5js1` (p5js, 1000ms) — assets/test-sketch.p5.js
 
-<video src="../app/backend/src/__fixtures__/export/assets/test-video-1s.mp4" width="160" controls muted title="p5js1 (p5js)"></video>
+<video src="../app/backend/src/__fixtures__/export/assets/test-sketch.p5.js" width="160" controls muted title="p5js1 (p5js)"></video>
 
 **p5.js Sketch** (`assets/test-sketch.p5.js`)
 
@@ -2333,6 +2350,97 @@ track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV][IIIIIIIIIIIIIIIIIIII]
 ```
           0s   2s   4s  6s   8s   10s  12s  14s 16s  18s  20s  22s  24s
 track-0   [IIIII][AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA]
+```
+
+---
+
+### editor operation regression workflow: removeTransition restores startMs and clears transition 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+| track-0 | clip-1 | image | i1 | 5000ms | 3000ms | 0-3000ms | - |
+
+**Timeline**
+
+```
+          0s      1s     2s      3s     4s      5s     6s      7s     8s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV][IIIIIIIIIIIIIIIIIIII]
+```
+
+---
+
+### editor operation regression workflow: setTrackName 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+| track-0 | clip-1 | image | i1 | 5000ms | 3000ms | 0-3000ms | - |
+
+**Timeline**
+
+```
+          0s      1s     2s      3s     4s      5s     6s      7s     8s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV][IIIIIIIIIIIIIIIIIIII]
+```
+
+---
+
+### editor operation regression workflow: setTrackColor 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+| track-0 | clip-1 | image | i1 | 5000ms | 3000ms | 0-3000ms | - |
+
+**Timeline**
+
+```
+          0s      1s     2s      3s     4s      5s     6s      7s     8s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV][IIIIIIIIIIIIIIIIIIII]
+```
+
+---
+
+### editor operation regression workflow: duplicate clip with transition clears transition on duplicate 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 5000ms | 0-5000ms | - |
+| track-0 | clip-1 | image | i1 | 4500ms | 3000ms | 0-3000ms | transition=fade 500ms |
+| track-0 | clip-2 | image | i1 | 7500ms | 3000ms | 0-3000ms | - |
+
+**Timeline**
+
+```
+          0s         2s          4s         6s          8s         10s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVV[IIIIIIIIIIIIIII][IIIIIIIIIIIIIII]
+```
+
+---
+
+### editor operation regression workflow: split then ripple delete one half 1
+
+**Clip Details**
+
+| Track | Clip | Kind | Asset | Start | Duration | In/Out | Properties |
+|-------|------|------|-------|-------|----------|--------|------------|
+| track-0 | clip-0 | video | v1 | 0ms | 2500ms | 2500-5000ms | - |
+| track-0 | clip-1 | image | i1 | 2500ms | 3000ms | 0-3000ms | - |
+
+**Timeline**
+
+```
+          0s         1s         2s         3s         4s         5s
+track-0   [VVVVVVVVVVVVVVVVVVVVVVVVV][IIIIIIIIIIIIIIIIIIIIIIIIIIIIIII]
 ```
 
 ---
