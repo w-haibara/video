@@ -324,11 +324,11 @@ export function buildExportArgs(
     `color=black:s=${preset.width}x${preset.height}:d=${totalDurationSec}:r=${fps},format=yuv420p[base]`,
   );
 
-  // 3. Pre-compute fade-out info for clips that precede a fade-type transition
+  // 3. Pre-compute fade-out info for clips that precede a transition (with buildFadeOut or buildOutgoingOverlayPosition)
   const fadeOutMap = new Map<string, { durationSec: number; clipDurationSec: number; transType: string }>();
   for (const { clip, trackIndex } of clipInfos) {
     const transHandler = clip.transition ? transitionExportRegistry.get(clip.transition.type) : undefined;
-    if (!clip.transition || !transHandler?.buildFadeOut) continue;
+    if (!clip.transition || (!transHandler?.buildFadeOut && !transHandler?.buildOutgoingOverlayPosition)) continue;
     const prev = clipInfos.find(
       (ci) =>
         ci.trackIndex === trackIndex &&
@@ -387,7 +387,7 @@ export function buildExportArgs(
     const outLabel = `[ov${overlayIdx}]`;
     let position = buildOverlayPosition(clip);
 
-    // ── Slide transitions: time-dependent overlay position ──
+    // ── Slide transitions: time-dependent overlay position (incoming) ──
     // Use x='expr':y='expr' named syntax so colons inside expressions
     // are not parsed as overlay parameter separators.
     const slideHandler = transType ? transitionExportRegistry.get(transType) : undefined;
@@ -396,6 +396,19 @@ export function buildExportArgs(
       const slidePos = slideHandler.buildOverlayPosition(startSec, fadeDur, preset);
       if (slidePos) {
         position = slidePos;
+      }
+    }
+
+    // ── Outgoing slide: time-dependent overlay position for outgoing clip ──
+    const fadeOutInfo = fadeOutMap.get(clip.id);
+    if (fadeOutInfo) {
+      const outHandler = transitionExportRegistry.get(fadeOutInfo.transType);
+      if (outHandler?.buildOutgoingOverlayPosition) {
+        const fadeOutStart = ptsOffset + fadeOutInfo.clipDurationSec - fadeOutInfo.durationSec;
+        const outPos = outHandler.buildOutgoingOverlayPosition(fadeOutStart, fadeOutInfo.durationSec, preset);
+        if (outPos) {
+          position = outPos;
+        }
       }
     }
 

@@ -3,8 +3,31 @@ import type { ActiveClip, PreviewRenderContext, PreviewLayerRenderer } from "../
 import { findAllActiveClips, computeMediaContainerStyle, mediaStyle, computeTransitionStyle } from "../../lib/preview-renderer-registry";
 import { compositeStrategyRegistry } from "../../lib/composite-strategy-registry";
 import { audioManager } from "../../lib/audio-manager";
-import type { Asset } from "@video/shared";
+import type { Asset, VideoFilter } from "@video/shared";
 import { getAnimatedValue, hasKeyframes } from "@video/shared";
+import { ChromaKeyOverlay } from "./ChromaKeyOverlay";
+import { GrainOverlay } from "./GrainOverlay";
+
+/** Find a video filter by type and return its strength, or 0 if not present. */
+function getFilterStrength(filters: VideoFilter[] | undefined, type: string): number {
+  if (!filters) return 0;
+  const f = filters.find((v) => v.type === type);
+  return f && f.strength > 0 ? f.strength : 0;
+}
+
+/** Vignette overlay div. */
+function VignetteOverlay({ strength }: { strength: number }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: `radial-gradient(circle, transparent 40%, rgba(0,0,0,${strength}) 100%)`,
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
 
 function getVideoMediaUrl(asset: Asset, projectId: string): string {
   if ((asset.kind === "video" || asset.kind === "p5js") && asset.proxyPath) {
@@ -61,6 +84,7 @@ function ManagedVideoElement({
   canvasW,
   canvasH,
   trackMuted,
+  videoRef: externalRef,
 }: {
   activeClip: ActiveClip;
   projectId: string;
@@ -68,8 +92,10 @@ function ManagedVideoElement({
   canvasW: number;
   canvasH: number;
   trackMuted: boolean;
+  videoRef?: React.RefObject<HTMLVideoElement | null>;
 }) {
-  const ref = useRef<HTMLVideoElement>(null);
+  const internalRef = useRef<HTMLVideoElement>(null);
+  const ref = externalRef ?? internalRef;
   const lastClipIdRef = useRef<string>("");
   const lastMediaUrlRef = useRef<string>("");
   const sourceChangingRef = useRef(false);
@@ -180,6 +206,78 @@ function TopmostVideoElement({ activeClip, ctx }: { activeClip: ActiveClip; ctx:
   );
 }
 
+function VideoClipWithOverlays({
+  activeClip,
+  isTopmost,
+  ctx,
+  trackMuted,
+}: {
+  activeClip: ActiveClip;
+  isTopmost: boolean;
+  ctx: PreviewRenderContext;
+  trackMuted: boolean;
+}) {
+  // Ref for non-topmost clips to pass to chroma key overlay
+  const managedVideoRef = useRef<HTMLVideoElement>(null);
+  const clip = activeClip.clip;
+  const chromaKey = clip.chromaKey;
+  const vignetteStrength = getFilterStrength(clip.videoFilters, "vignette");
+  const grainStrength = getFilterStrength(clip.videoFilters, "grain");
+  const assetW = activeClip.asset.width ?? ctx.canvasW;
+  const assetH = activeClip.asset.height ?? ctx.canvasH;
+
+  // For chroma key, we need the video element reference
+  const videoElement = isTopmost ? ctx.videoRef.current : managedVideoRef.current;
+
+  return (
+    <>
+      {chromaKey ? (
+        // When chroma key is active, hide the raw video and render through WebGL canvas
+        <>
+          {isTopmost ? (
+            <TopmostVideoElement activeClip={activeClip} ctx={ctx} />
+          ) : (
+            <ManagedVideoElement
+              activeClip={activeClip}
+              projectId={ctx.project.id}
+              isPlaying={ctx.isPlaying}
+              canvasW={ctx.canvasW}
+              canvasH={ctx.canvasH}
+              trackMuted={trackMuted}
+              videoRef={managedVideoRef}
+            />
+          )}
+          <ChromaKeyOverlay
+            mediaElement={videoElement}
+            chromaKey={chromaKey}
+            width={assetW}
+            height={assetH}
+          />
+        </>
+      ) : (
+        <>
+          {isTopmost ? (
+            <TopmostVideoElement activeClip={activeClip} ctx={ctx} />
+          ) : (
+            <ManagedVideoElement
+              activeClip={activeClip}
+              projectId={ctx.project.id}
+              isPlaying={ctx.isPlaying}
+              canvasW={ctx.canvasW}
+              canvasH={ctx.canvasH}
+              trackMuted={trackMuted}
+            />
+          )}
+        </>
+      )}
+      {vignetteStrength > 0 && <VignetteOverlay strength={vignetteStrength} />}
+      {grainStrength > 0 && (
+        <GrainOverlay width={assetW} height={assetH} strength={grainStrength} />
+      )}
+    </>
+  );
+}
+
 function VideoClipComponent({ content, ctx }: { content: unknown; ctx: PreviewRenderContext }) {
   const activeClips = content as ActiveClip[];
   const topmostClip = activeClips[activeClips.length - 1];
@@ -203,18 +301,12 @@ function VideoClipComponent({ content, ctx }: { content: unknown; ctx: PreviewRe
 
         return (
           <div key={activeClip.clip.id} style={containerStyle}>
-            {isTopmost ? (
-              <TopmostVideoElement activeClip={activeClip} ctx={ctx} />
-            ) : (
-              <ManagedVideoElement
-                activeClip={activeClip}
-                projectId={ctx.project.id}
-                isPlaying={ctx.isPlaying}
-                canvasW={ctx.canvasW}
-                canvasH={ctx.canvasH}
-                trackMuted={trackMuted}
-              />
-            )}
+            <VideoClipWithOverlays
+              activeClip={activeClip}
+              isTopmost={isTopmost}
+              ctx={ctx}
+              trackMuted={trackMuted}
+            />
           </div>
         );
       })}

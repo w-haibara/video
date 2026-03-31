@@ -4,8 +4,10 @@ export type TransitionExportHandler = {
   buildFadeIn?: (inputLabel: string, outLabel: string, ptsOffset: number, fadeDur: number) => string;
   /** Build FFmpeg filter for the outgoing clip's fade-out effect. Returns filter string or empty. */
   buildFadeOut?: (inputLabel: string, outLabel: string, fadeOutStart: number, fadeDur: number) => string;
-  /** Build overlay position expression for time-dependent slide. Returns position string or undefined (use default). */
+  /** Build overlay position expression for time-dependent slide (incoming clip). Returns position string or undefined (use default). */
   buildOverlayPosition?: (startSec: number, fadeDur: number, preset: { width: number; height: number }) => string;
+  /** Build overlay position expression for the outgoing clip during the transition window. Returns position string or undefined (use default). */
+  buildOutgoingOverlayPosition?: (fadeOutStart: number, fadeDur: number, preset: { width: number; height: number }) => string;
 };
 
 export class TransitionExportRegistry {
