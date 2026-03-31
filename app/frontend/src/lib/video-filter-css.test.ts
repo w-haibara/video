@@ -26,8 +26,8 @@ describe("buildVideoFilterCss", () => {
     expect(buildVideoFilterCss([{ type: "grayscale", strength: 1.0 }])).toBe("grayscale(1)");
   });
 
-  test("sharpen is export-only (no CSS)", () => {
-    expect(buildVideoFilterCss([{ type: "sharpen", strength: 0.5 }])).toBeUndefined();
+  test("sharpen approximated as contrast boost", () => {
+    expect(buildVideoFilterCss([{ type: "sharpen", strength: 0.5 }])).toBe("contrast(1.1)");
   });
 
   test("vignette is export-only (no CSS)", () => {
@@ -66,7 +66,7 @@ describe("buildVideoFilterCss", () => {
       { type: "sharpen", strength: 0.8 },
       { type: "grayscale", strength: 0.3 },
       { type: "grain", strength: 0.5 },
-    ])).toBe("blur(5px) grayscale(0.3)");
+    ])).toBe("blur(5px) contrast(1.1600000000000001) grayscale(0.3)");
   });
 
   test("unknown filter type is skipped", () => {

@@ -1,6 +1,6 @@
 import type { ExportClipHandler, ExportBuildContext } from "../export-handler-registry";
 import type { Clip, Asset } from "@video/shared";
-import { buildTransformFilter, hasClipTransform, buildColorCorrectionFilter, buildChromaKeyFilter, buildVideoFilterFfmpeg } from "../../services/export-service";
+import { buildTransformFilter, hasClipTransform, buildColorCorrectionFilter, buildChromaKeyFilter, buildVideoFilterFfmpeg, buildOpacityFilter } from "../../services/export-service";
 
 export const videoClipHandler: ExportClipHandler = {
   assetKind: "video",
@@ -41,6 +41,7 @@ export const videoClipHandler: ExportClipHandler = {
     const ckFilter = buildChromaKeyFilter(clip.chromaKey);
     const ccFilter = buildColorCorrectionFilter(clip.colorCorrection);
     const vfFilter = buildVideoFilterFfmpeg(clip.videoFilters);
+    const opacityFilter = buildOpacityFilter(clip);
 
     let chain: string;
     if (transformed) {
@@ -51,6 +52,7 @@ export const videoClipHandler: ExportClipHandler = {
         `${userCrop},format=yuva420p` +
         ckFilter +
         buildTransformFilter(clip, ctx.preset) +
+        opacityFilter +
         ccFilter +
         vfFilter;
     } else {
@@ -63,6 +65,7 @@ export const videoClipHandler: ExportClipHandler = {
         ckFilter + `,` +
         `pad=w='max(iw,${ctx.preset.width})':h='max(ih,${ctx.preset.height})':x=(ow-iw)/2:y=(oh-ih)/2:color=black@0,` +
         `crop=${ctx.preset.width}:${ctx.preset.height}:(iw-${ctx.preset.width})/2:(ih-${ctx.preset.height})/2` +
+        opacityFilter +
         ccFilter +
         vfFilter;
     }

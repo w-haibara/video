@@ -45,10 +45,8 @@ export function hasClipTransform(clip: Clip): boolean {
 
 /**
  * Build FFmpeg filter segment for clip rotation/scale.
- * NOTE: Export currently supports keyframe animation for transform.x/y only.
- * Scale and rotation are applied as static values from clip.transform.
- * Animated scale/rotation would require per-frame rendering (not FFmpeg expressions).
- * Position (x/y) is handled by the overlay filter, not here.
+ * Supports keyframe animation for transform.scale and transform.rotation
+ * via FFmpeg expressions. Position (x/y) is handled by the overlay filter.
  * Returns comma-prefixed filter chain or empty string.
  */
 export function buildTransformFilter(
@@ -57,20 +55,51 @@ export function buildTransformFilter(
 ): string {
   const scale = clip.transform?.scale ?? 1;
   const rotation = clip.transform?.rotation ?? 0;
+  const tracks = clip.keyframeTracks;
+  const clipStartSec = clip.startMs / 1000;
+
+  const hasAnimatedScale = tracks != null && hasKeyframes(tracks, "transform.scale");
+  const hasAnimatedRotation = tracks != null && hasKeyframes(tracks, "transform.rotation");
 
   const parts: string[] = [];
 
-  if (rotation !== 0) {
+  if (hasAnimatedRotation) {
+    const rotExpr = buildKeyframeFilterExpression(tracks!, "transform.rotation", rotation, clip.durationMs, clipStartSec);
+    // Convert degrees to radians in FFmpeg expression
+    parts.push(`rotate='(${rotExpr})*PI/180':ow='rotw((${rotExpr})*PI/180)':oh='roth((${rotExpr})*PI/180)':c=black@0`);
+  } else if (rotation !== 0) {
     const rad = (rotation * Math.PI) / 180;
     parts.push(`rotate=${rad}:ow=rotw(${rad}):oh=roth(${rad}):c=black@0`);
   }
 
-  if (scale !== 1) {
+  if (hasAnimatedScale) {
+    const scaleExpr = buildKeyframeFilterExpression(tracks!, "transform.scale", scale, clip.durationMs, clipStartSec);
+    parts.push(`scale=w='iw*(${scaleExpr})':h='ih*(${scaleExpr})':eval=frame`);
+  } else if (scale !== 1) {
     parts.push(`scale=iw*${scale}:ih*${scale}`);
   }
 
   if (parts.length === 0) return "";
   return "," + parts.join(",");
+}
+
+/**
+ * Build FFmpeg filter segment for animated opacity via keyframes.
+ * Uses format=yuva420p + lut filter with a time-varying alpha expression.
+ * Returns comma-prefixed filter chain or empty string.
+ */
+export function buildOpacityFilter(clip: Clip): string {
+  const tracks = clip.keyframeTracks;
+  if (!tracks || !hasKeyframes(tracks, "opacity")) return "";
+
+  const clipStartSec = clip.startMs / 1000;
+  const alphaExpr = buildKeyframeFilterExpression(tracks, "opacity", 1.0, clip.durationMs, clipStartSec);
+
+  // If the expression is just "1" (static full opacity), skip
+  if (alphaExpr === "1" || alphaExpr === "1.0") return "";
+
+  // Use geq to apply alpha expression; format=yuva420p ensures alpha channel exists
+  return `,format=yuva420p,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='clip(${alphaExpr},0,1)*255'`;
 }
 
 /**

@@ -36,7 +36,20 @@ export function buildColorCorrectionFilter(cc: ClipColorCorrection | undefined):
     parts.push(`hue-rotate(${hue}deg)`);
   }
 
-  // temperature is export-only; not representable with CSS filters
+  // Approximate temperature with CSS filters:
+  // Warm (positive): sepia + saturate to shift warm
+  // Cool (negative): hue-rotate blue + desaturate slightly
+  const temperature = cc.temperature ?? 0;
+  if (temperature > 0) {
+    // Warm: add sepia tint proportional to temperature, boost saturation
+    parts.push(`sepia(${(temperature * 0.3).toFixed(3)})`);
+    parts.push(`saturate(${(1 + temperature * 0.3).toFixed(3)})`);
+  } else if (temperature < 0) {
+    // Cool: hue-rotate toward blue, slightly desaturate
+    const amount = Math.abs(temperature);
+    parts.push(`hue-rotate(${(amount * 30).toFixed(1)}deg)`);
+    parts.push(`saturate(${(1 - amount * 0.2).toFixed(3)})`);
+  }
 
   if (parts.length === 0) return undefined;
   return parts.join(" ");
