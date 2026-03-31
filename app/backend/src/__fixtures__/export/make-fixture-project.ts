@@ -1096,3 +1096,85 @@ export function makePipSideBySideProject(): Project {
     },
   });
 }
+
+/** Feature Showcase: ALL features combined — p5js, video, image, audio,
+ *  transitions (fade/wipe/zoom/push), keyframes, speed, color correction,
+ *  video filters, chroma key, PiP, title overlays. */
+export function makeFeatureShowcaseProject(): Project {
+  return baseProject({
+    assets: [videoAsset, imageAsset, audioAsset, p5jsAsset],
+    settings: { durationMs: 12000, canvasWidth: CANVAS_W, canvasHeight: CANVAS_H },
+    sequence: {
+      tracks: [
+        {
+          id: "track-main",
+          clips: [
+            makeClip({
+              id: "c-p5-intro", clipKind: "p5js", assetId: "p5js1",
+              startMs: 0, durationMs: 3000, inMs: 0, outMs: 3000,
+              keyframeTracks: [{ property: "opacity", keyframes: [
+                { timeMs: 0, value: 0 }, { timeMs: 500, value: 1, easing: "ease-out" },
+              ]}],
+            }),
+            makeClip({
+              id: "c-vid-1",
+              startMs: 2500, durationMs: 1000, inMs: 0, outMs: 1000,
+              speed: 0.5,
+              transition: { type: "fade", durationMs: 500 },
+              colorCorrection: { brightness: 0.1, contrast: 0.15, saturation: -0.3 },
+              keyframeTracks: [{ property: "transform.x", keyframes: [
+                { timeMs: 0, value: -20 }, { timeMs: 1000, value: 20, easing: "ease-in-out" },
+              ]}],
+            }),
+            makeClip({
+              id: "c-vid-2",
+              startMs: 3200, durationMs: 1000, inMs: 0, outMs: 1000,
+              transition: { type: "wipe-left", durationMs: 300 },
+              videoFilters: [{ type: "sepia", strength: 0.6 }],
+            }),
+            makeClip({
+              id: "c-img-chroma", clipKind: "image", assetId: "img1",
+              startMs: 3900, durationMs: 2000, inMs: 0, outMs: 2000,
+              transition: { type: "zoom-in", durationMs: 300 },
+              chromaKey: { color: "#00ff00", similarity: 0.3, blend: 0.1 },
+            }),
+            makeClip({
+              id: "c-p5-outro", clipKind: "p5js", assetId: "p5js1",
+              startMs: 5600, durationMs: 3000, inMs: 0, outMs: 3000,
+              transition: { type: "push-left", durationMs: 300 },
+              videoFilters: [{ type: "grayscale", strength: 0.7 }],
+              keyframeTracks: [{ property: "opacity", keyframes: [
+                { timeMs: 2000, value: 1 }, { timeMs: 3000, value: 0, easing: "ease-in" },
+              ]}],
+            }),
+          ],
+        },
+        {
+          id: "track-overlay",
+          clips: [
+            { id: "c-title-intro", clipKind: "title", assetId: "",
+              startMs: 500, durationMs: 2000, inMs: 0, outMs: 2000,
+              text: { value: "Feature Showcase", fontSize: 14, color: "white", backgroundColor: "black@0.5" } },
+            makeClip({
+              id: "c-pip-p5", clipKind: "p5js", assetId: "p5js1",
+              startMs: 3200, durationMs: 2500, inMs: 0, outMs: 2500,
+              transform: { x: 30, y: 20, scale: 0.3, rotation: 0 },
+              blendMode: "screen",
+            }),
+            { id: "c-title-outro", clipKind: "title", assetId: "",
+              startMs: 6500, durationMs: 2000, inMs: 0, outMs: 2000,
+              text: { value: "The End", fontSize: 18, color: "white", backgroundColor: "black@0.7" } },
+          ],
+        },
+        makeTrack(
+          [
+            makeClip({ id: "c-aud-1", clipKind: "audio", assetId: "aud1", startMs: 0, durationMs: 1000, inMs: 0, outMs: 1000, volume: 0.7 }),
+            makeClip({ id: "c-aud-2", clipKind: "audio", assetId: "aud1", startMs: 3000, durationMs: 1000, inMs: 0, outMs: 1000, volume: 0.5 }),
+            makeClip({ id: "c-aud-3", clipKind: "audio", assetId: "aud1", startMs: 6000, durationMs: 1000, inMs: 0, outMs: 1000, volume: 0.3 }),
+          ],
+          "track-audio",
+        ),
+      ],
+    },
+  });
+}

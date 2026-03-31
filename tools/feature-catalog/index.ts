@@ -57,6 +57,7 @@ import {
   makeKeyframeColorCorrectionProject,
   makeVideoFilterTransitionProject,
   makeChromaKeyBlendProject,
+  makeFeatureShowcaseProject,
 } from "../../app/backend/src/__fixtures__/export/make-fixture-project";
 
 const ROOT = path.resolve(import.meta.dir, "../..");
@@ -163,6 +164,7 @@ const EXPORT_TESTS: Array<{
   { name: "keyframe-color-correction", description: "Keyframe transform.x + color correction (cross-feature)", factory: makeKeyframeColorCorrectionProject },
   { name: "video-filter-transition", description: "Video filter (grayscale) + fade transition (cross-feature)", factory: makeVideoFilterTransitionProject },
   { name: "chroma-key-blend", description: "Chroma key + screen blend mode (cross-feature)", factory: makeChromaKeyBlendProject },
+  { name: "feature-showcase", description: "ALL features: p5js, video, image, audio, transitions, keyframes, speed, color, filters, chroma key, PiP, titles", factory: makeFeatureShowcaseProject },
 ];
 
 // ── Snap parser ──
