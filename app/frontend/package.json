@@ -13,6 +13,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",
     "@video/shared": "workspace:*",
+    "mediabunny": "^1.40.1",
     "react": "^19",
     "react-dom": "^19",
     "react-router-dom": "^7.13.1"

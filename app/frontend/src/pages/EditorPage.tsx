@@ -24,6 +24,7 @@ import { useUndoRedo } from "../hooks/useUndoRedo";
 import { useAutoSave } from "../hooks/useAutoSave";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { addMarker, removeMarker, updateMarker, nextMarkerTime, prevMarkerTime } from "../lib/marker-ops";
+import { CanvasExportPanel } from "../components/CanvasExportPanel";
 import { theme, buttonStyle, inputStyle } from "../theme";
 
 function EditorPageInner({ projectId }: { projectId: string }) {
@@ -619,6 +620,10 @@ function EditorPageLoaded({
                     )}
                   </div>
                 )}
+                <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: "12px", paddingTop: "12px" }}>
+                  <div style={{ color: theme.textMuted, fontSize: "11px", marginBottom: "4px" }}>Browser Export</div>
+                  <CanvasExportPanel project={currentProject} />
+                </div>
               </div>
             }
             settingsContent={
