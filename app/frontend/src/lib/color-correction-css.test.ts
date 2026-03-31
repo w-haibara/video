@@ -44,8 +44,12 @@ describe("buildColorCorrectionFilter", () => {
     expect(buildColorCorrectionFilter({ hue: -45 })).toBe("hue-rotate(-45deg)");
   });
 
-  test("temperature is ignored in CSS preview", () => {
-    expect(buildColorCorrectionFilter({ temperature: 0.5 })).toBeUndefined();
+  test("warm temperature approximated with sepia + saturate", () => {
+    expect(buildColorCorrectionFilter({ temperature: 0.5 })).toBe("sepia(0.150) saturate(1.150)");
+  });
+
+  test("cool temperature approximated with hue-rotate + saturate", () => {
+    expect(buildColorCorrectionFilter({ temperature: -0.5 })).toBe("hue-rotate(15.0deg) saturate(0.900)");
   });
 
   test("multiple values combined", () => {

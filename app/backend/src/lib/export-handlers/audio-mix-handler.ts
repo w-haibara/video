@@ -1,5 +1,29 @@
 import type { ExportAudioHandler, ExportBuildContext } from "../export-handler-registry";
 import type { Clip } from "@video/shared";
+import { hasKeyframes, buildKeyframeFilterExpression } from "@video/shared";
+
+/**
+ * Build volume filter for a clip, supporting keyframe animation.
+ * Uses FFmpeg `volume` filter with `eval=frame` for animated volume.
+ * Returns comma-prefixed filter string or empty string.
+ */
+export function buildVolumeFilter(clip: Clip): string {
+  const tracks = clip.keyframeTracks;
+  const staticVolume = clip.volume ?? 1.0;
+
+  if (tracks && hasKeyframes(tracks, "volume")) {
+    const clipStartSec = clip.startMs / 1000;
+    const volExpr = buildKeyframeFilterExpression(tracks, "volume", staticVolume, clip.durationMs, clipStartSec);
+    return `,volume='${volExpr}':eval=frame`;
+  }
+
+  // Static volume: apply if not 1.0
+  if (staticVolume !== 1.0) {
+    return `,volume=${staticVolume}`;
+  }
+
+  return "";
+}
 
 /**
  * Build atempo filter chain for a given speed.
@@ -60,6 +84,7 @@ export const audioMixHandler: ExportAudioHandler = {
 
         let chain = `[${inputIdx}:a]atrim=start=${trimStart}:duration=${trimDur / 1000},asetpts=PTS-STARTPTS`;
         chain += buildAtempoChain(speed);
+        chain += buildVolumeFilter(clip);
         if (clip.startMs > 0) {
           const delayMs = Math.round(clip.startMs);
           chain += `,adelay=${delayMs}|${delayMs}`;
@@ -78,6 +103,7 @@ export const audioMixHandler: ExportAudioHandler = {
 
           let chain = `[${inputIdx}:a]atrim=start=${trimStart}:duration=${trimDur / 1000},asetpts=PTS-STARTPTS`;
           chain += buildAtempoChain(speed);
+          chain += buildVolumeFilter(clip);
           if (clip.startMs > 0) {
             const delayMs = Math.round(clip.startMs);
             chain += `,adelay=${delayMs}|${delayMs}`;

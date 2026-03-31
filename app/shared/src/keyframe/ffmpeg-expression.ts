@@ -1,8 +1,32 @@
-import type { KeyframeTrack } from "../types/keyframe";
+import type { KeyframeTrack, EasingType } from "../types/keyframe";
+
+/**
+ * Build an FFmpeg sub-expression for easing-interpolated progress.
+ * `p` is a linear 0..1 progress expression string.
+ *
+ * - linear:      p  (identity)
+ * - ease-in:     p^2
+ * - ease-out:    1-(1-p)^2
+ * - ease-in-out: if(lt(p,0.5), 2*p^2, 1-pow(-2*p+2,2)/2)
+ */
+function buildEasedProgress(p: string, easing: EasingType | undefined): string {
+  switch (easing) {
+    case "ease-in":
+      return `pow(${p},2)`;
+    case "ease-out":
+      return `(1-pow(1-(${p}),2))`;
+    case "ease-in-out":
+      return `if(lt(${p},0.5),2*pow(${p},2),1-pow(-2*(${p})+2,2)/2)`;
+    case "linear":
+    default:
+      return p;
+  }
+}
 
 /**
  * Build an FFmpeg expression string from keyframe tracks for a given property.
- * Uses linear interpolation only (easing is complex to express in FFmpeg).
+ * Supports easing: linear, ease-in, ease-out, ease-in-out via quadratic
+ * approximations expressible in FFmpeg's expression language.
  *
  * The returned expression uses FFmpeg's `t` variable (seconds from stream start)
  * combined with `if(between(...), ...)` for time-segmented interpolation.
@@ -29,9 +53,9 @@ export function buildKeyframeFilterExpression(
   // Single keyframe: constant value
   if (kfs.length === 1) return String(kfs[0].value);
 
-  // Build piecewise linear expression using nested if()
+  // Build piecewise expression using nested if()
   // For each segment between consecutive keyframes, generate:
-  //   if(between(t, t0, t1), v0 + (v1-v0)*(t-t0)/(t1-t0), <next>)
+  //   if(between(t, t0, t1), v0 + (v1-v0)*eased_progress, <next>)
   //
   // Before first keyframe: first value (constant)
   // After last keyframe: last value (constant)
@@ -53,12 +77,13 @@ export function buildKeyframeFilterExpression(
       // Constant segment
       segments.push(`if(between(${tVar},${t0},${t1}),${v0}`);
     } else {
-      // Linear interpolation
-      const slope = v1 - v0;
-      const span = right.timeMs - left.timeMs;
-      const slopePerSec = (slope / span) * 1000;
+      // Interpolation with easing
+      const easing = left.easing;
+      const linearProgress = `(${tVar}-${t0})/(${t1}-${t0})`;
+      const easedProgress = buildEasedProgress(linearProgress, easing);
+      const delta = v1 - v0;
       segments.push(
-        `if(between(${tVar},${t0},${t1}),${v0}+${slopePerSec.toFixed(4)}*(${tVar}-${t0})`,
+        `if(between(${tVar},${t0},${t1}),${v0}+${delta}*${easedProgress}`,
       );
     }
   }

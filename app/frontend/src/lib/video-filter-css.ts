@@ -29,7 +29,11 @@ export function buildVideoFilterCss(filters: VideoFilter[] | undefined): string 
       case "grayscale":
         parts.push(`grayscale(${f.strength})`);
         break;
-      // sharpen, vignette, grain — export-only, no CSS equivalent
+      case "sharpen":
+        // Approximate sharpening with a slight contrast boost
+        parts.push(`contrast(${1 + f.strength * 0.2})`);
+        break;
+      // vignette, grain — require overlay elements, no CSS filter equivalent
       default:
         break;
     }
