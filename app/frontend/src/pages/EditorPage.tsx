@@ -11,6 +11,7 @@ import { AssetPanel } from "../components/AssetPanel";
 import { Timeline } from "../components/Timeline";
 import { InspectorPanel } from "../components/InspectorPanel";
 import { PreviewPlayer } from "../components/PreviewPlayer";
+import { CanvasPreviewPlayer } from "../components/CanvasPreviewPlayer";
 import { PreviewPopout } from "../components/PreviewPopout";
 import { usePreviewPopout } from "../hooks/usePreviewPopout";
 import { SaveIndicator } from "../components/SaveIndicator";
@@ -65,6 +66,15 @@ function EditorPageLoaded({
   isPlaying: boolean;
   onPlayPause: () => void;
 }) {
+  // Feature flag: use Canvas-based preview (same render path as export)
+  const [useCanvasPreview] = useState(() => {
+    try {
+      return localStorage.getItem("useCanvasPreview") !== "false";
+    } catch {
+      return true;
+    }
+  });
+
   const [isPreviewFullscreen, setIsPreviewFullscreen] = useState(false);
   const togglePreviewFullscreen = useCallback(() => setIsPreviewFullscreen((v) => !v), []);
 
@@ -472,19 +482,47 @@ function EditorPageLoaded({
                 </button>
               </div>
               <PreviewPopout popoutWindow={popoutWindow}>
-                <PreviewPlayer
-                  project={currentProject}
-                  currentTimeMs={currentTimeMs}
-                  onTimeUpdate={onSeek}
-                  isPlaying={isPlaying}
-                  onPlayPause={onPlayPause}
-                  selectedClipId={primarySelectedClipId}
-                  onSelectClip={(id) => handleSelectClip(id)}
-                  isPopout={isPopout}
-                  onTogglePopout={togglePopout}
-                />
+                {useCanvasPreview ? (
+                  <CanvasPreviewPlayer
+                    project={currentProject}
+                    currentTimeMs={currentTimeMs}
+                    onTimeUpdate={onSeek}
+                    isPlaying={isPlaying}
+                    onPlayPause={onPlayPause}
+                    selectedClipId={primarySelectedClipId}
+                    onSelectClip={(id) => handleSelectClip(id)}
+                    isPopout={isPopout}
+                    onTogglePopout={togglePopout}
+                  />
+                ) : (
+                  <PreviewPlayer
+                    project={currentProject}
+                    currentTimeMs={currentTimeMs}
+                    onTimeUpdate={onSeek}
+                    isPlaying={isPlaying}
+                    onPlayPause={onPlayPause}
+                    selectedClipId={primarySelectedClipId}
+                    onSelectClip={(id) => handleSelectClip(id)}
+                    isPopout={isPopout}
+                    onTogglePopout={togglePopout}
+                  />
+                )}
               </PreviewPopout>
             </>
+          ) : useCanvasPreview ? (
+            <CanvasPreviewPlayer
+              project={currentProject}
+              currentTimeMs={currentTimeMs}
+              onTimeUpdate={onSeek}
+              isPlaying={isPlaying}
+              onPlayPause={onPlayPause}
+              selectedClipId={primarySelectedClipId}
+              onSelectClip={(id) => handleSelectClip(id)}
+              isFullscreen={isPreviewFullscreen}
+              onToggleFullscreen={togglePreviewFullscreen}
+              isPopout={isPopout}
+              onTogglePopout={togglePopout}
+            />
           ) : (
             <PreviewPlayer
               project={currentProject}
