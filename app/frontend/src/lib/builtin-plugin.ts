@@ -244,33 +244,30 @@ export const builtinPlugin: FrontendPlugin = {
     registry.registerTickStrategy({
       assetKind: "video",
       tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
-        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded, sourceChanging, sourceLoadedAt } = tickCtx;
+        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded, sourceChanging } = tickCtx;
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
         const speed = clip.clip.speed ?? 1;
         const videoReady = clip.clip.id === lastClipId;
-        // After a source change, use wall-clock for 500ms to let video stabilize
-        const stabilizing = sourceLoadedAt > 0 && (performance.now() - sourceLoadedAt) < 500;
+        const wallClock = Math.min(currentTimeMs + deltaMs, clipEndMs);
 
         if (!videoRef) {
           return null;
-        } else if (!videoReady || sourceChanging || videoRef.readyState < 2 || stabilizing) {
-          // Not ready, loading, or stabilizing — advance by wall-clock
+        } else if (!videoReady || sourceChanging || videoRef.readyState < 2) {
           if (videoRef.paused && videoRef.readyState >= 2) videoRef.play().catch(() => {});
-          return Math.min(currentTimeMs + deltaMs, clipEndMs);
+          return wallClock;
         } else if (videoRef.ended || videoEnded) {
           resetVideoEnded();
-          return Math.min(currentTimeMs + deltaMs, clipEndMs);
+          return wallClock;
         } else if (videoRef.paused) {
           videoRef.play().catch(() => {});
-          return Math.min(currentTimeMs + deltaMs, clipEndMs);
+          return wallClock;
         } else {
+          // Video is playing — sync to video.currentTime
           const videoTimeMs = videoRef.currentTime * 1000;
-          const expectedVideoTime = clip.clip.inMs + (currentTimeMs - clip.clip.startMs) * speed;
-          if (Math.abs(videoTimeMs - expectedVideoTime) > 500) {
-            return Math.min(currentTimeMs + deltaMs, clipEndMs);
-          }
           const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs) / speed;
-          return Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
+          const synced = Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
+          // NEVER go backward during playback — use wall-clock if video sync would rewind
+          return Math.max(synced, currentTimeMs);
         }
       },
     });
@@ -278,31 +275,28 @@ export const builtinPlugin: FrontendPlugin = {
     registry.registerTickStrategy({
       assetKind: "p5js",
       tick: (clip: ActiveClip, deltaMs: number, tickCtx: TickContext): number | null => {
-        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded, sourceChanging, sourceLoadedAt } = tickCtx;
+        const { currentTimeMs, videoRef, lastClipId, videoEnded, resetVideoEnded, sourceChanging } = tickCtx;
         const clipEndMs = clip.clip.startMs + clip.clip.durationMs;
         const speed = clip.clip.speed ?? 1;
         const videoReady = clip.clip.id === lastClipId;
-        const stabilizing = sourceLoadedAt > 0 && (performance.now() - sourceLoadedAt) < 500;
+        const wallClock = Math.min(currentTimeMs + deltaMs, clipEndMs);
 
         if (!videoRef) {
           return null;
-        } else if (!videoReady || sourceChanging || videoRef.readyState < 2 || stabilizing) {
+        } else if (!videoReady || sourceChanging || videoRef.readyState < 2) {
           if (videoRef.paused && videoRef.readyState >= 2) videoRef.play().catch(() => {});
-          return Math.min(currentTimeMs + deltaMs, clipEndMs);
+          return wallClock;
         } else if (videoRef.ended || videoEnded) {
           resetVideoEnded();
-          return Math.min(currentTimeMs + deltaMs, clipEndMs);
+          return wallClock;
         } else if (videoRef.paused) {
           videoRef.play().catch(() => {});
-          return Math.min(currentTimeMs + deltaMs, clipEndMs);
+          return wallClock;
         } else {
           const videoTimeMs = videoRef.currentTime * 1000;
-          const expectedVideoTime = clip.clip.inMs + (currentTimeMs - clip.clip.startMs) * speed;
-          if (Math.abs(videoTimeMs - expectedVideoTime) > 500) {
-            return Math.min(currentTimeMs + deltaMs, clipEndMs);
-          }
           const timelineMs = clip.clip.startMs + (videoTimeMs - clip.clip.inMs) / speed;
-          return Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
+          const synced = Math.max(clip.clip.startMs, Math.min(timelineMs, clipEndMs));
+          return Math.max(synced, currentTimeMs);
         }
         return null;
       },
