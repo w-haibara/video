@@ -20,6 +20,8 @@ export type FrameCompareOptions = {
   actualDir: string;
   /** Max allowed pixel diff percentage per frame (default: 1.0 = 1%) */
   threshold?: number;
+  /** Per-channel tolerance (0-255) before a pixel counts as "different" (default: 2) */
+  channelTolerance?: number;
 };
 
 export async function listFrames(dir: string): Promise<string[]> {
@@ -49,6 +51,7 @@ export async function compareFrames(
   opts: FrameCompareOptions,
 ): Promise<FrameCompareResult> {
   const threshold = opts.threshold ?? 1.0;
+  const channelTolerance = opts.channelTolerance ?? 2;
 
   const refFrames = await listFrames(opts.referenceDir);
   const actFrames = await listFrames(opts.actualDir);
@@ -77,7 +80,7 @@ export async function compareFrames(
           const dr = Math.abs(refData[p] - actData[p]);
           const dg = Math.abs(refData[p + 1] - actData[p + 1]);
           const db = Math.abs(refData[p + 2] - actData[p + 2]);
-          if (dr > 2 || dg > 2 || db > 2) {
+          if (dr > channelTolerance || dg > channelTolerance || db > channelTolerance) {
             diffPixels++;
           }
         }

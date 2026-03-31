@@ -40,6 +40,19 @@ After modifying `sequence-ops` or export-related code, follow this workflow:
 - First run auto-generates the snapshot — verify it visually in the feature catalog
 - IMPORTANT: Do NOT use `--update-snapshots` while iterating on a new case. Delete the single new entry from `.snap` and re-run instead, to avoid overwriting existing correct snapshots.
 
+### Preview regression testing
+
+Preview regression tests capture browser-rendered preview frames via Playwright
+and compare against reference screenshots. Requires `bun run dev` running.
+
+- Run: `bun test tools/preview-test/preview-regression.test.ts`
+- Update references: `UPDATE_PREVIEW_REFERENCES=1 bun test tools/preview-test/preview-regression.test.ts`
+- Preview test page: `http://localhost:5173/preview-test?project=<id>&t=<ms>`
+- Two comparison modes:
+  - **Preview regression** (tight threshold) — catches rendering changes in the browser
+  - **Preview vs export** (generous threshold) — catches divergence between preview and export
+- Preview references are stored in `tools/preview-test/references/`
+
 ### Adding new export regression test cases
 
 - Add factory function to `app/backend/src/__fixtures__/export/make-fixture-project.ts`

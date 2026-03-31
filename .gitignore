@@ -8,3 +8,4 @@ screenshots/
 storybook-static/
 coverage/
 debug-storybook.log
+tools/preview-test/.actual/
