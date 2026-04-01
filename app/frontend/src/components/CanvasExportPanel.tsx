@@ -3,7 +3,9 @@ import type { Project, Asset } from "@video/shared";
 import { theme, buttonStyle } from "../theme";
 import {
   exportWithCanvas,
+  exportWithWorker,
   isWebCodecsSupported,
+  isWorkerExportSupported,
 } from "../lib/canvas-export";
 
 type Props = {
@@ -160,11 +162,15 @@ export function CanvasExportPanel({ project }: Props) {
     [project.assets, getVideoFrame, getImageFrame],
   );
 
+  const useWorker = isWorkerExportSupported();
+
   const handleExport = useCallback(async () => {
     setState({ status: "exporting", progress: 0 });
 
+    const exportFn = useWorker ? exportWithWorker : exportWithCanvas;
+
     try {
-      const result = await exportWithCanvas({
+      const result = await exportFn({
         project,
         getFrameSource,
         onProgress: (progress) => {
@@ -184,7 +190,7 @@ export function CanvasExportPanel({ project }: Props) {
         error: err instanceof Error ? err.message : String(err),
       });
     }
-  }, [project, getFrameSource]);
+  }, [project, getFrameSource, useWorker]);
 
   const handleDownload = useCallback(() => {
     if (state.status !== "completed") return;
@@ -238,7 +244,7 @@ export function CanvasExportPanel({ project }: Props) {
         }}
       >
         Export video directly in the browser using WebCodecs (video only, no
-        audio).
+        audio).{useWorker ? " Encoding runs in a background worker." : ""}
       </div>
 
       {state.status === "idle" && (

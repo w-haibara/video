@@ -222,6 +222,161 @@ export async function exportWithCanvas(
   };
 }
 
+// ── Worker-based export ──
+
+/** Check if Worker-based export is available */
+export function isWorkerExportSupported(): boolean {
+  return (
+    typeof Worker !== "undefined" &&
+    typeof OffscreenCanvas !== "undefined" &&
+    typeof ImageBitmap !== "undefined" &&
+    isWebCodecsSupported()
+  );
+}
+
+/**
+ * Export using a Web Worker for encoding.
+ *
+ * Main thread: renders each frame with CanvasCompositor -> creates ImageBitmap
+ * Worker: receives ImageBitmap, encodes with mediabunny, muxes to MP4
+ *
+ * This keeps the heavy encoding off the main thread for better responsiveness.
+ */
+export async function exportWithWorker(
+  opts: CanvasExportOptions,
+): Promise<CanvasExportResult> {
+  const { project, getFrameSource, onProgress } = opts;
+
+  const width = opts.width ?? project.settings.canvasWidth;
+  const height = opts.height ?? project.settings.canvasHeight;
+  const fps = opts.fps ?? 30;
+  const videoBitrate = opts.videoBitrate ?? 8_000_000;
+
+  const endMs = getSequenceEndMs(project);
+  if (endMs <= 0) {
+    throw new Error("Project has no clips to export");
+  }
+
+  const totalFrames = Math.ceil((endMs / 1000) * fps);
+  const frameDurationSec = 1 / fps;
+
+  // 1. Create canvas for rendering on main thread
+  const canvas = new OffscreenCanvas(width, height);
+  const compositor = new CanvasCompositor(canvas);
+
+  // 2. Create and initialize the worker
+  const worker = new Worker(
+    new URL("./export-worker.ts", import.meta.url),
+    { type: "module" },
+  );
+
+  // Set up message handling
+  const workerReady = new Promise<void>((resolve, reject) => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.data.type === "ready") {
+        worker.removeEventListener("message", onMessage);
+        resolve();
+      } else if (e.data.type === "error") {
+        worker.removeEventListener("message", onMessage);
+        reject(new Error(e.data.message));
+      }
+    };
+    worker.addEventListener("message", onMessage);
+  });
+
+  worker.postMessage({
+    type: "init",
+    data: { width, height, fps, videoBitrate },
+  });
+
+  await workerReady;
+
+  // 3. Render each frame on main thread and send to worker
+  try {
+    for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
+      const timeMs = (frameIndex / fps) * 1000;
+      const timestampSec = frameIndex * frameDurationSec;
+
+      // Build FrameSources for this time
+      const sources: FrameSources = new Map();
+      const assetIds = collectActiveAssetIds(project, timeMs);
+
+      const sourcePromises = assetIds.map(async (assetId) => {
+        const clipTimeMs = clipTimeForAsset(project, assetId, timeMs);
+        const source = await getFrameSource(assetId, clipTimeMs);
+        if (source) {
+          sources.set(assetId, source);
+        }
+      });
+      // eslint-disable-next-line no-await-in-loop -- sequential frame rendering is intentional
+      await Promise.all(sourcePromises);
+
+      // Render frame onto canvas
+      compositor.renderFrame(project, timeMs, sources);
+
+      // Create ImageBitmap from the rendered canvas (zero-copy transfer to worker)
+      // eslint-disable-next-line no-await-in-loop -- sequential frame rendering is intentional
+      const bitmap = await createImageBitmap(canvas);
+
+      const isKeyFrame = frameIndex % (fps * 2) === 0;
+
+      // Transfer bitmap to worker (zero-copy)
+      worker.postMessage(
+        {
+          type: "frame",
+          data: {
+            bitmap,
+            timestamp: timestampSec,
+            duration: frameDurationSec,
+            progress: (frameIndex + 1) / totalFrames,
+            keyFrame: isKeyFrame,
+          },
+        },
+        [bitmap],
+      );
+
+      // Report progress on main thread too
+      if (onProgress) {
+        onProgress((frameIndex + 1) / totalFrames);
+      }
+
+      // Yield to the main thread periodically to keep UI responsive
+      if (frameIndex % 5 === 0) {
+        // eslint-disable-next-line no-await-in-loop -- intentional yield
+        await new Promise<void>((r) => setTimeout(r, 0));
+      }
+    }
+  } finally {
+    compositor.dispose();
+  }
+
+  // 4. Flush and wait for result
+  const result = await new Promise<Blob>((resolve, reject) => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.data.type === "done") {
+        worker.removeEventListener("message", onMessage);
+        resolve(e.data.blob);
+      } else if (e.data.type === "error") {
+        worker.removeEventListener("message", onMessage);
+        reject(new Error(e.data.message));
+      }
+    };
+    worker.addEventListener("message", onMessage);
+    worker.postMessage({ type: "flush" });
+  });
+
+  // 5. Terminate worker
+  worker.terminate();
+
+  return {
+    blob: result,
+    durationMs: endMs,
+    frameCount: totalFrames,
+    width,
+    height,
+  };
+}
+
 /** Check if WebCodecs is available in the current browser */
 export function isWebCodecsSupported(): boolean {
   return (
