@@ -13,6 +13,8 @@ import {
   ADTS,
   MPEG_TS,
 } from "mediabunny";
+import sharp from "sharp";
+import { extname } from "node:path";
 
 const MEDIA_FORMATS = [MP4, QTFF, MATROSKA, WEBM, MP3, WAVE, OGG, FLAC, ADTS, MPEG_TS];
 
@@ -227,15 +229,27 @@ export const ffmpegTool: FfmpegTool = {
   },
 
   async generateThumbnail(inputPath, outputPath) {
-    const result = await spawn("ffmpeg", [
-      "-y",
-      "-i", inputPath,
-      "-vframes", "1",
-      "-vf", "scale=-2:360",
-      "-q:v", "8",
-      outputPath,
-    ]);
-    assertSuccess(result, "generateThumbnail");
+    const ext = extname(inputPath).toLowerCase();
+    const imageExts = new Set([".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".tif", ".heic", ".heif", ".avif"]);
+
+    if (imageExts.has(ext)) {
+      // Use sharp for image thumbnails (no FFmpeg needed)
+      await sharp(inputPath)
+        .resize({ height: 360, withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toFile(outputPath);
+    } else {
+      // For video files, still use FFmpeg to extract first frame
+      const result = await spawn("ffmpeg", [
+        "-y",
+        "-i", inputPath,
+        "-vframes", "1",
+        "-vf", "scale=-2:360",
+        "-q:v", "8",
+        outputPath,
+      ]);
+      assertSuccess(result, "generateThumbnail");
+    }
   },
 
   async generateProxy(inputPath, outputPath, opts, onProgress) {
@@ -308,12 +322,9 @@ export const ffmpegTool: FfmpegTool = {
   },
 
   async convertToJpeg(inputPath, outputPath) {
-    const result = await spawn("ffmpeg", [
-      "-y",
-      "-i", inputPath,
-      "-q:v", "2",
-      outputPath,
-    ]);
-    assertSuccess(result, "convertToJpeg");
+    // Use sharp for JPEG conversion (supports HEIC, HEIF, AVIF, WebP, etc.)
+    await sharp(inputPath)
+      .jpeg({ quality: 90 })
+      .toFile(outputPath);
   },
 };

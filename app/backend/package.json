@@ -7,8 +7,10 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@types/sharp": "^0.32.0",
     "@video/shared": "workspace:*",
     "hono": "^4",
-    "mediabunny": "^1.40.1"
+    "mediabunny": "^1.40.1",
+    "sharp": "^0.34.5"
   }
 }
