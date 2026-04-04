@@ -1,4 +1,4 @@
-import type { Project } from "@video/shared";
+import type { Project, Asset } from "@video/shared";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { buildExportArgs } from "./export-service";
@@ -12,10 +12,11 @@ export async function exportProject(
   project: Project,
   assetsDir: string,
   outputPath: string,
+  resolveAssetVideoPath?: (asset: Asset) => string,
 ): Promise<void> {
   await mkdir(path.dirname(outputPath), { recursive: true });
 
-  const args = buildExportArgs(project, assetsDir, outputPath);
+  const args = buildExportArgs(project, assetsDir, outputPath, resolveAssetVideoPath);
 
   const proc = Bun.spawn(["ffmpeg", ...args], {
     stdout: "pipe",

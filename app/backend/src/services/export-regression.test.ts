@@ -399,7 +399,6 @@ describe("export regression", () => {
     };
 
     // 4. Export using a custom resolveAssetVideoPath that points to the rendered MP4
-    const { buildExportArgs } = await import("./export-service");
     const testDir = path.join(tmpDir, "p5js-rendered");
     const outputPath = path.join(testDir, "output.mp4");
     const actualFramesDir = path.join(testDir, "frames");
@@ -408,15 +407,8 @@ describe("export regression", () => {
       if (a.kind === "p5js") return renderedMp4Path;
       return path.join(ASSETS_DIR, path.basename(a.originalPath));
     };
-    const args = buildExportArgs(project, ASSETS_DIR, outputPath, resolveAssetVideoPath);
 
-    await mkdir(path.dirname(outputPath), { recursive: true });
-    const proc = Bun.spawn(["ffmpeg", ...args], { stdout: "pipe", stderr: "pipe" });
-    const exitCode = await proc.exited;
-    if (exitCode !== 0) {
-      const stderr = await new Response(proc.stderr).text();
-      throw new Error(`Export failed (exit ${exitCode}): ${stderr}`);
-    }
+    await exportProject(project, ASSETS_DIR, outputPath, resolveAssetVideoPath);
 
     // Extract frames
     const frames = await extractFrames({
@@ -575,7 +567,6 @@ describe("export regression", () => {
     };
 
     // Export using a custom resolveAssetVideoPath
-    const { buildExportArgs } = await import("./export-service");
     const testDir = path.join(tmpDir, "p5js-flowfield");
     const outputPath = path.join(testDir, "output.mp4");
     const actualFramesDir = path.join(testDir, "frames");
@@ -584,15 +575,8 @@ describe("export regression", () => {
       if (a.kind === "p5js") return renderedMp4Path;
       return path.join(ASSETS_DIR, path.basename(a.originalPath));
     };
-    const args = buildExportArgs(project, ASSETS_DIR, outputPath, resolveAssetVideoPath);
 
-    await mkdir(path.dirname(outputPath), { recursive: true });
-    const proc = Bun.spawn(["ffmpeg", ...args], { stdout: "pipe", stderr: "pipe" });
-    const exitCode = await proc.exited;
-    if (exitCode !== 0) {
-      const stderr = await new Response(proc.stderr).text();
-      throw new Error(`Export failed (exit ${exitCode}): ${stderr}`);
-    }
+    await exportProject(project, ASSETS_DIR, outputPath, resolveAssetVideoPath);
 
     const frames = await extractFrames({
       inputPath: outputPath,
@@ -694,7 +678,6 @@ describe("export regression", () => {
       },
     };
 
-    const { buildExportArgs } = await import("./export-service");
     const testDir = path.join(tmpDir, "p5js-flowfield-multi-track");
     const outputPath = path.join(testDir, "output.mp4");
     const actualFramesDir = path.join(testDir, "frames");
@@ -703,15 +686,8 @@ describe("export regression", () => {
       if (a.kind === "p5js") return renderedMp4Path;
       return path.join(ASSETS_DIR, path.basename(a.originalPath));
     };
-    const args = buildExportArgs(project, ASSETS_DIR, outputPath, resolveAssetVideoPath);
 
-    await mkdir(path.dirname(outputPath), { recursive: true });
-    const proc = Bun.spawn(["ffmpeg", ...args], { stdout: "pipe", stderr: "pipe" });
-    const exitCode = await proc.exited;
-    if (exitCode !== 0) {
-      const stderr = await new Response(proc.stderr).text();
-      throw new Error(`Export failed (exit ${exitCode}): ${stderr}`);
-    }
+    await exportProject(project, ASSETS_DIR, outputPath, resolveAssetVideoPath);
 
     const frames = await extractFrames({
       inputPath: outputPath,
