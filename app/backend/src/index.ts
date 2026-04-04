@@ -1,6 +1,10 @@
 import { app } from "./app";
 import { mkdir } from "node:fs/promises";
 import { getWorkspaceRoot } from "./utils/paths";
+import { loadPlugins } from "./lib/plugin-loader";
+import { builtinPlugin } from "./lib/builtin-plugin";
+
+loadPlugins([builtinPlugin]);
 
 const workspaceRoot = getWorkspaceRoot();
 await mkdir(workspaceRoot, { recursive: true });
