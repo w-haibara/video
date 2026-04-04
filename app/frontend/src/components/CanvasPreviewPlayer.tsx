@@ -264,6 +264,9 @@ export function CanvasPreviewPlayer({
     let cancelled = false;
 
     const seekAndRender = async () => {
+      // Clear ended state so that subsequent play works after seek/rewind
+      videoEndedRef.current.clear();
+
       const allActiveClips = findAllActiveClips(project, currentTimeMs);
       const seekPromises: Promise<void>[] = [];
 
@@ -275,6 +278,21 @@ export function CanvasPreviewPlayer({
         if (videoSourceChangingRef.current.has(asset.id)) continue;
 
         const targetSec = ac.clipTimeMs / 1000;
+        if (video.ended) {
+          // After ended, video.load() is needed to fully reset the element so
+          // drawImage returns valid frame data. Handle entirely outside the
+          // async promise chain to avoid React re-render cancellation issues.
+          const render = renderCurrentFrame;
+          video.load();
+          video.addEventListener("loadeddata", () => {
+            video.currentTime = targetSec;
+            video.addEventListener("seeked", () => {
+              render();
+              requestAnimationFrame(() => render());
+            }, { once: true });
+          }, { once: true });
+          continue; // Skip seekPromises for this video
+        }
         if (video.readyState < 2) {
           // Video not yet loaded — wait for loadeddata first
           seekPromises.push(
@@ -299,13 +317,12 @@ export function CanvasPreviewPlayer({
       if (seekPromises.length > 0) {
         await Promise.all(seekPromises);
       }
-      if (cancelled) return;
-
+      // Always render after seek completes — even if the effect was "cancelled" by a
+      // React re-render (e.g. triggered by video state changes during seek). The render
+      // is safe and idempotent; skipping it causes blank frames after rewind.
       renderCurrentFrame();
       // Extra rAF for the browser to paint the decoded frame
-      requestAnimationFrame(() => {
-        if (!cancelled) renderCurrentFrame();
-      });
+      requestAnimationFrame(() => renderCurrentFrame());
     };
 
     seekAndRender();
@@ -314,10 +331,24 @@ export function CanvasPreviewPlayer({
 
   // Play/pause video elements
   useEffect(() => {
-    // Iterate all managed video elements and play/pause them
-    for (const [, video] of videoElementsRef.current) {
+    if (isPlaying) {
+      // Clear ended tracking — we are starting fresh playback
+      videoEndedRef.current.clear();
+    }
+
+    const proj = projectRef.current;
+    const curTime = currentTimeMsRef.current;
+
+    for (const [assetId, video] of videoElementsRef.current) {
       if (isPlaying) {
-        video.play().catch(() => {});
+        const allActive = findAllActiveClips(proj, curTime);
+        const ac = allActive.find((c) => c.asset.id === assetId);
+        const targetSec = ac ? ac.clipTimeMs / 1000 : 0;
+        // Seek to correct position before playing (handles ended state)
+        video.currentTime = targetSec;
+        video.addEventListener("seeked", () => {
+          video.play().catch(() => {});
+        }, { once: true });
       } else {
         video.pause();
       }
