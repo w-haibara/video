@@ -6,8 +6,12 @@ import {
   BufferTarget,
   CanvasSource,
   canEncodeVideo,
+  canEncodeAudio,
+  AudioBufferSource,
   type VideoEncodingConfig,
+  type AudioEncodingConfig,
 } from "mediabunny";
+import { mixAudio, type AudioMixResult } from "./audio-mixer";
 
 // ── Types ──
 
@@ -26,6 +30,8 @@ export type CanvasExportOptions = {
     assetId: string,
     clipTimeMs: number,
   ) => Promise<CanvasImageSource | null>;
+  /** Resolve an asset ID to a fetchable audio URL, or null to skip. */
+  getAudioUrl?: (assetId: string) => string | null;
   /** Progress callback (0..1) */
   onProgress?: (progress: number) => void;
 };
@@ -89,6 +95,49 @@ function clipTimeForAsset(
   return 0;
 }
 
+// ── Audio helpers ──
+
+/**
+ * Pre-mix audio and determine encoding config.
+ * Returns the mixed audio and an AudioBufferSource ready to be added as a track,
+ * or null if no audio is available.
+ */
+async function prepareMixedAudio(
+  project: Project,
+  getAudioUrl?: (assetId: string) => string | null,
+): Promise<{ audioSource: AudioBufferSource; audioResult: AudioMixResult } | null> {
+  if (!getAudioUrl) return null;
+
+  let audioResult: AudioMixResult | null;
+  try {
+    audioResult = await mixAudio({ project, getAudioUrl });
+  } catch (err) {
+    console.warn("[canvas-export] Audio mixing failed, exporting video only:", err);
+    return null;
+  }
+  if (!audioResult) return null;
+
+  // Check AAC support, fall back to opus
+  let audioCodec: "aac" | "opus" = "aac";
+  const canAac = await canEncodeAudio("aac");
+  if (!canAac) {
+    const canOpus = await canEncodeAudio("opus");
+    if (!canOpus) {
+      console.warn("[canvas-export] No supported audio codec found, exporting video only");
+      return null;
+    }
+    audioCodec = "opus";
+  }
+
+  const audioConfig: AudioEncodingConfig = {
+    codec: audioCodec,
+    bitrate: 192_000,
+  };
+
+  const audioSource = new AudioBufferSource(audioConfig);
+  return { audioSource, audioResult };
+}
+
 // ── Main export function ──
 
 export async function exportWithCanvas(
@@ -97,6 +146,7 @@ export async function exportWithCanvas(
   const {
     project,
     getFrameSource,
+    getAudioUrl,
     onProgress,
   } = opts;
 
@@ -128,7 +178,10 @@ export async function exportWithCanvas(
   // 2. Create CanvasCompositor
   const compositor = new CanvasCompositor(canvas);
 
-  // 3. Determine video codec — try AVC first, fall back
+  // 3. Pre-mix audio (runs before video setup so track is added before start)
+  const audioPrep = await prepareMixedAudio(project, getAudioUrl);
+
+  // 4. Determine video codec — try AVC first, fall back
   let videoCodec: "avc" | "vp9" | "vp8" = "avc";
   const canAvc = await canEncodeVideo("avc", {
     width,
@@ -144,7 +197,7 @@ export async function exportWithCanvas(
     videoCodec = canVp9 ? "vp9" : "vp8";
   }
 
-  // 4. Configure encoding and muxing
+  // 5. Configure encoding and muxing
   const encodingConfig: VideoEncodingConfig = {
     codec: videoCodec,
     bitrate: videoBitrate,
@@ -161,6 +214,12 @@ export async function exportWithCanvas(
   });
 
   output.addVideoTrack(canvasSource);
+
+  // Add audio track before starting (required by mediabunny)
+  if (audioPrep) {
+    output.addAudioTrack(audioPrep.audioSource);
+  }
+
   await output.start();
 
   // 5. Render each frame
@@ -202,10 +261,16 @@ export async function exportWithCanvas(
     compositor.dispose();
   }
 
-  // 6. Finalize output
+  // 6. Feed mixed audio into the audio source (after video frames are done)
+  if (audioPrep) {
+    await audioPrep.audioSource.add(audioPrep.audioResult.audioBuffer);
+    audioPrep.audioSource.close();
+  }
+
+  // 7. Finalize output
   await output.finalize();
 
-  // 7. Build result blob
+  // 8. Build result blob
   const buffer = target.buffer;
   if (!buffer) {
     throw new Error("Export failed: no output buffer produced");
@@ -245,7 +310,7 @@ export function isWorkerExportSupported(): boolean {
 export async function exportWithWorker(
   opts: CanvasExportOptions,
 ): Promise<CanvasExportResult> {
-  const { project, getFrameSource, onProgress } = opts;
+  const { project, getFrameSource, getAudioUrl, onProgress } = opts;
 
   const width = opts.width ?? project.settings.canvasWidth;
   const height = opts.height ?? project.settings.canvasHeight;
@@ -260,11 +325,14 @@ export async function exportWithWorker(
   const totalFrames = Math.ceil((endMs / 1000) * fps);
   const frameDurationSec = 1 / fps;
 
-  // 1. Create canvas for rendering on main thread
+  // 1. Pre-mix audio on main thread (OfflineAudioContext not available in workers)
+  const audioPrep = await prepareMixedAudio(project, getAudioUrl);
+
+  // 2. Create canvas for rendering on main thread
   const canvas = new OffscreenCanvas(width, height);
   const compositor = new CanvasCompositor(canvas);
 
-  // 2. Create and initialize the worker
+  // 3. Create and initialize the worker
   const worker = new Worker(
     new URL("./export-worker.ts", import.meta.url),
     { type: "module" },
@@ -284,9 +352,23 @@ export async function exportWithWorker(
     worker.addEventListener("message", onMessage);
   });
 
+  // Determine audio codec config to pass to worker (if audio is available)
+  let audioCodecForWorker: "aac" | "opus" | null = null;
+  if (audioPrep) {
+    const canAac = await canEncodeAudio("aac");
+    audioCodecForWorker = canAac ? "aac" : "opus";
+  }
+
   worker.postMessage({
     type: "init",
-    data: { width, height, fps, videoBitrate },
+    data: {
+      width,
+      height,
+      fps,
+      videoBitrate,
+      audioCodec: audioCodecForWorker,
+      audioBitrate: audioCodecForWorker ? 192_000 : undefined,
+    },
   });
 
   await workerReady;
@@ -350,7 +432,33 @@ export async function exportWithWorker(
     compositor.dispose();
   }
 
-  // 4. Flush and wait for result
+  // 4. Send mixed audio data to worker (AudioBuffer is not transferable,
+  //    so we extract Float32Array channel data and transfer those)
+  if (audioPrep) {
+    const { audioBuffer, sampleRate } = audioPrep.audioResult;
+    const channelData: Float32Array[] = [];
+    const transferables: ArrayBuffer[] = [];
+    for (let ch = 0; ch < audioBuffer.numberOfChannels; ch++) {
+      // Copy channel data (getChannelData returns a reference to internal buffer)
+      const data = new Float32Array(audioBuffer.getChannelData(ch));
+      channelData.push(data);
+      transferables.push(data.buffer);
+    }
+    worker.postMessage(
+      {
+        type: "audio",
+        data: {
+          channelData,
+          sampleRate,
+          length: audioBuffer.length,
+          numberOfChannels: audioBuffer.numberOfChannels,
+        },
+      },
+      transferables,
+    );
+  }
+
+  // 5. Flush and wait for result
   const result = await new Promise<Blob>((resolve, reject) => {
     const onMessage = (e: MessageEvent) => {
       if (e.data.type === "done") {
@@ -365,7 +473,7 @@ export async function exportWithWorker(
     worker.postMessage({ type: "flush" });
   });
 
-  // 5. Terminate worker
+  // 6. Terminate worker
   worker.terminate();
 
   return {
