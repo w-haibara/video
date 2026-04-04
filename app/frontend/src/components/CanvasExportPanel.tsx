@@ -162,6 +162,33 @@ export function CanvasExportPanel({ project }: Props) {
     [project.assets, getVideoFrame, getImageFrame],
   );
 
+  /**
+   * Resolve an asset ID to a fetchable audio URL (for audio clips and
+   * video clips with embedded audio).
+   */
+  const getAudioUrl = useCallback(
+    (assetId: string): string | null => {
+      const asset = project.assets.find((a) => a.id === assetId);
+      if (!asset) return null;
+
+      if (asset.kind === "audio") {
+        if (asset.originalPath) {
+          const filename = asset.originalPath.split("/").pop();
+          return `/media/projects/${project.id}/originals/${filename}`;
+        }
+        return null;
+      }
+
+      if (asset.kind === "video" && asset.hasAudio) {
+        const url = getMediaUrl(asset, project.id);
+        return url || null;
+      }
+
+      return null;
+    },
+    [project.assets, project.id],
+  );
+
   const useWorker = isWorkerExportSupported();
 
   const handleExport = useCallback(async () => {
@@ -173,6 +200,7 @@ export function CanvasExportPanel({ project }: Props) {
       const result = await exportFn({
         project,
         getFrameSource,
+        getAudioUrl,
         onProgress: (progress) => {
           setState({ status: "exporting", progress });
         },
@@ -190,7 +218,7 @@ export function CanvasExportPanel({ project }: Props) {
         error: err instanceof Error ? err.message : String(err),
       });
     }
-  }, [project, getFrameSource, useWorker]);
+  }, [project, getFrameSource, getAudioUrl, useWorker]);
 
   const handleDownload = useCallback(() => {
     if (state.status !== "completed") return;
@@ -243,8 +271,8 @@ export function CanvasExportPanel({ project }: Props) {
           fontSize: "11px",
         }}
       >
-        Export video directly in the browser using WebCodecs (video only, no
-        audio).{useWorker ? " Encoding runs in a background worker." : ""}
+        Export video with audio directly in the browser using WebCodecs.
+        {useWorker ? " Encoding runs in a background worker." : ""}
       </div>
 
       {state.status === "idle" && (
