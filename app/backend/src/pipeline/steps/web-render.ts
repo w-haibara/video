@@ -2,8 +2,19 @@ import type { PipelineStep } from "../types";
 import type { RenderCacheManager } from "../../services/render-cache-manager";
 import { chromiumTool } from "../tools/chromium";
 import { join, dirname } from "node:path";
-import { writeFile, mkdir, rm } from "node:fs/promises";
+import { readFile, writeFile, mkdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
+
+/**
+ * Resolve the mediabunny minified CJS browser bundle path.
+ * The CJS bundle wraps everything in `var Mediabunny = (() => { ... })();`
+ * so injecting it into a browser page makes `Mediabunny` available as a global.
+ */
+function resolveMediabunnyBundlePath(): string {
+  // require.resolve("mediabunny") points to dist/bundles/mediabunny.cjs
+  const cjsPath = require.resolve("mediabunny");
+  return cjsPath.replace(/\.cjs$/, ".min.cjs");
+}
 
 export type WebRenderSettings = {
   width: number;
@@ -70,89 +81,79 @@ export const webRenderStep: PipelineStep = {
           waited += pollInterval;
         }
 
-        // 4. Spawn ffmpeg to receive PNG frames on stdin (image2pipe)
-        const ffmpegArgs = [
-          "-y",
-          "-f",
-          "image2pipe",
-          "-framerate",
-          String(fps),
-          "-i",
-          "pipe:0",
-          "-c:v",
-          "libx264",
-          "-pix_fmt",
-          "yuv420p",
-          "-preset",
-          "fast",
-          "-crf",
-          "23",
-          "-g",
-          "1",
-          "-r",
-          String(fps),
-          "-movflags",
-          "+faststart",
-          outputPath,
-        ];
+        // 4. Inject mediabunny bundle into the page for in-browser encoding
+        const bundlePath = resolveMediabunnyBundlePath();
+        const bundleSource = await readFile(bundlePath, "utf-8");
+        await session.evaluate<void>(bundleSource, { timeoutMs: 30_000 });
 
-        const ffmpegProc = Bun.spawn(["ffmpeg", ...ffmpegArgs], {
-          stdin: "pipe",
-          stdout: "ignore",
-          stderr: "pipe",
-        });
+        // 5. Initialize WebCodecs encoder inside Chrome via mediabunny
+        await session.evaluate<void>(`
+          (async () => {
+            const { Output, Mp4OutputFormat, BufferTarget, CanvasSource, canEncodeVideo } = Mediabunny;
+            const canvas = document.querySelector('canvas');
+            if (!canvas) throw new Error('No canvas element found');
 
-        // Start draining stderr concurrently to prevent deadlock
-        const stderrPromise = ffmpegProc.stderr
-          ? new Response(ffmpegProc.stderr).text()
-          : Promise.resolve("");
+            // Determine best available codec for MP4
+            let codec = 'avc';
+            if (!(await canEncodeVideo('avc'))) {
+              if (await canEncodeVideo('vp9')) codec = 'vp9';
+              else if (await canEncodeVideo('av1')) codec = 'av1';
+              else throw new Error('No supported video codec available for encoding');
+            }
 
-        try {
-          // 5. Capture frames and pipe to ffmpeg
-          const renderExpression = `
-            (function() {
+            window.__canvasSource = new CanvasSource(canvas, {
+              codec,
+              bitrate: 8_000_000,
+              keyFrameInterval: 1,
+            });
+
+            window.__target = new BufferTarget();
+            window.__output = new Output({
+              format: new Mp4OutputFormat({ fastStart: 'in-memory' }),
+              target: window.__target,
+            });
+            window.__output.addVideoTrack(window.__canvasSource, { frameRate: ${fps} });
+            await window.__output.start();
+          })()
+        `);
+
+        // 6. Capture frames and encode via WebCodecs
+        for (let i = 0; i < totalFrames; i++) {
+          await session.evaluate<void>(`
+            (async () => {
+              var __frameIndex = ${i};
               if (typeof window.__renderFrame === 'function') {
                 window.__renderFrame(__frameIndex);
               }
-              // Find the first canvas element and return its data URL
-              const canvas = document.querySelector('canvas');
-              if (!canvas) throw new Error('No canvas element found');
-              return canvas.toDataURL('image/png');
+              const timestamp = ${i} / ${fps};
+              const duration = 1 / ${fps};
+              await window.__canvasSource.add(timestamp, duration);
             })()
-          `;
-
-          const frames = session.captureFrames({
-            totalFrames,
-            fps,
-            renderExpression,
-            onProgress: (fraction) => ctx.reportProgress(fraction * 0.9),
-          });
-
-          const writer = ffmpegProc.stdin!;
-          for await (const pngBuffer of frames) {
-            writer.write(pngBuffer);
-          }
-          writer.end();
-        } catch (err) {
-          // Kill ffmpeg if frame capture fails to prevent hanging
-          try { ffmpegProc.kill(); } catch { /* ignore */ }
-          throw err;
+          `);
+          ctx.reportProgress((i + 1) / totalFrames * 0.9);
         }
 
-        // 6. Wait for ffmpeg to finish
-        const [exitCode, stderrText] = await Promise.all([
-          ffmpegProc.exited,
-          stderrPromise,
-        ]);
-        if (exitCode !== 0) {
-          throw new Error(
-            `web-render ffmpeg failed (exit ${exitCode}): ${stderrText}`,
-          );
-        }
+        // 7. Finalize and retrieve MP4 buffer
+        const base64Mp4 = await session.evaluate<string>(`
+          (async () => {
+            await window.__output.finalize();
+            const buffer = window.__target.buffer;
+            const bytes = new Uint8Array(buffer);
+            // Convert to base64 in chunks to avoid call stack limits
+            const chunkSize = 32768;
+            let binary = '';
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+              binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+            }
+            return btoa(binary);
+          })()
+        `, { timeoutMs: 60_000 });
+
+        await writeFile(outputPath, Buffer.from(base64Mp4, "base64"));
 
         ctx.reportProgress(1.0);
 
-        // 7. Store rendered path in shared context for downstream steps
+        // 8. Store rendered path in shared context for downstream steps
         ctx.shared.set("renderedMp4Path", outputPath);
         if (cacheManager) {
           // Compute source hash for cache commit

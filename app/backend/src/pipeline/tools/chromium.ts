@@ -10,7 +10,7 @@ export type ChromiumSession = {
   /** Load an HTML file (file:// URL) or http URL */
   navigate: (url: string) => Promise<void>;
   /** Execute JS in the page and return the result */
-  evaluate: <T>(expression: string) => Promise<T>;
+  evaluate: <T>(expression: string, opts?: { timeoutMs?: number }) => Promise<T>;
   /** Capture frames as PNG Buffers via an async generator */
   captureFrames: (opts: {
     totalFrames: number;
@@ -145,13 +145,15 @@ function createCdpConnection(ws: WebSocket) {
   function send(
     method: string,
     params?: Record<string, unknown>,
+    timeoutMs?: number,
   ): Promise<any> {
+    const timeout = timeoutMs ?? CDP_RESPONSE_TIMEOUT_MS;
     return new Promise((resolve, reject) => {
       const id = ++msgId;
       const timer = setTimeout(() => {
         pending.delete(id);
-        reject(new Error(`CDP call ${method} timed out (${CDP_RESPONSE_TIMEOUT_MS}ms)`));
-      }, CDP_RESPONSE_TIMEOUT_MS);
+        reject(new Error(`CDP call ${method} timed out (${timeout}ms)`));
+      }, timeout);
 
       pending.set(id, {
         resolve: (value: any) => {
@@ -282,12 +284,12 @@ export const chromiumTool: ChromiumTool = {
       await loadPromise;
     };
 
-    const evaluate = async <T>(expression: string): Promise<T> => {
+    const evaluate = async <T>(expression: string, evalOpts?: { timeoutMs?: number }): Promise<T> => {
       const result = await cdp.send("Runtime.evaluate", {
         expression,
         returnByValue: true,
         awaitPromise: true,
-      });
+      }, evalOpts?.timeoutMs);
       if (result.exceptionDetails) {
         const desc =
           result.exceptionDetails.exception?.description ??
