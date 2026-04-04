@@ -579,50 +579,50 @@ function EditorPageLoaded({
             }
             exportContent={
               <div style={{ padding: "8px", fontSize: "12px", color: theme.text }}>
-                <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
-                  Filename
-                </label>
-                <input
-                  type="text"
-                  value={exportFilename}
-                  onChange={(e) => setExportFilename(e.target.value)}
-                  style={{ ...inputStyle, padding: "6px 8px", fontSize: "13px", marginBottom: "12px" }}
-                />
-                <button
-                  onClick={handleExport}
-                  disabled={!!isExporting || exportMutation.isPending}
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    background: isExporting ? theme.bgDark : theme.button,
-                    color: isExporting ? theme.textMuted : theme.buttonText,
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: isExporting ? "default" : "pointer",
-                    fontSize: "13px",
-                    marginBottom: "12px",
-                  }}
-                >
-                  {isExporting ? "Exporting..." : "Start Export"}
-                </button>
-                {activeJobId && exportJob && (
-                  <div>
-                    <JobProgress job={exportJob} />
-                    {exportJob.status === "completed" && (
-                      <div style={{ color: theme.success, marginTop: "4px", fontSize: "12px" }}>
-                        Export completed! Downloading...
-                      </div>
-                    )}
-                    {exportJob.status === "failed" && (
-                      <div style={{ color: theme.error, marginTop: "4px", fontSize: "12px" }}>
-                        Export failed: {exportJob.error}
-                      </div>
-                    )}
-                  </div>
-                )}
+                <CanvasExportPanel project={currentProject} />
                 <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: "12px", paddingTop: "12px" }}>
-                  <div style={{ color: theme.textMuted, fontSize: "11px", marginBottom: "4px" }}>Browser Export</div>
-                  <CanvasExportPanel project={currentProject} />
+                  <div style={{ color: theme.textMuted, fontSize: "11px", marginBottom: "4px" }}>Server Export (FFmpeg)</div>
+                  <label style={{ color: theme.textMuted, display: "block", marginBottom: "4px" }}>
+                    Filename
+                  </label>
+                  <input
+                    type="text"
+                    value={exportFilename}
+                    onChange={(e) => setExportFilename(e.target.value)}
+                    style={{ ...inputStyle, padding: "6px 8px", fontSize: "13px", marginBottom: "12px" }}
+                  />
+                  <button
+                    onClick={handleExport}
+                    disabled={!!isExporting || exportMutation.isPending}
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      background: isExporting ? theme.bgDark : theme.button,
+                      color: isExporting ? theme.textMuted : theme.buttonText,
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: isExporting ? "default" : "pointer",
+                      fontSize: "13px",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    {isExporting ? "Exporting..." : "Start Export"}
+                  </button>
+                  {activeJobId && exportJob && (
+                    <div>
+                      <JobProgress job={exportJob} />
+                      {exportJob.status === "completed" && (
+                        <div style={{ color: theme.success, marginTop: "4px", fontSize: "12px" }}>
+                          Export completed! Downloading...
+                        </div>
+                      )}
+                      {exportJob.status === "failed" && (
+                        <div style={{ color: theme.error, marginTop: "4px", fontSize: "12px" }}>
+                          Export failed: {exportJob.error}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             }
