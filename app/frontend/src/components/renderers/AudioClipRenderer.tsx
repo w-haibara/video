@@ -57,7 +57,7 @@ function AudioElement({
     return () => {
       audioManager.disconnectElement(activeClip.clip.id);
     };
-  }, [activeClip.clip.id, ref.current, trackMuted]);
+  }, [activeClip.clip.id, trackMuted, volume]);
 
   // Update volume continuously
   useEffect(() => {
@@ -100,6 +100,7 @@ function AudioElement({
         if (isPlaying) audio.play().catch(() => {});
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeClip object reference change triggers this; individual properties like clipTimeMs don't need listing
   }, [activeClip.clip.id, mediaUrl, isPlaying]);
 
   // Play/pause sync

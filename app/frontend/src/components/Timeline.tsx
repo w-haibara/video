@@ -493,7 +493,7 @@ export function Timeline({
 
             // Separator between split and clipboard group
             if (onSplitClip && (onCopyClip || onDuplicateClip)) {
-              items.push({ type: "separator" });
+              items.push({ type: "separator", id: "sep-split" });
             }
 
             // Group 2: Clipboard operations
@@ -540,7 +540,7 @@ export function Timeline({
 
             // Separator between clipboard and delete group
             if (items.length > 0) {
-              items.push({ type: "separator" });
+              items.push({ type: "separator", id: "sep-clipboard" });
             }
 
             // Group 3: Delete operations
@@ -601,7 +601,7 @@ export function Timeline({
               });
             }
             if (items.length > 0) {
-              items.push({ type: "separator" });
+              items.push({ type: "separator", id: "sep-track-props" });
             }
             if (onToggleTrackLocked) {
               items.push({
@@ -619,7 +619,7 @@ export function Timeline({
                 },
               });
             }
-            items.push({ type: "separator" });
+            items.push({ type: "separator", id: "sep-track-delete" });
             items.push({
               label: "Delete Track",
               onClick: () => {

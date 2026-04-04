@@ -11,6 +11,7 @@ type MenuAction = {
 
 type MenuSeparator = {
   type: "separator";
+  id: string;
 };
 
 export type MenuItem = MenuAction | MenuSeparator;
@@ -61,7 +62,7 @@ export function ContextMenu({ items, position, onClose }: Props) {
         if (item.type === "separator") {
           return (
             <div
-              key={i}
+              key={item.id}
               style={{
                 height: "1px",
                 background: theme.border,
@@ -74,7 +75,7 @@ export function ContextMenu({ items, position, onClose }: Props) {
         const action = item as MenuAction;
         return (
           <button
-            key={i}
+            key={action.label}
             onClick={() => {
               if (!action.disabled) {
                 action.onClick();

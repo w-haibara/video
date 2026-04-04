@@ -21,7 +21,7 @@ function makeSeq(clips: Clip[], trackOverrides: Partial<Track> = {}): Sequence {
 
 function getClip(seq: Sequence, clipId = "c1"): Clip {
   for (const t of seq.tracks) {
-    const c = t.clips.find((c) => c.id === clipId);
+    const c = t.clips.find((cl) => cl.id === clipId);
     if (c) return c;
   }
   throw new Error(`Clip ${clipId} not found`);

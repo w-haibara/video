@@ -37,18 +37,20 @@ export function PreviewTestPage() {
     setCurrentTimeMs(ms);
   }, []);
 
+  const projectLoaded = !!project;
+
   // Expose API for Playwright
   useEffect(() => {
     window.__previewTest = {
       seek,
       getTime: () => timeMsRef.current,
-      ready: !!project,
+      ready: projectLoaded,
       frameStable: false,
     };
     return () => {
       delete window.__previewTest;
     };
-  }, [seek, !!project]);
+  }, [seek, projectLoaded]);
 
   // Mark frame as stable after React render + video seek completion.
   // Playwright waits for this before taking a screenshot.

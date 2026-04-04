@@ -187,6 +187,7 @@ export function PreviewPlayer({
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately runs on clip/source/play changes, not every videoContent property change
   }, [videoContent?.clip.id, mediaUrl, isPlaying]);
 
   // Listen for video ended event to advance clips
@@ -308,7 +309,7 @@ export function PreviewPlayer({
 
     animFrameRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [isPlaying]);
+  }, [isPlaying, canvasW, canvasH]);
 
   // Seek video when timeline is scrubbed (not playing)
   useEffect(() => {
@@ -316,6 +317,7 @@ export function PreviewPlayer({
     if (!video || isPlaying || !videoContent) return;
     if (sourceChangingRef.current) return;
     video.currentTime = videoContent.clipTimeMs / 1000;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately runs on time/play changes, not every videoContent property change
   }, [currentTimeMs, isPlaying]);
 
   // Escape key exits fullscreen

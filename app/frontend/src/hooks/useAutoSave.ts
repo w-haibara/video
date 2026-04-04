@@ -35,6 +35,7 @@ export function useAutoSave(projectId: string, sequence: Sequence, markers?: Mar
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- updateProject reference changes every render; adding it would cause infinite loop
   }, [sequence, markers]);
 
   return { saveStatus: statusRef.current };

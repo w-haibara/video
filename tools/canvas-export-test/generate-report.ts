@@ -158,7 +158,7 @@ async function analyzeFixture(f: (typeof FIXTURES)[number]): Promise<FixtureResu
   });
 
   // Only count pixel mismatches (ignore trailing missing frames)
-  const pixelMismatches = result.perFrame.filter((f) => !f.passed);
+  const pixelMismatches = result.perFrame.filter((pf) => !pf.passed);
   const passed = pixelMismatches.length === 0;
 
   // Embed images as data URIs

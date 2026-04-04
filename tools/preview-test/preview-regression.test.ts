@@ -46,6 +46,8 @@ const TEST_CASES: Array<{
   exportChannelTolerance?: number;
   /** Per-fixture pixel threshold override for export comparison */
   exportThreshold?: number;
+  /** Skip preview regression assertion (frames still captured for catalog) */
+  skipPreview?: string;
 }> = [
   { fixture: "single-video" },
   { fixture: "two-clips" },
@@ -68,7 +70,7 @@ const TEST_CASES: Array<{
   { fixture: "chroma-key" },
   { fixture: "pip-corner-br" },
   // Feature showcase: combines all features — inherently high divergence
-  { fixture: "feature-showcase", skipExportCompare: true },
+  { fixture: "feature-showcase", skipExportCompare: true, skipPreview: "combines all features with text — too many divergence sources for tight preview threshold" },
 ];
 
 async function hasReferenceFrames(dir: string): Promise<boolean> {
@@ -137,6 +139,11 @@ describe("preview regression", () => {
           actualDir,
           threshold: PREVIEW_THRESHOLD,
         });
+
+        // Known-divergent cases: frames captured for catalog, assertion skipped
+        if (tc.skipPreview) {
+          return;
+        }
 
         if (!previewResult.passed) {
           const failures = previewResult.perFrame

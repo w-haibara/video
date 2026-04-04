@@ -297,13 +297,13 @@ export const chromiumTool: ChromiumTool = {
       return result.result.value as T;
     };
 
-    async function* captureFrames(opts: {
+    async function* captureFrames(captureOpts: {
       totalFrames: number;
       fps: number;
       renderExpression: string;
       onProgress?: (fraction: number) => void;
     }): AsyncGenerator<Buffer> {
-      for (let i = 0; i < opts.totalFrames; i++) {
+      for (let i = 0; i < captureOpts.totalFrames; i++) {
         // Set frame index variable
         await cdp.send("Runtime.evaluate", {
           expression: `var __frameIndex = ${i};`,
@@ -311,7 +311,7 @@ export const chromiumTool: ChromiumTool = {
         });
         // Execute render expression to get data URL
         const result = await cdp.send("Runtime.evaluate", {
-          expression: opts.renderExpression,
+          expression: captureOpts.renderExpression,
           returnByValue: true,
           awaitPromise: true,
         });
@@ -332,7 +332,7 @@ export const chromiumTool: ChromiumTool = {
         }
         const base64 = dataUrl.slice("data:image/png;base64,".length);
         yield Buffer.from(base64, "base64");
-        opts.onProgress?.((i + 1) / opts.totalFrames);
+        captureOpts.onProgress?.((i + 1) / captureOpts.totalFrames);
       }
     }
 

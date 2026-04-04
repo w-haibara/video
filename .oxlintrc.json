@@ -2,15 +2,17 @@
   "$schema": "https://json.schemastore.org/oxlintrc.json",
   "categories": {
     "correctness": "error",
-    "suspicious": "warn",
-    "perf": "warn"
+    "suspicious": "error",
+    "perf": "error"
   },
   "plugins": ["typescript", "react"],
   "rules": {
     "no-unused-vars": "off",
     "typescript/no-unused-vars": "off",
+    "no-await-in-loop": "off",
     "react/react-in-jsx-scope": "off",
-    "react-hooks/exhaustive-deps": "warn"
+    "react-hooks/exhaustive-deps": "error",
+    "react/no-array-index-key": "error"
   },
   "overrides": [
     {

@@ -67,7 +67,7 @@ function useAudioConnection(
     return () => {
       audioManager.disconnectElement(clipId);
     };
-  }, [clipId, element, trackMuted]);
+  }, [clipId, element, trackMuted, volume]);
 
   // Update volume continuously (separate effect so volume changes don't reconnect)
   useEffect(() => {
@@ -144,6 +144,7 @@ function ManagedVideoElement({
         if (isPlaying) video.play().catch(() => {});
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeClip object reference change triggers this; ref is stable from useRef
   }, [activeClip.clip.id, mediaUrl, isPlaying]);
 
   // Playback rate sync
@@ -152,7 +153,7 @@ function ManagedVideoElement({
     const video = ref.current;
     if (!video) return;
     video.playbackRate = speed;
-  }, [speed]);
+  }, [speed, ref]);
 
   // Play/pause sync
   useEffect(() => {
@@ -163,7 +164,7 @@ function ManagedVideoElement({
     } else {
       video.pause();
     }
-  }, [isPlaying]);
+  }, [isPlaying, ref]);
 
   // Seek when not playing
   useEffect(() => {
@@ -171,7 +172,7 @@ function ManagedVideoElement({
     if (!video || isPlaying) return;
     if (sourceChangingRef.current) return;
     video.currentTime = activeClip.clipTimeMs / 1000;
-  }, [activeClip.clipTimeMs, isPlaying]);
+  }, [activeClip.clipTimeMs, isPlaying, ref]);
 
   return (
     <video

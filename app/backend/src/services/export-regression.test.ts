@@ -419,7 +419,6 @@ describe("export regression", () => {
     }
 
     // Extract frames
-    const { extractFrames } = await import("../utils/frame-extract");
     const frames = await extractFrames({
       inputPath: outputPath,
       outputDir: actualFramesDir,
