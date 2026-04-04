@@ -57,37 +57,6 @@ function assertSuccess(
   }
 }
 
-async function probeJson(inputPath: string): Promise<any> {
-  const maxRetries = 3;
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    if (attempt > 0) {
-      await new Promise((r) => setTimeout(r, 100 * attempt));
-    }
-
-    const result = await spawn("ffprobe", [
-      "-v", "quiet",
-      "-print_format", "json",
-      "-show_format",
-      "-show_streams",
-      inputPath,
-    ]);
-    assertSuccess(result, "ffprobe");
-
-    try {
-      return JSON.parse(result.stdout);
-    } catch {
-      lastError = new Error(
-        `ffprobe JSON parse failed (attempt ${attempt + 1}/${maxRetries}, ` +
-        `stdout ${result.stdout.length} bytes): ${result.stdout.slice(0, 200)}`
-      );
-    }
-  }
-
-  throw lastError;
-}
-
 /**
  * Probe a media file using mediabunny (handles video/audio container formats).
  */
@@ -213,11 +182,6 @@ async function probeImageFile(inputPath: string): Promise<ProbeResult> {
 }
 
 export const ffmpegTool: FfmpegTool = {
-  async checkInstalled() {
-    const result = await spawn("ffmpeg", ["-version"]);
-    if (result.exitCode !== 0) throw new Error("ffmpeg not found");
-  },
-
   async probe(inputPath) {
     // Try mediabunny first (handles video/audio container formats)
     try {

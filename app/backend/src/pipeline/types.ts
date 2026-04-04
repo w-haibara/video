@@ -30,9 +30,8 @@ export type ProbeResult = {
   isHdr?: boolean;
 };
 
-/** FFmpeg tool abstraction (swappable) */
+/** Media tool abstraction (swappable) */
 export type FfmpegTool = {
-  checkInstalled: () => Promise<void>;
   probe: (inputPath: string) => Promise<ProbeResult>;
   generateThumbnail: (inputPath: string, outputPath: string) => Promise<void>;
   generateProxy: (

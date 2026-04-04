@@ -31,9 +31,6 @@ export {
 export {
   getStaticValue,
 } from "./keyframe/property-resolver";
-export {
-  buildKeyframeFilterExpression,
-} from "./keyframe/ffmpeg-expression";
 
 // Utils
 export { generateId } from "./utils/id";
