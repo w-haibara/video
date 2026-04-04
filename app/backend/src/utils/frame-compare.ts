@@ -1,5 +1,6 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 
 export type FrameCompareResult = {
   totalFrames: number;
@@ -32,16 +33,14 @@ export async function listFrames(dir: string): Promise<string[]> {
 }
 
 /**
- * Decode a PNG to raw RGBA bytes using FFmpeg.
+ * Decode a PNG to raw RGBA bytes using sharp.
  */
 async function decodeToRgba(filePath: string): Promise<Uint8Array> {
-  const proc = Bun.spawn(
-    ["ffmpeg", "-i", filePath, "-f", "rawvideo", "-pix_fmt", "rgba", "-"],
-    { stdout: "pipe", stderr: "pipe" },
-  );
-  const output = await new Response(proc.stdout).arrayBuffer();
-  await proc.exited;
-  return new Uint8Array(output);
+  const { data } = await sharp(filePath)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
 }
 
 /**
