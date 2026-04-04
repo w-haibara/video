@@ -1,6 +1,7 @@
 import path from "node:path";
 import { Hono } from "hono";
-import { mkdir, cp } from "node:fs/promises";
+import { mkdir, cp, readFile, writeFile, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { generateId } from "@video/shared";
 import type { Project, Asset } from "@video/shared";
 import {
@@ -11,6 +12,9 @@ import {
   renderCacheDir,
 } from "../utils/paths";
 import { saveProject, deleteProject } from "../services/project-service";
+import { buildP5jsHtml } from "../pipeline/steps/p5js-prepare";
+import { webRenderStep } from "../pipeline/steps/web-render";
+import type { PipelineContext } from "../pipeline/types";
 
 // Fixture factory imports
 import {
@@ -26,6 +30,11 @@ import {
   makeZoomInTransitionProject,
   makePushLeftTransitionProject,
   makeP5jsProject,
+  makeP5jsTransformProject,
+  makeP5jsMultiTrackProject,
+  makeP5jsTransitionProject,
+  makeP5jsFlowfieldProject,
+  makeP5jsFlowfieldMultiTrackProject,
   makeKeyframeTransformXProject,
   makeSpeed2xProject,
   makeColorCorrectionProject,
@@ -121,6 +130,11 @@ const fixtureFactories: Record<string, () => Project> = {
   "color-correction-video-filter": makeColorCorrectionVideoFilterProject,
   "keyframe-color-correction": makeKeyframeColorCorrectionProject,
   "video-filter-transition": makeVideoFilterTransitionProject,
+  "p5js-transform": makeP5jsTransformProject,
+  "p5js-multi-track": makeP5jsMultiTrackProject,
+  "p5js-transition": makeP5jsTransitionProject,
+  "p5js-flowfield": makeP5jsFlowfieldProject,
+  "p5js-flowfield-multi-track": makeP5jsFlowfieldMultiTrackProject,
   "feature-showcase": makeFeatureShowcaseProject,
 };
 
@@ -152,15 +166,67 @@ async function prepareAsset(asset: Asset, projectId: string): Promise<void> {
       break;
     }
     case "p5js": {
-      // Use the pre-rendered p5js video as proxy
-      const cacheDir = path.join(renderCacheDir(projectId), asset.id);
-      await mkdir(cacheDir, { recursive: true });
-      const renderedSrc = path.join(FIXTURES_ASSETS_DIR, "test-p5js-rendered-1s.mp4");
-      await cp(renderedSrc, path.join(cacheDir, "proxy.mp4"));
-      asset.proxyPath = `render-cache/${asset.id}/proxy.mp4`;
+      // If originalPath points to a pre-rendered MP4, use it directly
+      if (asset.originalPath.endsWith(".mp4")) {
+        const cacheDir = path.join(renderCacheDir(projectId), asset.id);
+        await mkdir(cacheDir, { recursive: true });
+        const renderedSrc = path.join(FIXTURES_ASSETS_DIR, path.basename(asset.originalPath));
+        await cp(renderedSrc, path.join(cacheDir, "proxy.mp4"));
+        asset.proxyPath = `render-cache/${asset.id}/proxy.mp4`;
+        break;
+      }
+      // Render the p5.js sketch source via Chromium pipeline
+      await renderP5jsSketch(asset, projectId);
       break;
     }
   }
+}
+
+/**
+ * Render a p5.js sketch source file through the Chromium pipeline
+ * (generative-prepare → web-render) and store the result as proxy video.
+ */
+async function renderP5jsSketch(asset: Asset, projectId: string): Promise<void> {
+  const sketchCode = await readFile(
+    path.join(FIXTURES_ASSETS_DIR, path.basename(asset.originalPath)),
+    "utf-8",
+  );
+
+  const width = 160;
+  const height = 90;
+  const fps = 10;
+  const durationMs = asset.durationMs ?? 1000;
+
+  // Write sketch to a temp project dir for the pipeline
+  const projDir = path.join(tmpdir(), `p5js-render-${projectId}-${asset.id}`);
+  await mkdir(projDir, { recursive: true });
+  await writeFile(path.join(projDir, "sketch.p5.js"), sketchCode);
+
+  const html = buildP5jsHtml(sketchCode, width, height);
+  const shared = new Map<string, unknown>([
+    ["canvasWidth", width],
+    ["canvasHeight", height],
+    ["fps", fps],
+    ["durationMs", durationMs],
+    ["webRenderHtml", html],
+    ["webRenderSettings", { width, height, fps, durationMs }],
+  ]);
+
+  const ctx: PipelineContext = {
+    asset: { ...asset, originalPath: "sketch.p5.js" },
+    projectDir: projDir,
+    projectId,
+    shared,
+    reportProgress: () => {},
+  };
+
+  await webRenderStep.execute(ctx);
+
+  const renderedMp4Path = ctx.shared.get("renderedMp4Path") as string;
+  const cacheDir = path.join(renderCacheDir(projectId), asset.id);
+  await mkdir(cacheDir, { recursive: true });
+  await cp(renderedMp4Path, path.join(cacheDir, "proxy.mp4"));
+  asset.proxyPath = `render-cache/${asset.id}/proxy.mp4`;
 }
 
 const testFixtures = new Hono();

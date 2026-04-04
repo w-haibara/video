@@ -32,7 +32,28 @@ const audioAsset: Asset = {
 const p5jsAsset: Asset = {
   id: "p5js1",
   kind: "p5js",
-  originalPath: "assets/test-sketch.p5.js",  // Source-only: always points to the sketch
+  originalPath: "assets/test-sketch.p5.js",
+  durationMs: 1000,
+  width: CANVAS_W,
+  height: CANVAS_H,
+  hasAudio: false,
+};
+
+const p5jsFlowfieldAsset: Asset = {
+  id: "p5js-flowfield",
+  kind: "p5js",
+  originalPath: "assets/test-sketch-flowfield.p5.js",
+  durationMs: 1000,
+  width: CANVAS_W,
+  height: CANVAS_H,
+  hasAudio: false,
+};
+
+/** p5js asset resolved to its pre-rendered MP4 for direct FFmpeg export */
+const p5jsVideoAsset: Asset = {
+  id: "p5js1",
+  kind: "p5js",
+  originalPath: "assets/test-p5js-rendered-1s.mp4",
   durationMs: 1000,
   width: CANVAS_W,
   height: CANVAS_H,
@@ -406,6 +427,109 @@ export function makeP5jsProject(): Project {
         makeTrack([
           makeClip({ id: "c1", clipKind: "p5js", assetId: "p5js1", durationMs: 1000 }),
         ]),
+      ],
+    },
+  });
+}
+
+/** p5.js clip with transform (scale + rotation) */
+export function makeP5jsTransformProject(): Project {
+  return baseProject({
+    assets: [p5jsVideoAsset],
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            id: "c1",
+            clipKind: "p5js",
+            assetId: "p5js1",
+            durationMs: 1000,
+            transform: { x: 20, y: 10, scale: 0.7, rotation: 15 },
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** p5.js clip + video clip on separate tracks (multi-track overlay) */
+export function makeP5jsMultiTrackProject(): Project {
+  return baseProject({
+    assets: [videoAsset, p5jsVideoAsset],
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", clipKind: "video", assetId: "v1", durationMs: 1000 }),
+        ], "t1"),
+        makeTrack([
+          makeClip({
+            id: "c2",
+            clipKind: "p5js",
+            assetId: "p5js1",
+            durationMs: 1000,
+            blendMode: "opacity",
+          }),
+        ], "t2"),
+      ],
+    },
+  });
+}
+
+/** p5.js clip with fade transition from video */
+export function makeP5jsTransitionProject(): Project {
+  return baseProject({
+    assets: [videoAsset, p5jsVideoAsset],
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", clipKind: "video", assetId: "v1", startMs: 0, durationMs: 1000 }),
+          makeClip({
+            id: "c2",
+            clipKind: "p5js",
+            assetId: "p5js1",
+            startMs: 700,
+            durationMs: 1000,
+            transition: { type: "fade", durationMs: 300 },
+          }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** Complex p5.js sketch — Perlin-noise flow field with particle trails.
+ *  Tests the Chromium rendering pipeline with dynamic, per-frame drawing. */
+export function makeP5jsFlowfieldProject(): Project {
+  return baseProject({
+    assets: [p5jsFlowfieldAsset],
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", clipKind: "p5js", assetId: "p5js-flowfield", durationMs: 1000 }),
+        ]),
+      ],
+    },
+  });
+}
+
+/** p5.js flow field + video multi-track overlay — complex sketch composited with video */
+export function makeP5jsFlowfieldMultiTrackProject(): Project {
+  return baseProject({
+    assets: [videoAsset, p5jsFlowfieldAsset],
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({ id: "c1", clipKind: "video", assetId: "v1", durationMs: 1000 }),
+        ], "t1"),
+        makeTrack([
+          makeClip({
+            id: "c2",
+            clipKind: "p5js",
+            assetId: "p5js-flowfield",
+            durationMs: 1000,
+            blendMode: "screen",
+          }),
+        ], "t2"),
       ],
     },
   });

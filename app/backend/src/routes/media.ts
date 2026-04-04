@@ -18,6 +18,55 @@ const MIME_TYPES: Record<string, string> = {
   ".ogg": "audio/ogg",
 };
 
+/**
+ * Serve a file with HTTP Range request support.
+ * Required for video seek in browsers — without Range support,
+ * the seekable range is 0-0 and video.currentTime cannot be changed.
+ */
+async function serveFileWithRange(
+  c: { req: { header: (name: string) => string | undefined } },
+  filePath: string,
+  contentType: string,
+  extraHeaders?: Record<string, string>,
+): Promise<Response> {
+  const file = Bun.file(filePath);
+  if (!(await file.exists())) {
+    return new Response(JSON.stringify({ error: "File not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const fileSize = file.size;
+  const rangeHeader = c.req.header("range");
+
+  const headers: Record<string, string> = {
+    "Content-Type": contentType,
+    "Accept-Ranges": "bytes",
+    ...extraHeaders,
+  };
+
+  if (rangeHeader) {
+    const match = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+    if (match) {
+      const start = parseInt(match[1], 10);
+      const end = match[2] ? parseInt(match[2], 10) : fileSize - 1;
+      const chunkSize = end - start + 1;
+
+      headers["Content-Range"] = `bytes ${start}-${end}/${fileSize}`;
+      headers["Content-Length"] = String(chunkSize);
+
+      return new Response(file.slice(start, end + 1), {
+        status: 206,
+        headers,
+      });
+    }
+  }
+
+  headers["Content-Length"] = String(fileSize);
+  return new Response(file, { status: 200, headers });
+}
+
 const media = new Hono();
 
 media.get("/projects/:projectId/:type/:filename", async (c) => {
@@ -26,22 +75,16 @@ media.get("/projects/:projectId/:type/:filename", async (c) => {
     return c.json({ error: "Invalid media type" }, 400);
   }
   const filePath = resolveWorkspacePath("projects", projectId, type, filename);
-  const file = Bun.file(filePath);
-  if (!(await file.exists())) {
-    return c.json({ error: "File not found" }, 404);
-  }
 
   const ext = path.extname(filename).toLowerCase();
   const contentType = MIME_TYPES[ext] ?? "application/octet-stream";
 
-  const headers: Record<string, string> = {
-    "Content-Type": contentType,
-  };
+  const extraHeaders: Record<string, string> = {};
   if (type === "exports") {
-    headers["Content-Disposition"] = `attachment; filename="${filename}"`;
+    extraHeaders["Content-Disposition"] = `attachment; filename="${filename}"`;
   }
 
-  return new Response(file, { headers });
+  return serveFileWithRange(c, filePath, contentType, extraHeaders);
 });
 
 // Serve files from render-cache/{assetId}/{filename}
@@ -54,15 +97,11 @@ media.get("/projects/:projectId/render-cache/:assetId/:filename", async (c) => {
     assetId,
     filename,
   );
-  const file = Bun.file(filePath);
-  if (!(await file.exists())) {
-    return c.json({ error: "File not found" }, 404);
-  }
 
   const ext = path.extname(filename).toLowerCase();
   const contentType = MIME_TYPES[ext] ?? "application/octet-stream";
 
-  return new Response(file, { headers: { "Content-Type": contentType } });
+  return serveFileWithRange(c, filePath, contentType);
 });
 
 export { media };

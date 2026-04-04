@@ -9,4 +9,3 @@ storybook-static/
 coverage/
 debug-storybook.log
 tools/preview-test/.actual/
-tools/preview-test/.compositor-actual/

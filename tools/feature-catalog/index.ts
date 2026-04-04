@@ -30,6 +30,11 @@ import {
   makeAddProject,
   makeDifferenceProject,
   makeP5jsProject,
+  makeP5jsTransformProject,
+  makeP5jsMultiTrackProject,
+  makeP5jsTransitionProject,
+  makeP5jsFlowfieldProject,
+  makeP5jsFlowfieldMultiTrackProject,
   makeEmptyAssetMixedProject,
   makeSplitClipProject,
   makeMutedTrackProject,
@@ -72,6 +77,10 @@ const REFS_DIR = path.join(
 const ASSETS_DIR = path.join(
   ROOT,
   "app/backend/src/__fixtures__/export/assets",
+);
+const CANVAS_ACTUAL_DIR = path.join(
+  ROOT,
+  "tools/canvas-export-test/.actual",
 );
 
 // ── Constants (derived from theme) ──
@@ -164,6 +173,11 @@ const EXPORT_TESTS: Array<{
   { name: "keyframe-color-correction", description: "Keyframe transform.x + color correction (cross-feature)", factory: makeKeyframeColorCorrectionProject },
   { name: "video-filter-transition", description: "Video filter (grayscale) + fade transition (cross-feature)", factory: makeVideoFilterTransitionProject },
   { name: "chroma-key-blend", description: "Chroma key + screen blend mode (cross-feature)", factory: makeChromaKeyBlendProject },
+  { name: "p5js-transform", description: "p5.js clip with transform (scale + rotation)", factory: makeP5jsTransformProject },
+  { name: "p5js-multi-track", description: "p5.js + video multi-track overlay (opacity blend)", factory: makeP5jsMultiTrackProject },
+  { name: "p5js-transition", description: "p5.js with fade transition from video", factory: makeP5jsTransitionProject },
+  { name: "p5js-flowfield", description: "Complex p5.js: Perlin-noise flow field with particle trails", factory: makeP5jsFlowfieldProject },
+  { name: "p5js-flowfield-multi-track", description: "p5.js flow field + video multi-track (screen blend)", factory: makeP5jsFlowfieldMultiTrackProject },
   { name: "feature-showcase", description: "ALL features: p5js, video, image, audio, transitions, keyframes, speed, color, filters, chroma key, PiP, titles", factory: makeFeatureShowcaseProject },
 ];
 
@@ -218,6 +232,77 @@ async function buildAllExportTestCases(): Promise<ExportTestCase[]> {
     EXPORT_TESTS.map((def) => countFrames(def.name)),
   );
   return EXPORT_TESTS.map((def, i) => buildExportTestCase(def, frameCounts[i]));
+}
+
+// ── Parity test mapping (fixture name -> export ref name) ──
+
+const PARITY_FIXTURE_MAP: Array<{
+  fixture: string;
+  exportRef: string;
+  skip?: string;
+}> = [
+  { fixture: "single-video", exportRef: "single-video" },
+  { fixture: "two-clips", exportRef: "two-clips" },
+  { fixture: "image-clip", exportRef: "image-clip" },
+  { fixture: "text-overlay", exportRef: "text-overlay" },
+  { fixture: "title-font-align", exportRef: "title-font-align" },
+  { fixture: "crop-transform", exportRef: "crop-transform" },
+  { fixture: "multi-track", exportRef: "multi-track" },
+  { fixture: "overlay-transform", exportRef: "overlay-transform" },
+  { fixture: "transition-fade", exportRef: "transition-fade" },
+  { fixture: "transition-fade-black", exportRef: "transition-fade-black" },
+  { fixture: "transition-fade-white", exportRef: "transition-fade-white" },
+  { fixture: "transition-slide-left", exportRef: "transition-slide-left" },
+  { fixture: "transition-slide-right", exportRef: "transition-slide-right" },
+  { fixture: "transition-slide-up", exportRef: "transition-slide-up" },
+  { fixture: "transition-slide-down", exportRef: "transition-slide-down" },
+  { fixture: "transition-wipe-left", exportRef: "transition-wipe-left" },
+  { fixture: "transition-wipe-up", exportRef: "transition-wipe-up" },
+  { fixture: "transition-zoom-in", exportRef: "transition-zoom-in" },
+  { fixture: "transition-push-left", exportRef: "transition-push-left" },
+  { fixture: "opacity", exportRef: "blend-opacity" },
+  { fixture: "multiply", exportRef: "blend-multiply" },
+  { fixture: "screen", exportRef: "blend-screen" },
+  { fixture: "overlay-blend", exportRef: "blend-overlay" },
+  { fixture: "add", exportRef: "blend-add" },
+  { fixture: "difference", exportRef: "blend-difference" },
+  { fixture: "transition-with-transform", exportRef: "transition-with-transform" },
+  { fixture: "transition-multi-track", exportRef: "transition-multi-track" },
+  { fixture: "blend-mode-transition", exportRef: "blend-mode-transition" },
+  { fixture: "crop-blend", exportRef: "crop-blend" },
+  { fixture: "keyframe-transform-x", exportRef: "keyframe-transform-x" },
+  { fixture: "speed-2x", exportRef: "speed-2x" },
+  { fixture: "speed-half", exportRef: "speed-half" },
+  { fixture: "speed-multi-clip", exportRef: "speed-multi-clip" },
+  { fixture: "speed-transition", exportRef: "speed-transition" },
+  { fixture: "color-correction", exportRef: "color-correction" },
+  { fixture: "color-correction-hue", exportRef: "color-correction-hue" },
+  { fixture: "color-correction-transform", exportRef: "color-correction-transform" },
+  { fixture: "color-correction-video-filter", exportRef: "color-correction-video-filter" },
+  { fixture: "keyframe-color-correction", exportRef: "keyframe-color-correction" },
+  { fixture: "video-filter-blur-sepia", exportRef: "video-filter-blur-sepia" },
+  { fixture: "video-filter-grayscale", exportRef: "video-filter-grayscale" },
+  { fixture: "video-filter-transform", exportRef: "video-filter-transform" },
+  { fixture: "video-filter-transition", exportRef: "video-filter-transition" },
+  { fixture: "chroma-key", exportRef: "chroma-key" },
+  { fixture: "chroma-key-transform", exportRef: "chroma-key-transform" },
+  { fixture: "chroma-key-blend", exportRef: "chroma-key-blend" },
+  { fixture: "pip-corner-br", exportRef: "pip-corner-br" },
+  { fixture: "pip-side-by-side", exportRef: "pip-side-by-side" },
+  { fixture: "p5js-transform", exportRef: "p5js-transform" },
+  { fixture: "p5js-multi-track", exportRef: "p5js-multi-track" },
+  { fixture: "p5js-transition", exportRef: "p5js-transition" },
+  { fixture: "p5js-flowfield", exportRef: "p5js-flowfield" },
+  { fixture: "p5js-flowfield-multi-track", exportRef: "p5js-flowfield-multi-track" },
+  { fixture: "feature-showcase", exportRef: "feature-showcase" },
+];
+
+async function countActualFrames(fixtureName: string): Promise<number> {
+  try {
+    return (await listFrames(path.join(CANVAS_ACTUAL_DIR, fixtureName))).length;
+  } catch {
+    return 0;
+  }
 }
 
 // ── Clip property helpers ──
@@ -756,6 +841,11 @@ function renderIndexPage(
 <h1>Feature Catalog</h1>
 <p class="page-desc">Video editor feature catalog with export examples and editor operation references.</p>
 
+<div class="card" style="background:#F4F0D9;margin-bottom:24px">
+  <a href="/parity" style="font-weight:600;font-size:15px">Canvas Export Parity Comparison \u2192</a>
+  <span style="font-size:13px;color:#939F91;margin-left:8px">Side-by-side FFmpeg vs Canvas frames</span>
+</div>
+
 <div class="section-heading" data-testid="section-exports">Export Features (${exportTests.length})</div>
 <div class="card">
   <ul class="case-list" data-testid="export-list">${exportRows}</ul>
@@ -782,6 +872,312 @@ function renderSnapshotPage(snap: Snapshot): string {
 <h1>Snapshot: ${esc(snap.name)}</h1>
 ${renderSnapshotDetail(snap)}
   `);
+}
+
+// ── Parity page renderers ──
+
+const PARITY_STYLES = `
+  .parity-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .parity-table th {
+    text-align: left; padding: 8px 12px; background: #F4F0D9;
+    border-bottom: 2px solid #D4CCAB; font-weight: 600;
+  }
+  .parity-table td { padding: 8px 12px; border-bottom: 1px solid #EFE9D5; }
+  .parity-table tr:hover { background: #FDFAF0; }
+  .status-ok { color: #8DA101; font-weight: 600; }
+  .status-missing { color: #F85552; font-weight: 600; }
+  .status-skip { color: #939F91; font-style: italic; }
+
+  .compare-section { margin-bottom: 32px; }
+  .compare-label {
+    font-size: 13px; font-weight: 700; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .compare-label .tag {
+    font-size: 11px; font-weight: 400; padding: 1px 6px;
+    border-radius: 3px; color: #fff;
+  }
+  .tag-ffmpeg { background: #E66868; }
+  .tag-canvas { background: #3A94C5; }
+  .compare-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-bottom: 16px;
+  }
+  .compare-filmstrip { min-width: 0; }
+  .frame-pair {
+    display: flex; gap: 4px; overflow-x: auto; padding: 4px 0;
+  }
+  .frame-pair img {
+    width: 128px; height: 72px; object-fit: contain; background: #000;
+    border-radius: 2px; image-rendering: pixelated; flex-shrink: 0;
+  }
+  .frame-number {
+    font-size: 10px; color: #939F91; text-align: center;
+    margin-top: 2px;
+  }
+  .frame-slot { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+
+  .compare-side-by-side {
+    display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px;
+  }
+  .compare-frame-pair {
+    display: flex; flex-direction: column; gap: 4px;
+    border: 1px solid #EFE9D5; border-radius: 6px; padding: 8px;
+    background: #fff;
+  }
+  .compare-frame-pair .pair-row {
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .compare-frame-pair img {
+    width: 192px; height: 108px; object-fit: contain; background: #000;
+    border-radius: 3px; image-rendering: pixelated;
+  }
+  .compare-frame-pair .missing-frame {
+    width: 192px; height: 108px; background: #F4F0D9;
+    border-radius: 3px; display: flex; align-items: center;
+    justify-content: center; color: #939F91; font-size: 12px;
+  }
+  .pair-label { font-size: 11px; font-weight: 600; text-align: center; }
+`;
+
+const PARITY_FILMSTRIP_SCRIPT = `
+document.querySelectorAll('.parity-player').forEach(player => {
+  const refBase = player.dataset.refBase;
+  const actualBase = player.dataset.actualBase;
+  const refCount = parseInt(player.dataset.refCount);
+  const actualCount = parseInt(player.dataset.actualCount);
+  const maxCount = Math.max(refCount, actualCount);
+  let current = 1;
+  let intervalId = null;
+
+  const refImg = player.querySelector('.ref-display');
+  const actualImg = player.querySelector('.actual-display');
+  const counter = player.querySelector('.parity-counter');
+
+  function frameSrc(base, n) {
+    return base + String(n).padStart(4, '0') + '.png';
+  }
+
+  function show(n) {
+    current = n;
+    if (n <= refCount) {
+      refImg.src = frameSrc(refBase, n);
+      refImg.style.display = '';
+    } else {
+      refImg.style.display = 'none';
+    }
+    if (n <= actualCount) {
+      actualImg.src = frameSrc(actualBase, n);
+      actualImg.style.display = '';
+    } else {
+      actualImg.style.display = 'none';
+    }
+    counter.textContent = 'Frame ' + n + ' / ' + maxCount;
+    player.querySelectorAll('.pair-thumb').forEach((t, i) => {
+      t.classList.toggle('active', i + 1 === n);
+    });
+  }
+
+  player.querySelector('.btn-play').onclick = () => {
+    if (intervalId) return;
+    intervalId = setInterval(() => {
+      show(current >= maxCount ? 1 : current + 1);
+    }, 200);
+  };
+  player.querySelector('.btn-pause').onclick = () => {
+    clearInterval(intervalId); intervalId = null;
+  };
+  player.querySelector('.btn-step-back').onclick = () => {
+    clearInterval(intervalId); intervalId = null;
+    show(current <= 1 ? maxCount : current - 1);
+  };
+  player.querySelector('.btn-step-fwd').onclick = () => {
+    clearInterval(intervalId); intervalId = null;
+    show(current >= maxCount ? 1 : current + 1);
+  };
+
+  player.querySelectorAll('.pair-thumb').forEach((thumb, i) => {
+    thumb.onclick = () => {
+      clearInterval(intervalId); intervalId = null;
+      show(i + 1);
+    };
+  });
+
+  show(1);
+});
+`;
+
+function renderParityIndexPage(
+  parityData: Array<{
+    fixture: string;
+    exportRef: string;
+    skip?: string;
+    refFrames: number;
+    actualFrames: number;
+  }>,
+): string {
+  const rows = parityData.map((p) => {
+    let status: string;
+    if (p.skip) {
+      status = `<span class="status-skip">skipped: ${esc(p.skip)}</span>`;
+    } else if (p.actualFrames > 0 && p.refFrames > 0) {
+      status = `<span class="status-ok">ready</span>`;
+    } else if (p.refFrames === 0) {
+      status = `<span class="status-missing">no FFmpeg refs</span>`;
+    } else {
+      status = `<span class="status-missing">no Canvas frames (run parity test first)</span>`;
+    }
+
+    const link = p.skip
+      ? `<span class="case-name" style="color:#939F91">${esc(p.fixture)}</span>`
+      : `<a href="/parity/${esc(p.fixture)}" class="case-name">${esc(p.fixture)}</a>`;
+
+    return `<tr>
+      <td>${link}</td>
+      <td>${p.refFrames}</td>
+      <td>${p.actualFrames}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join("\n");
+
+  const readyCount = parityData.filter((p) => !p.skip && p.actualFrames > 0 && p.refFrames > 0).length;
+  const skipCount = parityData.filter((p) => p.skip).length;
+  const missingCount = parityData.length - readyCount - skipCount;
+
+  return wrapPage("Canvas Export Parity", `
+<div class="breadcrumb"><a href="/">\u2190 Index</a></div>
+<h1>Canvas Export Parity</h1>
+<p class="page-desc">
+  Side-by-side comparison of FFmpeg export reference frames vs Canvas-rendered frames.<br>
+  Run <code>bun test tools/canvas-export-test/canvas-export-parity.test.ts</code> to generate Canvas frames.
+</p>
+<div class="export-meta" style="margin-bottom:16px">
+  <span class="meta-item">${readyCount} ready</span>
+  <span class="meta-item">${missingCount} missing</span>
+  <span class="meta-item">${skipCount} skipped</span>
+</div>
+<div class="card">
+  <table class="parity-table">
+    <thead><tr><th>Fixture</th><th>FFmpeg frames</th><th>Canvas frames</th><th>Status</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+</div>
+  `, { script: "" });
+}
+
+function renderParityDetailPage(
+  fixture: string,
+  exportRef: string,
+  refFrameCount: number,
+  actualFrameCount: number,
+): string {
+  const maxFrames = Math.max(refFrameCount, actualFrameCount);
+
+  if (maxFrames === 0) {
+    return wrapPage(`Parity: ${fixture}`, `
+<div class="breadcrumb"><a href="/parity">\u2190 Parity Index</a></div>
+<h1>Parity: ${esc(fixture)}</h1>
+<p class="no-frames">No frames available. Run the parity test and ensure FFmpeg references exist.</p>
+    `);
+  }
+
+  // Build frame-by-frame comparison
+  const framePairs = Array.from({ length: maxFrames }, (_, i) => {
+    const n = i + 1;
+    const nStr = String(n).padStart(4, "0");
+    const refSrc = n <= refFrameCount
+      ? `/frames/${esc(exportRef)}/frame_${nStr}.png`
+      : null;
+    const actualSrc = n <= actualFrameCount
+      ? `/actual-frames/${esc(fixture)}/frame_${nStr}.png`
+      : null;
+
+    const refEl = refSrc
+      ? `<img src="${refSrc}" alt="FFmpeg frame ${n}" loading="lazy">`
+      : `<div class="missing-frame">N/A</div>`;
+    const actualEl = actualSrc
+      ? `<img src="${actualSrc}" alt="Canvas frame ${n}" loading="lazy">`
+      : `<div class="missing-frame">N/A</div>`;
+
+    return `<div class="compare-frame-pair">
+      <div class="pair-label">Frame ${n}</div>
+      <div class="pair-row">
+        <div style="text-align:center">
+          ${refEl}
+          <div class="frame-number"><span class="tag tag-ffmpeg">FFmpeg</span></div>
+        </div>
+        <div style="text-align:center">
+          ${actualEl}
+          <div class="frame-number"><span class="tag tag-canvas">Canvas</span></div>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  // Build thumbnail strip for interactive player
+  const thumbs = Array.from({ length: maxFrames }, (_, i) => {
+    const n = i + 1;
+    const nStr = String(n).padStart(4, "0");
+    const src = n <= refFrameCount
+      ? `/frames/${esc(exportRef)}/frame_${nStr}.png`
+      : `/actual-frames/${esc(fixture)}/frame_${nStr}.png`;
+    return `<img src="${src}" class="thumb pair-thumb" data-index="${n}" alt="frame ${n}" loading="lazy">`;
+  }).join("");
+
+  const refDisplaySrc = refFrameCount > 0
+    ? `/frames/${esc(exportRef)}/frame_0001.png`
+    : "";
+  const actualDisplaySrc = actualFrameCount > 0
+    ? `/actual-frames/${esc(fixture)}/frame_0001.png`
+    : "";
+
+  return wrapPage(`Parity: ${fixture}`, `
+<style>${PARITY_STYLES}</style>
+<div class="breadcrumb"><a href="/parity">\u2190 Parity Index</a></div>
+<h1>Parity: ${esc(fixture)}</h1>
+<div class="export-meta" style="margin-bottom:16px">
+  <span class="meta-item">Export ref: ${esc(exportRef)}</span>
+  <span class="meta-item">FFmpeg frames: ${refFrameCount}</span>
+  <span class="meta-item">Canvas frames: ${actualFrameCount}</span>
+</div>
+
+<div class="card">
+  <h2>Interactive Player</h2>
+  <div class="parity-player"
+    data-ref-base="/frames/${esc(exportRef)}/frame_"
+    data-actual-base="/actual-frames/${esc(fixture)}/frame_"
+    data-ref-count="${refFrameCount}"
+    data-actual-count="${actualFrameCount}">
+    <div class="compare-grid">
+      <div>
+        <div class="compare-label"><span class="tag tag-ffmpeg">FFmpeg</span> Reference</div>
+        <img class="player-img ref-display" src="${esc(refDisplaySrc)}" alt="FFmpeg frame"
+             style="${refFrameCount === 0 ? "display:none" : ""}">
+      </div>
+      <div>
+        <div class="compare-label"><span class="tag tag-canvas">Canvas</span> Actual</div>
+        <img class="player-img actual-display" src="${esc(actualDisplaySrc)}" alt="Canvas frame"
+             style="${actualFrameCount === 0 ? "display:none" : ""}">
+      </div>
+    </div>
+    <div class="player-controls" style="flex-direction:row; gap:8px; margin-bottom:8px">
+      <button class="btn-step-back" title="Step back">\u23EE</button>
+      <button class="btn-play" title="Play">\u25B6</button>
+      <button class="btn-pause" title="Pause">\u23F8</button>
+      <button class="btn-step-fwd" title="Step forward">\u23ED</button>
+      <span class="parity-counter frame-counter">Frame 1 / ${maxFrames}</span>
+    </div>
+    <div class="filmstrip-thumbs">${thumbs}</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>All Frames Side by Side</h2>
+  <div class="compare-side-by-side">
+    ${framePairs}
+  </div>
+</div>
+  `, { script: PARITY_FILMSTRIP_SCRIPT });
 }
 
 // ── Data loaders with mtime cache ──
@@ -849,6 +1245,35 @@ Bun.serve({
       return htmlResponse(renderExportPage(tc));
     }
 
+    // ── Parity index: /parity ──
+    if (url.pathname === "/parity") {
+      const parityData = await Promise.all(
+        PARITY_FIXTURE_MAP.map(async (p) => ({
+          fixture: p.fixture,
+          exportRef: p.exportRef,
+          skip: p.skip,
+          refFrames: await countFrames(p.exportRef),
+          actualFrames: await countActualFrames(p.fixture),
+        })),
+      );
+      return htmlResponse(renderParityIndexPage(parityData));
+    }
+
+    // ── Parity detail: /parity/:fixture ──
+    const parityMatch = url.pathname.match(/^\/parity\/([^/]+)$/);
+    if (parityMatch) {
+      const fixture = decodeURIComponent(parityMatch[1]);
+      const mapping = PARITY_FIXTURE_MAP.find((p) => p.fixture === fixture);
+      if (!mapping) return new Response("Not Found", { status: 404 });
+      const [refFrameCount, actualFrameCount] = await Promise.all([
+        countFrames(mapping.exportRef),
+        countActualFrames(mapping.fixture),
+      ]);
+      return htmlResponse(
+        renderParityDetailPage(fixture, mapping.exportRef, refFrameCount, actualFrameCount),
+      );
+    }
+
     // ── Snapshot detail: /snapshots/:index ──
     const snapMatch = url.pathname.match(/^\/snapshots\/(\d+)$/);
     if (snapMatch) {
@@ -895,6 +1320,24 @@ Bun.serve({
       const testName = rest.slice(0, slashIdx);
       const fileName = rest.slice(slashIdx + 1);
       const resolved = resolveUnder(REFS_DIR, testName, fileName);
+      if (!resolved) return new Response("Forbidden", { status: 403 });
+      try {
+        return new Response(Bun.file(resolved), {
+          headers: { "content-type": "image/png" },
+        });
+      } catch {
+        return new Response("Not Found", { status: 404 });
+      }
+    }
+
+    // ── Static: /actual-frames/:fixtureName/:file ──
+    if (url.pathname.startsWith("/actual-frames/")) {
+      const rest = url.pathname.slice("/actual-frames/".length);
+      const slashIdx = rest.indexOf("/");
+      if (slashIdx === -1) return new Response("Not Found", { status: 404 });
+      const fixtureName = rest.slice(0, slashIdx);
+      const fileName = rest.slice(slashIdx + 1);
+      const resolved = resolveUnder(CANVAS_ACTUAL_DIR, fixtureName, fileName);
       if (!resolved) return new Response("Forbidden", { status: 403 });
       try {
         return new Response(Bun.file(resolved), {

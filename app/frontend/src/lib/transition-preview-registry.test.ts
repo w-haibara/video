@@ -41,24 +41,28 @@ describe("TransitionPreviewRegistry", () => {
   describe("fade-white handler", () => {
     const handler = transitionPreviewRegistry.get("fade-white")!;
 
-    test("computeIncomingStyle at progress 0.25 has brightness filter", () => {
+    test("computeIncomingStyle at progress 0.25 has opacity 0 and no whiteBlend", () => {
       const style = handler.computeIncomingStyle(0.25);
-      expect(style.filter).toBe("brightness(5)");
-    });
-
-    test("computeIncomingStyle at progress 0.75 has no filter", () => {
-      const style = handler.computeIncomingStyle(0.75);
-      expect(style.filter).toBeUndefined();
-    });
-
-    test("computeOutgoingStyle at progress 0.25 has brightness filter", () => {
-      const style = handler.computeOutgoingStyle!(0.25);
-      expect(style.filter).toBe("brightness(5)");
-    });
-
-    test("computeOutgoingStyle at progress 0.75 has opacity 0", () => {
-      const style = handler.computeOutgoingStyle!(0.75);
       expect(style.opacity).toBe(0);
+      expect(style.__whiteBlend).toBe(0);
+    });
+
+    test("computeIncomingStyle at progress 0.75 has opacity and whiteBlend", () => {
+      const style = handler.computeIncomingStyle(0.75);
+      expect(style.opacity).toBe(0.5);
+      expect(style.__whiteBlend).toBe(0.5);
+    });
+
+    test("computeOutgoingStyle at progress 0.25 has opacity 1 and whiteBlend 0.5", () => {
+      const style = handler.computeOutgoingStyle!(0.25);
+      expect(style.opacity).toBe(1);
+      expect(style.__whiteBlend).toBe(0.5);
+    });
+
+    test("computeOutgoingStyle at progress 0.75 has opacity 0.5 and whiteBlend 1", () => {
+      const style = handler.computeOutgoingStyle!(0.75);
+      expect(style.opacity).toBe(0.5);
+      expect(style.__whiteBlend).toBe(1);
     });
   });
 

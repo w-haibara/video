@@ -35,6 +35,11 @@ import {
   makeAddProject,
   makeDifferenceProject,
   makeP5jsProject,
+  makeP5jsTransformProject,
+  makeP5jsMultiTrackProject,
+  makeP5jsTransitionProject,
+  makeP5jsFlowfieldProject,
+  makeP5jsFlowfieldMultiTrackProject,
   makeSplitClipProject,
   makeEmptyAssetMixedProject,
   makeOnlyEmptyAssetProject,
@@ -488,4 +493,261 @@ describe("export regression", () => {
   test("chroma key + blend mode combo", async () => {
     await runExportRegression("chroma-key-blend", makeChromaKeyBlendProject());
   }, 30_000);
+
+  // ── p5.js rendering ──
+
+  test("p5js clip with transform", async () => {
+    await runExportRegression("p5js-transform", makeP5jsTransformProject());
+  }, 30_000);
+
+  test("p5js + video multi-track overlay", async () => {
+    await runExportRegression("p5js-multi-track", makeP5jsMultiTrackProject());
+  }, 30_000);
+
+  test("p5js with fade transition from video", async () => {
+    await runExportRegression("p5js-transition", makeP5jsTransitionProject());
+  }, 30_000);
+
+  test("p5js flow field (complex sketch rendered from source)", async () => {
+    // Read the flow field sketch and set up a temp project dir
+    const sketchCode = await readFile(
+      path.join(ASSETS_DIR, "test-sketch-flowfield.p5.js"),
+      "utf-8",
+    );
+    const projDir = path.join(tmpDir, "p5js-flowfield-project");
+    await mkdir(projDir, { recursive: true });
+    await writeFile(path.join(projDir, "sketch.p5.js"), sketchCode);
+
+    // Run p5js pipeline: generative-prepare → web-render
+    const asset: Asset = {
+      id: "p5js-flowfield",
+      kind: "p5js",
+      originalPath: "sketch.p5.js",
+      durationMs: 1000,
+      width: CANVAS_W,
+      height: CANVAS_H,
+    };
+    const shared = new Map<string, unknown>([
+      ["canvasWidth", CANVAS_W],
+      ["canvasHeight", CANVAS_H],
+      ["fps", FPS],
+      ["durationMs", 1000],
+    ]);
+    const ctx: PipelineContext = {
+      asset,
+      projectDir: projDir,
+      projectId: "p5js-flowfield-test",
+      shared,
+      reportProgress: () => {},
+    };
+    await generativePrepareStep.execute(ctx);
+    await webRenderStep.execute(ctx);
+
+    // Build project pointing to the rendered MP4
+    const renderedMp4Path = ctx.shared.get("renderedMp4Path") as string;
+    const project: Project = {
+      id: "p5js-flowfield-test",
+      name: "p5js flow field test",
+      createdAt: "2026-01-01T00:00:00Z",
+      updatedAt: "2026-01-01T00:00:00Z",
+      assets: [ctx.asset],
+      sequence: {
+        tracks: [{
+          id: "t1",
+          clips: [{
+            id: "c1",
+            clipKind: "p5js",
+            assetId: "p5js-flowfield",
+            startMs: 0,
+            durationMs: 1000,
+            inMs: 0,
+            outMs: 1000,
+          }],
+        }],
+      },
+      settings: { durationMs: 2000, canvasWidth: CANVAS_W, canvasHeight: CANVAS_H },
+      exportPreset: {
+        width: CANVAS_W,
+        height: CANVAS_H,
+        fps: FPS,
+        videoBitrate: "200k",
+        audioBitrate: "64k",
+      },
+    };
+
+    // Export using a custom resolveAssetVideoPath
+    const { buildExportArgs } = await import("./export-service");
+    const testDir = path.join(tmpDir, "p5js-flowfield");
+    const outputPath = path.join(testDir, "output.mp4");
+    const actualFramesDir = path.join(testDir, "frames");
+
+    const resolveAssetVideoPath = (a: Asset) => {
+      if (a.kind === "p5js") return renderedMp4Path;
+      return path.join(ASSETS_DIR, path.basename(a.originalPath));
+    };
+    const args = buildExportArgs(project, ASSETS_DIR, outputPath, resolveAssetVideoPath);
+
+    await mkdir(path.dirname(outputPath), { recursive: true });
+    const proc = Bun.spawn(["ffmpeg", ...args], { stdout: "pipe", stderr: "pipe" });
+    const exitCode = await proc.exited;
+    if (exitCode !== 0) {
+      const stderr = await new Response(proc.stderr).text();
+      throw new Error(`Export failed (exit ${exitCode}): ${stderr}`);
+    }
+
+    const frames = await extractFrames({
+      inputPath: outputPath,
+      outputDir: actualFramesDir,
+      fps: FPS,
+      width: CANVAS_W,
+      height: CANVAS_H,
+    });
+    expect(frames.length).toBeGreaterThan(0);
+
+    // Reference management
+    const refDir = path.join(REFERENCES_DIR, "p5js-flowfield");
+    const updateRefs = process.env.UPDATE_REFERENCES === "1";
+
+    if (updateRefs || !(await hasReferenceFrames(refDir))) {
+      await rm(refDir, { recursive: true, force: true });
+      await mkdir(refDir, { recursive: true });
+      await Promise.all(frames.map((frame) =>
+        cp(frame, path.join(refDir, path.basename(frame)))
+      ));
+      console.log(`[regression] Generated reference frames for "p5js-flowfield" (${frames.length} frames)`);
+      return;
+    }
+
+    const result = await compareFrames({
+      referenceDir: refDir,
+      actualDir: actualFramesDir,
+      threshold: 2.0,
+    });
+
+    if (!result.passed) {
+      const failures = result.perFrame
+        .filter((f) => !f.passed)
+        .map((f) => `  frame ${f.index}: ${f.diffPercent.toFixed(2)}% diff`)
+        .join("\n");
+      expect(result.passed, `Frame comparison failed for "p5js-flowfield"\n${failures}`).toBe(true);
+    }
+  }, 60_000);
+
+  test("p5js flow field + video multi-track (screen blend)", async () => {
+    // Render the flow field sketch first
+    const sketchCode = await readFile(
+      path.join(ASSETS_DIR, "test-sketch-flowfield.p5.js"),
+      "utf-8",
+    );
+    const projDir = path.join(tmpDir, "p5js-flowfield-mt-project");
+    await mkdir(projDir, { recursive: true });
+    await writeFile(path.join(projDir, "sketch.p5.js"), sketchCode);
+
+    const asset: Asset = {
+      id: "p5js-flowfield",
+      kind: "p5js",
+      originalPath: "sketch.p5.js",
+      durationMs: 1000,
+      width: CANVAS_W,
+      height: CANVAS_H,
+    };
+    const shared = new Map<string, unknown>([
+      ["canvasWidth", CANVAS_W],
+      ["canvasHeight", CANVAS_H],
+      ["fps", FPS],
+      ["durationMs", 1000],
+    ]);
+    const ctx: PipelineContext = {
+      asset,
+      projectDir: projDir,
+      projectId: "p5js-flowfield-mt-test",
+      shared,
+      reportProgress: () => {},
+    };
+    await generativePrepareStep.execute(ctx);
+    await webRenderStep.execute(ctx);
+
+    const renderedMp4Path = ctx.shared.get("renderedMp4Path") as string;
+
+    // Build multi-track project: video on track1, p5js flow field on track2 with screen blend
+    const project: Project = {
+      id: "p5js-flowfield-mt-test",
+      name: "p5js flow field multi-track test",
+      createdAt: "2026-01-01T00:00:00Z",
+      updatedAt: "2026-01-01T00:00:00Z",
+      assets: [
+        { id: "v1", kind: "video", originalPath: "assets/test-video-1s.mp4", durationMs: 1000, width: CANVAS_W, height: CANVAS_H, hasAudio: false },
+        ctx.asset,
+      ],
+      sequence: {
+        tracks: [
+          { id: "t1", clips: [{ id: "c1", clipKind: "video" as const, assetId: "v1", startMs: 0, durationMs: 1000, inMs: 0, outMs: 1000 }] },
+          { id: "t2", clips: [{ id: "c2", clipKind: "p5js" as const, assetId: "p5js-flowfield", startMs: 0, durationMs: 1000, inMs: 0, outMs: 1000, blendMode: "screen" as const }] },
+        ],
+      },
+      settings: { durationMs: 2000, canvasWidth: CANVAS_W, canvasHeight: CANVAS_H },
+      exportPreset: {
+        width: CANVAS_W,
+        height: CANVAS_H,
+        fps: FPS,
+        videoBitrate: "200k",
+        audioBitrate: "64k",
+      },
+    };
+
+    const { buildExportArgs } = await import("./export-service");
+    const testDir = path.join(tmpDir, "p5js-flowfield-multi-track");
+    const outputPath = path.join(testDir, "output.mp4");
+    const actualFramesDir = path.join(testDir, "frames");
+
+    const resolveAssetVideoPath = (a: Asset) => {
+      if (a.kind === "p5js") return renderedMp4Path;
+      return path.join(ASSETS_DIR, path.basename(a.originalPath));
+    };
+    const args = buildExportArgs(project, ASSETS_DIR, outputPath, resolveAssetVideoPath);
+
+    await mkdir(path.dirname(outputPath), { recursive: true });
+    const proc = Bun.spawn(["ffmpeg", ...args], { stdout: "pipe", stderr: "pipe" });
+    const exitCode = await proc.exited;
+    if (exitCode !== 0) {
+      const stderr = await new Response(proc.stderr).text();
+      throw new Error(`Export failed (exit ${exitCode}): ${stderr}`);
+    }
+
+    const frames = await extractFrames({
+      inputPath: outputPath,
+      outputDir: actualFramesDir,
+      fps: FPS,
+      width: CANVAS_W,
+      height: CANVAS_H,
+    });
+    expect(frames.length).toBeGreaterThan(0);
+
+    const refDir = path.join(REFERENCES_DIR, "p5js-flowfield-multi-track");
+    const updateRefs = process.env.UPDATE_REFERENCES === "1";
+
+    if (updateRefs || !(await hasReferenceFrames(refDir))) {
+      await rm(refDir, { recursive: true, force: true });
+      await mkdir(refDir, { recursive: true });
+      await Promise.all(frames.map((frame) =>
+        cp(frame, path.join(refDir, path.basename(frame)))
+      ));
+      console.log(`[regression] Generated reference frames for "p5js-flowfield-multi-track" (${frames.length} frames)`);
+      return;
+    }
+
+    const result = await compareFrames({
+      referenceDir: refDir,
+      actualDir: actualFramesDir,
+      threshold: 2.0,
+    });
+
+    if (!result.passed) {
+      const failures = result.perFrame
+        .filter((f) => !f.passed)
+        .map((f) => `  frame ${f.index}: ${f.diffPercent.toFixed(2)}% diff`)
+        .join("\n");
+      expect(result.passed, `Frame comparison failed for "p5js-flowfield-multi-track"\n${failures}`).toBe(true);
+    }
+  }, 60_000);
 });

@@ -10,7 +10,9 @@
     "restart": "concurrently --kill-others-on-fail --restart-tries 0 \"bun run --hot app/backend/src/index.ts\" \"cd app/frontend && bunx vite\"",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
-    "test": "bun test",
+    "test": "bun test app/",
+    "test:parity": "bun test tools/canvas-export-test/canvas-export-parity.test.ts",
+    "test:preview": "bun test tools/preview-test/preview-regression.test.ts",
     "catalog": "bun run tools/feature-catalog/index.ts",
     "catalog:capture": "bun run tools/feature-catalog/capture-screenshots.ts"
   },

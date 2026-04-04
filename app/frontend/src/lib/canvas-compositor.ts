@@ -23,6 +23,7 @@ export type ParsedTransitionEffect = {
   scale?: number;
   clipInset?: { top: number; right: number; bottom: number; left: number }; // percentages
   filter?: string;
+  whiteBlend?: number; // 0=no blend, 1=full white (for fade-white transition)
 };
 
 // ── WebGL Shaders (reused from ChromaKeyOverlay) ──
@@ -172,6 +173,10 @@ export function parseTransitionStyle(style: Record<string, unknown>): ParsedTran
 
   if (style.filter) {
     result.filter = String(style.filter);
+  }
+
+  if (style.__whiteBlend !== undefined) {
+    result.whiteBlend = Number(style.__whiteBlend);
   }
 
   return result;
@@ -452,8 +457,33 @@ export class CanvasCompositor {
       ctx.scale(drawScale, drawScale);
     }
 
-    // Source crop region (if clip has crop)
-    if (crop) {
+    // ── Fade-white: blend toward/from white using an offscreen canvas ──
+    // FFmpeg fade color=white blends each pixel toward white BEFORE applying alpha.
+    // We replicate this by rendering the clip to a temporary canvas, blending white
+    // on top with "lighter" composite, then drawing the result at the target alpha.
+    if (transEffect.whiteBlend != null && transEffect.whiteBlend > 0) {
+      // Render clip + white blend to a temporary canvas
+      const tmpCanvas = new OffscreenCanvas(destW, destH);
+      const tmpCtx = tmpCanvas.getContext("2d")!;
+      if (filterParts.length > 0) {
+        tmpCtx.filter = filterParts.join(" ");
+      }
+      if (crop) {
+        tmpCtx.drawImage(source, crop.x, crop.y, crop.width, crop.height, 0, 0, destW, destH);
+      } else {
+        tmpCtx.drawImage(source, 0, 0, destW, destH);
+      }
+      // Additive white blend on the temporary canvas
+      tmpCtx.globalCompositeOperation = "lighter";
+      tmpCtx.globalAlpha = transEffect.whiteBlend;
+      tmpCtx.filter = "none";
+      tmpCtx.fillStyle = "#ffffff";
+      tmpCtx.fillRect(0, 0, destW, destH);
+
+      // Draw the blended result to the main canvas (filter already applied in tmp)
+      ctx.filter = "none";
+      ctx.drawImage(tmpCanvas, -destW / 2, -destH / 2, destW, destH);
+    } else if (crop) {
       ctx.drawImage(
         source,
         crop.x, crop.y, crop.width, crop.height, // source rect
@@ -521,6 +551,9 @@ export class CanvasCompositor {
           combined.filter = combined.filter
             ? `${combined.filter} ${parsed.filter}`
             : parsed.filter;
+        }
+        if (parsed.whiteBlend !== undefined) {
+          combined.whiteBlend = Math.max(combined.whiteBlend ?? 0, parsed.whiteBlend);
         }
       }
     }

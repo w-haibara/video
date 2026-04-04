@@ -87,6 +87,8 @@ export const webRenderStep: PipelineStep = {
           "fast",
           "-crf",
           "23",
+          "-g",
+          "1",
           "-r",
           String(fps),
           "-movflags",

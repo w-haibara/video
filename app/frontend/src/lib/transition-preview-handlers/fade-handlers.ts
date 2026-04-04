@@ -26,21 +26,17 @@ export const fadeWhitePreviewHandler: TransitionPreviewHandler = {
   type: "fade-white",
   label: "Fade (White)",
   computeIncomingStyle(progress) {
-    const style: Record<string, unknown> = {
+    // FFmpeg: fade in alpha (second half) + fade from white (second half)
+    return {
       opacity: progress < 0.5 ? 0 : (progress - 0.5) * 2,
+      __whiteBlend: progress < 0.5 ? 0 : 1 - (progress - 0.5) * 2,
     };
-    if (progress < 0.5) {
-      style.filter = "brightness(5)";
-    }
-    return style;
   },
   computeOutgoingStyle(progress) {
-    const style: Record<string, unknown> = {
-      opacity: progress < 0.5 ? 1 - progress * 2 : 0,
+    // FFmpeg: fade to white (first half, alpha stays 1) + fade out alpha (second half)
+    return {
+      opacity: progress < 0.5 ? 1 : (1 - progress) * 2,
+      __whiteBlend: progress < 0.5 ? progress * 2 : 1,
     };
-    if (progress < 0.5) {
-      style.filter = "brightness(5)";
-    }
-    return style;
   },
 };

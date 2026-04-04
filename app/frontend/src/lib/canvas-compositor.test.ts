@@ -764,7 +764,7 @@ describe("CanvasCompositor", () => {
       expect(mocked.ctx._drawImageCalls.length).toBe(2);
     });
 
-    test("fade-white transition includes brightness filter", () => {
+    test("fade-white transition applies white blend", () => {
       const mocked = createMockCanvas(1920, 1080);
       const compositor = new CanvasCompositor(mocked.canvas as unknown as HTMLCanvasElement);
 
@@ -951,5 +951,11 @@ describe("parseTransitionStyle", () => {
     const result = parseTransitionStyle({ opacity: 0, filter: "brightness(5)" });
     expect(result.opacity).toBe(0);
     expect(result.filter).toBe("brightness(5)");
+  });
+
+  test("parses __whiteBlend for fade-white transitions", () => {
+    const result = parseTransitionStyle({ opacity: 0.5, __whiteBlend: 0.7 });
+    expect(result.opacity).toBe(0.5);
+    expect(result.whiteBlend).toBe(0.7);
   });
 });

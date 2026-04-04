@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Canvas / FFmpeg パリティ不一致レポート</title>
+<style>
+  @page { margin: 0; size: A4; }
+  @media print { body { padding: 24px; } }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', 'Hiragino Sans', sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.7; padding: 40px 20px; }
+  .container { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.8em; color: #f0f6fc; border-bottom: 2px solid #30363d; padding-bottom: 16px; margin-bottom: 32px; }
+  h2 { font-size: 1.3em; color: #58a6ff; margin-top: 48px; margin-bottom: 16px; }
+  h3 { font-size: 1.05em; color: #f0f6fc; margin: 20px 0 8px; }
+  p, li { font-size: 0.95em; }
+  ul { margin-left: 20px; margin-bottom: 12px; }
+  .case { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px; margin-bottom: 32px; }
+  .case-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .case-num { background: #da3633; color: white; font-weight: bold; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.85em; flex-shrink: 0; }
+  .case-title { font-size: 1.15em; color: #f0f6fc; font-weight: 600; }
+  .badge { display: inline-block; font-size: 0.75em; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+  .badge-yuv { background: #6e40c9; color: white; }
+  .badge-compositor { background: #d29922; color: black; }
+  .badge-algo { background: #1f6feb; color: white; }
+  .frames { display: flex; gap: 16px; margin: 16px 0; flex-wrap: wrap; }
+  .frame-pair { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; flex: 1; min-width: 280px; }
+  .frame-pair h4 { font-size: 0.85em; color: #8b949e; margin-bottom: 8px; text-align: center; }
+  .frame-images { display: flex; gap: 8px; justify-content: center; align-items: center; }
+  .frame-col { text-align: center; }
+  .frame-col img { width: 160px; height: 90px; border: 2px solid #30363d; border-radius: 4px; image-rendering: pixelated; display: block; }
+  .frame-col .label { font-size: 0.7em; color: #8b949e; margin-top: 4px; }
+  .pixel-info { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8em; background: #0d1117; border: 1px solid #30363d; border-radius: 4px; padding: 8px 12px; margin: 8px 0; }
+  .pixel-info .swatch { display: inline-block; width: 14px; height: 14px; border: 1px solid #484f58; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+  .explanation { background: #1c2128; border-left: 3px solid #58a6ff; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 12px 0; }
+  .explanation h4 { color: #58a6ff; font-size: 0.9em; margin-bottom: 6px; }
+  .formula { font-family: 'SF Mono', 'Fira Code', monospace; background: #0d1117; padding: 12px; border-radius: 4px; margin: 8px 0; font-size: 0.85em; color: #79c0ff; overflow-x: auto; white-space: pre; }
+  .arrow { font-size: 1.5em; color: #484f58; align-self: center; }
+  .summary { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px; margin-top: 48px; }
+  .summary table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  .summary th { text-align: left; padding: 8px; border-bottom: 2px solid #30363d; color: #f0f6fc; font-size: 0.85em; }
+  .summary td { padding: 8px; border-bottom: 1px solid #21262d; font-size: 0.85em; }
+  .summary td:first-child { font-family: monospace; color: #79c0ff; }
+  .intro { margin-bottom: 32px; }
+  .intro p { color: #8b949e; }
+  .yuv-diagram { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin: 12px 0; text-align: center; }
+  .yuv-diagram svg { max-width: 100%; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Canvas / FFmpeg パリティ不一致分析レポート</h1>
+
+<div class="intro">
+<p>Canvas Export パリティテストで検出された 6 つの不一致ケースについて、原因と発生メカニズムを解説する。</p>
+<p>テスト素材: ビデオ＝赤一色 <span style="display:inline-block;width:14px;height:14px;background:#fd0000;border:1px solid #484f58;border-radius:2px;vertical-align:middle;"></span> (253,0,0)、画像＝青一色 <span style="display:inline-block;width:14px;height:14px;background:#0000fe;border:1px solid #484f58;border-radius:2px;vertical-align:middle;"></span> (0,0,254)</p>
+</div>
+
+<!-- ═══════════ Case 1: overlay-blend ═══════════ -->
+<div class="case">
+  <div class="case-header">
+    <div class="case-num">1</div>
+    <span class="case-title">overlay-blend</span>
+    <span class="badge badge-yuv">YUV 色空間</span>
+  </div>
+  <p>2トラック構成。Track 1＝赤ビデオ、Track 2＝青画像を <code>overlay</code> ブレンドで合成。</p>
+  
+  <div class="frames">
+    <div class="frame-pair">
+      <h4>Frame 1</h4>
+      <div class="frame-images">
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAACXBIWXMAAAABAAAAAQBPJcTWAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAEZ0FNQQAAxzLHSXBEAAAA6UlEQVR4nO3RAQkAMAzAsDm95juainMogQgodO4cwuZ7AU8ZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBsctEmvP3/bm4mQAAAAASUVORK5CYII=" alt="FFmpeg">
+          <div class="label">FFmpeg</div>
+        </div>
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAA2UlEQVR4nOzRQQ0AAAgAIR/2b+xmjxtUYG8o2yFNcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc47gEAAP//Ok82QQAAAAZJREFUAwAQKwJmRIQzHwAAAABJRU5ErkJggg==" alt="Canvas">
+          <div class="label">Canvas</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pixel-info">
+    FFmpeg: <span class="swatch" style="background:#d1005f"></span> <code>#D1005F</code> (209, 0, 95)<br>
+    Canvas: <span class="swatch" style="background:#fd0000"></span> <code>#FD0000</code> (253, 0, 0)
+  </div>
+
+  <div class="explanation">
+    <h4>発生原理: YUV 色空間での blend 演算</h4>
+    <p>FFmpeg の <code>blend=all_mode=overlay</code> フィルタは入力ストリームを <strong>YUV420p</strong> ピクセルフォーマットのまま処理する。テストビデオの赤 (253,0,0) は YUV エンコード時に:</p>
+    <div class="formula">RGB(253, 0, 0) → YUV(81.5, 90.3, 240.0)  (BT.601)
+RGB(0, 0, 254) → YUV(28.8, 218.3, 18.4)</div>
+    <p>overlay blend 計算は各 YUV チャネルに対して行われ、結果を RGB に逆変換する。このとき <strong>Y（輝度）に対する overlay と UV（色差）に対する overlay は、RGB 空間での overlay とは異なる結果</strong>を生む。</p>
+    <p>一方 Canvas の <code>globalCompositeOperation = "overlay"</code> は RGB 空間で直接計算するため、正しい overlay 結果を得る。FFmpeg 側の色ずれは YUV 空間での演算に起因する構造的差異。</p>
+  </div>
+</div>
+
+<!-- ═══════════ Case 2: difference ═══════════ -->
+<div class="case">
+  <div class="case-header">
+    <div class="case-num">2</div>
+    <span class="case-title">difference</span>
+    <span class="badge badge-yuv">YUV 色空間</span>
+  </div>
+  <p>2トラック構成。Track 1＝赤ビデオ、Track 2＝青画像を <code>difference</code> ブレンドで合成。</p>
+  
+  <div class="frames">
+    <div class="frame-pair">
+      <h4>Frame 1</h4>
+      <div class="frame-images">
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAACXBIWXMAAAABAAAAAQBPJcTWAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAEZ0FNQQAAxzLHSXBEAAAA8UlEQVR4nO3RUQnAMBTAwIrY9+yM59/QaqIUwsEJCGS9zxC2rhdw1B78EWZwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdwnMFxBscZHGdw3B48hBkc9wP7N5zH1o0qLwAAAABJRU5ErkJggg==" alt="FFmpeg">
+          <div class="label">FFmpeg</div>
+        </div>
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAA2klEQVR4nOzRQQ0AAAgAIR/2j+zscYMK7M0NXTukCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExz0AAAD//yN5+5wAAAAGSURBVAMAh+4DZXNl3lIAAAAASUVORK5CYII=" alt="Canvas">
+          <div class="label">Canvas</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pixel-info">
+    FFmpeg: <span class="swatch" style="background:#1e1447"></span> <code>#1E1447</code> (30, 20, 71)<br>
+    Canvas: <span class="swatch" style="background:#fe00fe"></span> <code>#FE00FE</code> (254, 0, 254)
+  </div>
+
+  <div class="explanation">
+    <h4>発生原理: YUV difference が RGB difference と根本的に異なる</h4>
+    <p>RGB 空間での difference は直感的:</p>
+    <div class="formula">difference(R) = |253 - 0|   = 253
+difference(G) = |0 - 0|     = 0
+difference(B) = |0 - 254|   = 254
+結果: (253, 0, 254) = マゼンタ ← Canvas の結果</div>
+    <p>しかし FFmpeg は YUV 空間で difference を計算する:</p>
+    <div class="formula">difference(Y)  = |81.5 - 28.8|   = 52.7
+difference(Cb) = |90.3 - 218.3|  = 128.0 → 中立点
+difference(Cr) = |240.0 - 18.4|  = 221.6 → clamp → 221.6
+
+YUV(52.7, 128.0, 221.6) → RGB 逆変換 → 暗い紫紺</div>
+    <p>YUV の差分を取ると <strong>輝度差が小さい</strong>ため結果は暗くなる。赤と青は RGB では最大距離だが、YUV では輝度 (Y) がどちらも低く近い値。これが YUV 色空間での blend 演算が RGB と大きく乖離する最も顕著な例。</p>
+  </div>
+</div>
+
+<!-- ═══════════ Case 3: transition-with-transform ═══════════ -->
+<div class="case">
+  <div class="case-header">
+    <div class="case-num">3</div>
+    <span class="case-title">transition-with-transform</span>
+    <span class="badge badge-compositor">Compositor</span>
+  </div>
+  <p>1トラック、2クリップ。Clip 1＝赤ビデオ (0-1000ms)、Clip 2＝青画像 (700-1700ms) に fade トランジション (300ms) + transform (scale:0.8, rotation:15°)。</p>
+  
+  <div class="frames">
+    <div class="frame-pair">
+      <h4>Frame 1 (t=0ms) — トランジション前</h4>
+      <div class="frame-images">
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAACXBIWXMAAAABAAAAAQBPJcTWAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAEZ0FNQQAAxzLHSXBEAAABHklEQVR4nO3OAQkAMAzAsLm4f6W7ilIYhQjI7Jsc5g+C8gdB+YOg/EFQ/iAofxCUPwjKHwTlD4LyB0H5g6D8QVD+ICh/EJQ/CMofBOUPgvIHQfmDoPxBUP4gKH8QlD8Iyh8E5Q+C8gdB+YOg/EFQ/iAofxCUPwjKHwTlD4LyB0H5g6D8QVD+ICh/EJQ/CMofBOUPgvIHQfmDoPxBUP4gKH8QlD8Iyh8E5Q+C8gdB+YOg/EFQ/iAofxCUPwjKHwTlD4LyB0H5g6D8QVD+ICh/EJQ/CMofBOUPgvIHQfmDoPxBUP4gKH8QlD8Iyh8E5Q+C8gdB+YOg/EFQ/iAofxCUPwjKHwTlD4LyB0H5g6D8QVD+ICh/EJQ/CMofBOUPgvo74BkULP5g/gAAAABJRU5ErkJggg==" alt="FFmpeg">
+          <div class="label">FFmpeg</div>
+        </div>
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAA2UlEQVR4nOzRQQ0AAAgAIR/2j+zscYMK7A1lO6QJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHPQAAAP//7pTRygAAAAZJREFUAwC5RAJnQGvZGwAAAABJRU5ErkJggg==" alt="Canvas">
+          <div class="label">Canvas</div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-pair">
+      <h4>Frame 11 (t=1000ms) — トランジション中</h4>
+      <div class="frame-images">
+        <div class="frame-col">
+          <img src="data:image/png;base64,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" alt="FFmpeg">
+          <div class="label">FFmpeg</div>
+        </div>
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAFHUlEQVR4nOydSYgcVRiAvzGDIxJJUFxxaQOKCmbccIlbZ6I45OJy9KIe9eJy8+Q5F5ebXhRvnlxAdJqY2O0SJSgxg7gd1KAoKkpLQnCCyeTlr1Sn6O6pXuq96v9V/x/NTFfXg5npr9/2/3/VzFISb8H9TJ5VWIYP5PExHKbqzFAG7qf8DRvRxRHYA7tgJ3wBx6gi5Qi+Vd5KzbjP327p1k72z1SIcgQ/J49Y+DEdw53yf4iccgR/CHcTH27Q3id9epdM2EeIkBIEz0FbvkaNW459lI7hX8tiLQ5KELwI71Ep/hTTyersV3RTguAX4Ekqyw/pGO6UH0IfJQh209g81ed/+Dzt1nvlUAWhBV8iu45ylnJ6OAjNVPa3TJTQb/2j8CpTzW/ppqsBf1E6oQW/Bo9gnGAyUdLQgn+CyzC6yUZJv4SjBCOo4KvgG4wBtCUQ5Lr1+yGipEEFPwXPY4yA/yhpUMFKUoQxko2Sfgr/MS7hBLvY5O/6UoQx4ux+kvbsfaNGScMJrss4Y/hl5ChpOMFxpQhjpBMldWu0f9dqFE5wpCnCGDkqFSk7pXPv6YqSBhK8USbg2FOEMdIdJQ0k+AF4E2PC/AFLswTBBmcNnO/ixIEEL2LoIMQQXZOIjKGCED24jqGGEIJtAtbDAe+C3Zi/gKEF/6voeSnTMZTQ8C64jqEFl5Zoehd8H4YWlqHtV/Cc9WBNLOF7FX2bxZ810cC3YNsg6WEFPsO3YItQ6qEpjn0KdinCmzG00Ei+eRRcn75LVDTTTL55FGwbJD20YX/yzKNgm4D10OgUX/oSXLNLVDTR6DzzJbiOoYhm55kvwTYB6+H77DVOXgTPmGBNLGUPvAiet0tUNNHKHngRbOtnPaxmJ2A8CbbxWQ97ZRN8iuKC5+RWlIYSlrqOiwu2FKEqWl3HxQXb+KyHdpIizFJcsK2w9NBKUoRZCgp2u6PNGFpo9b5UUPCipQg10ex9qaBgm4D18EsnRZiloOA6hhZ2970/SxHBNUsRaqLV99Uigm39rIdVuW1DH4oItglYD8syB/dhbMEzVgWtieZaJ9YxPgdlW30hnIExYXZInr8PxXex6yTZcI88bglzRbmRT9LN2n3P+Q1TrJeN0za4F67BKAm3ft661jm/He4QvCsPxwWieZv07IswAtLMOVdOoPHqVHYdzsLwzBb5hy/9KTmSPCvztE3YHnFT7zk59xieYKpgvWhOJuwrMcbkHXgw57SSXNDFojnxfR7GCDwDL+ac1pbsc7/PtekYfheciTEAt1v5Lue05mzu6VLwlYzhNxWLyVSVA3B5fotY0vUb0jHcPTZhnOR1eCy/RYz1GLVU9oIsIKeZh+GN/BZRF9ycBtel3fqO6QuJr8rnu53fqDIVVc7u7ans68V95dkvf+kAKlkyd7aM3pWfsF+Cpwc2qnxNZA22y1J8a+Uugdzee6FKL9NT9Op2WTemIfEtsgeLmhX5vK4MbDedVc0ufnJnOoZvjvNNyEsRZpnOcP9huU1JcqeSc9MQqft6KdHQGLKdXZeQ5Yp0DNc/Yd8AXw3TzgT3RXkd0oAUYRYTPBCFdUgDUoRZTPBIKKlDegJeHrKpCR6bCdYhbcreCSsfE1ycWYmSlpbWHJwizGKC/bJBVuBB65BegceHb22CwxGoDukheHv41ia4BDzWIQ2VIuz62UaZFKxDGipFmMUET5Ax6pB2wLOMgglWQm24OqSF/AtVejHB2sipQxo2RZjlOAAAAP//yfuW6AAAAAZJREFUAwDvh/Rxi9ZSFgAAAABJRU5ErkJggg==" alt="Canvas">
+          <div class="label">Canvas</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pixel-info">
+    Frame 1:  FFmpeg <code>#FF1700</code> ≈ Canvas <code>#FE0000</code> — 一致（G=23 は YUV デコード誤差）<br>
+    Frame 11: FFmpeg <code>#090DE5</code> vs Canvas <code>#0000FE</code> — 背景色の差（赤残り vs 黒）
+  </div>
+
+  <div class="explanation">
+    <h4>発生原理: トランジション中の背景合成の差</h4>
+    <p>Frame 11 (t=1000ms) ではトランジション進行中で、outgoing クリップ (赤) が fade out している。</p>
+    <ul>
+      <li><strong>FFmpeg</strong>: fade out する赤クリップが残像として低 opacity で描画され、暗い赤が青の transform されたクリップの背景に残る → <code>#090DE5</code></li>
+      <li><strong>Canvas</strong>: outgoing クリップの opacity が 0 に到達しているため、transform された青クリップのみが黒背景上に描画される → <code>#0000FE</code></li>
+    </ul>
+    <p>fade のタイミング曲線と opacity 計算の差により、特定フレームで outgoing クリップの残り方が異なる。Frame 11 のみ 39% diff で、他のフレームは一致。</p>
+  </div>
+</div>
+
+<!-- ═══════════ Case 4: blend-mode-transition ═══════════ -->
+<div class="case">
+  <div class="case-header">
+    <div class="case-num">4</div>
+    <span class="case-title">blend-mode-transition</span>
+    <span class="badge badge-compositor">Compositor</span>
+  </div>
+  <p>1トラック、2クリップ。Clip 1＝赤ビデオ (0-1000ms)、Clip 2＝青画像 (700-1700ms) に fade トランジション (300ms) + <code>multiply</code> ブレンド。</p>
+  
+  <div class="frames">
+    <div class="frame-pair">
+      <h4>Frame 1 (t=0ms) — トランジション前</h4>
+      <div class="frame-images">
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAACXBIWXMAAAABAAAAAQBPJcTWAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAEZ0FNQQAAxzLHSXBEAAABHklEQVR4nO3OAQkAMAzAsLm4f6W7ilIYhQjI7Jsc5g+C8gdB+YOg/EFQ/iAofxCUPwjKHwTlD4LyB0H5g6D8QVD+ICh/EJQ/CMofBOUPgvIHQfmDoPxBUP4gKH8QlD8Iyh8E5Q+C8gdB+YOg/EFQ/iAofxCUPwjKHwTlD4LyB0H5g6D8QVD+ICh/EJQ/CMofBOUPgvIHQfmDoPxBUP4gKH8QlD8Iyh8E5Q+C8gdB+YOg/EFQ/iAofxCUPwjKHwTlD4LyB0H5g6D8QVD+ICh/EJQ/CMofBOUPgvIHQfmDoPxBUP4gKH8QlD8Iyh8E5Q+C8gdB+YOg/EFQ/iAofxCUPwjKHwTlD4LyB0H5g6D8QVD+ICh/EJQ/CMofBOUPgvo74BkULP5g/gAAAABJRU5ErkJggg==" alt="FFmpeg">
+          <div class="label">FFmpeg</div>
+        </div>
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAA2UlEQVR4nOzRQQ0AAAgAIR/2j+zscYMK7A1lO6QJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHPQAAAP//7pTRygAAAAZJREFUAwC5RAJnQGvZGwAAAABJRU5ErkJggg==" alt="Canvas">
+          <div class="label">Canvas</div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-pair">
+      <h4>Frame 11 (t=1000ms) — トランジション中</h4>
+      <div class="frame-images">
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAACXBIWXMAAAABAAAAAQBPJcTWAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAEZ0FNQQAAxzLHSXBEAAABHklEQVR4nO3OAQkAMBDEsFPx/qVORSmMQgRku+Vn/iAofxCUPwjKHwTlD4LyB0H5g6D8QVD+ICh/EJQ/CMofBOUPgvIHQfmDoPxBUP4gKH8QlD8Iyh8E5Q+C8gdB+YOg/EFQ/iAofxCUPwjKHwTlD4LyB0H5g6D8QVD+ICh/EJQ/CMofBOUPgvIHQfmDoPxBUP4gKH8QlD8Iyh8E5Q+C8gdB+YOg/EFQ/iAofxCUPwjKHwTlD4LyB0H5g6D8QVD+ICh/EJQ/CMofBOUPgvIHQfmDoPxBUP4gKH8QlD8Iyh8E5Q+C8gdB+YOg/EFQ/iAofxCUPwjKHwTlD4LyB0H5g6D8QVD+ICh/EJQ/CMofBOUPgvIHQfmDoPxBUP4gpAc0ytW9Wzoe4QAAAABJRU5ErkJggg==" alt="FFmpeg">
+          <div class="label">FFmpeg</div>
+        </div>
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAA2ElEQVR4nOzRMREAAAwDoQ7xr7k+/sACO9J2pAmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMcJjhMcJzhOcJzgOMFxguMExwmOExwnOE5wnOA4wXGC4wTHCY4THCc4TnCc4DjBcYLjBMc9AAAA//8vw7uTAAAABklEQVQDAOieAWl/UX/+AAAAAElFTkSuQmCC" alt="Canvas">
+          <div class="label">Canvas</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pixel-info">
+    Frame 11: FFmpeg <code>#001600</code> vs Canvas <code>#000000</code> — ともにほぼ黒
+  </div>
+
+  <div class="explanation">
+    <h4>発生原理: multiply blend + fade のタイミング差</h4>
+    <p>multiply blend: <code>result = base × blend / 255</code>。赤 (253,0,0) × 青 (0,0,254) はどのチャネルでも一方が 0 なので結果は黒 (0,0,0)。</p>
+    <p>Canvas の <code>#000000</code> は数学的に正しい。FFmpeg の <code>#001600</code> (G=22) は、テストビデオの MP4 デコード時の YUV→RGB 変換で G チャネルに 22 程度のアーティファクトが発生し、それが multiply 計算後も残っているため。</p>
+    <p>Frame 8, 9 が 100% diff なのは、トランジション中の opacity 計算タイミングの差で、CanvasCompositor が一方のクリップしか描画しないフレームがある一方、FFmpeg は常に両クリップを合成しているため。</p>
+  </div>
+</div>
+
+<!-- ═══════════ Case 5: crop-blend ═══════════ -->
+<div class="case">
+  <div class="case-header">
+    <div class="case-num">5</div>
+    <span class="case-title">crop-blend</span>
+    <span class="badge badge-yuv">YUV 色空間</span>
+  </div>
+  <p>2トラック構成。Track 1＝赤ビデオ、Track 2＝青画像に crop (20,10,120,70) + <code>screen</code> ブレンド。</p>
+  
+  <div class="frames">
+    <div class="frame-pair">
+      <h4>Frame 1</h4>
+      <div class="frame-images">
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAACXBIWXMAAAABAAAAAQBPJcTWAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAEZ0FNQQAAxzLHSXBEAAABOklEQVR4nO3XO04DMQBF0ayASMD+FxGC+GxuIjlFRoIKgie5HOkU7jx6183sloc3wnabfwF/SuA4geMEjhM4TuA4geN+EPhj+Ho+cFXH4bzw+Tw/8P5zeB9euKrXYSw8N/Dx4mlhhvXmUwM/L8wwN/DK43Kx+TOPWW/7i0YC3yqB474JvP5nEfje3VDgzbcIEzhO4DiB4wSOEzhO4DiB4wSOEzhO4DiB4wSOEzhO4DiB47YIvLpGYIERGIH/LYHjBI4TOE7gOIHjBI4TOE7gOIHjBI4TOE7gOIHjBI4TOE7gOIHjBI4TOE7gOIHjBI4TOE7gOIHjBI4TOE7gOIHjBI4TOE7gOIHjBI4TOE7gOIHjBI4TOE7gOIHjBI4TOE7guC0Cc08EjhM4TuA4geMEjhM4TuA4geMEjjsBRHwzdJv/pZIAAAAASUVORK5CYII=" alt="FFmpeg">
+          <div class="label">FFmpeg</div>
+        </div>
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAA80lEQVR4nOzYwQnAMBADwcO4/5JDeoghmGWmhUUf7Wco20OawHECxwkcJ3CcwHECxwkcJ3DcYWA/2D/WfGXBcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcQLHCRwncJzAcYeB13A3C44TOE7gOIHjBI4TOE7gOIHjBI57AQAA//8UPTEcAAAABklEQVQDAPVUA2lzLIGoAAAAAElFTkSuQmCC" alt="Canvas">
+          <div class="label">Canvas</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pixel-info">
+    crop 領域内（中央）:<br>
+    FFmpeg: <span class="swatch" style="background:#ff13ff"></span> <code>#FF13FF</code> (255, 19, 255)<br>
+    Canvas: <span class="swatch" style="background:#fe00fe"></span> <code>#FE00FE</code> (254, 0, 254)<br><br>
+    crop 領域外（左端）:<br>
+    FFmpeg: <span class="swatch" style="background:#ff1700"></span> <code>#FF1700</code> (255, 23, 0) — 赤 + G漏れ<br>
+    Canvas: <span class="swatch" style="background:#fd0000"></span> <code>#FD0000</code> (253, 0, 0) — 純赤
+  </div>
+
+  <div class="explanation">
+    <h4>発生原理: screen blend の色空間差 + YUV デコード G 漏れ</h4>
+    <p>screen blend: <code>result = 1 - (1-base)(1-blend)</code>。赤+青の screen 結果:</p>
+    <div class="formula">screen(R) = 1 - (1-253/255)(1-0/255)   = 253/255 → 253
+screen(G) = 1 - (1-0)(1-0)             = 0
+screen(B) = 1 - (1-0/255)(1-254/255)   = 254/255 → 254
+Canvas 結果: (253, 0, 254) = #FE00FE ✓ 正しい</div>
+    <p>FFmpeg の G=19 は、テストビデオ MP4 の YUV→RGB 変換で G チャネルに発生するアーティファクト。純赤 (255,0,0) は YUV420p でクロマサブサンプリングされると、デコード時に G 成分が完全に 0 に戻らない。</p>
+    <p>41.67% diff は crop 外領域の G 漏れ (23 > channelTolerance 40 の閾値以内だが) と crop 境界のアンチエイリアス差に起因。</p>
+  </div>
+</div>
+
+<!-- ═══════════ Case 6: video-filter-transform ═══════════ -->
+<div class="case">
+  <div class="case-header">
+    <div class="case-num">6</div>
+    <span class="case-title">video-filter-transform</span>
+    <span class="badge badge-algo">アルゴリズム差</span>
+  </div>
+  <p>単一クリップ。赤ビデオに blur (strength:0.5) + transform (x:10, y:-5, scale:0.8, rotation:15°)。</p>
+  
+  <div class="frames">
+    <div class="frame-pair">
+      <h4>Frame 1</h4>
+      <div class="frame-images">
+        <div class="frame-col">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAIAAACwpMoFAAAACXBIWXMAAAABAAAAAQBPJcTWAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAEZ0FNQQAAxzLHSXBEAAAQAElEQVR4nO19B7hW1dH1nH3623t/7zWmaUxiYowpxt4/u4nGEjUq9tgbFiyAiCiggogSRBEQBAQFUUFEELGgAlJEsSIqFmI0Go1/4vev2fOel3OFywcXjCZ6nvXw3MeEyzlnnZlZM3vvGaIOXYaGp+FrJIlSRAWNbxF9h2gLoi0V7WHS3i4d6dIxUXVhjC5OUr+MGpC3h+fU7QXr/rI7ueI9XHGA2SULeErj6YIJzC6oJ/LGI3mamaOH0owpGZqcprvSNC5JdyRpVIJui9PQGA2O0aAIXROlvhG6Msq4LEqX+HSBT+d7dIpHJzt0vEPH2fRHm4606DCLDjVpX4v2MfkOd1e0o8nYTtE2uG2inxH9RGMzje9ptGjUNMoaRY2sRkIjpYEf4sH7ccgAgp8Zpoa8Q1sj/F/Cbzj8X/6t15oJ3jggeCurQfAfPSb4ojhdmlb9syYIHpE3R5UcsPtALTKz6s6q+09VHGCOxryyM6doPVk0gVkFA5iZN4FpBTU1RxM1xuWMO7M0ImUOT6pbksaQBF2fMvonqXeSrk5Q9wR1i9PFcaNLjE6P0mkROjlCJ/l0tMs4wqXDHfqtRwe4fHt72rSLQzvbtINF25v0S5O2MuhnBj/CjzQ21fiWQa1EdY2KRpjgpEZaQ8iWN/NfRXBJf9ff06/jF0S/Nml/Rb+z6QTYUFRdHqeeKbopq24uOmOK5riKM63qzWiJPllzgflVZ0HNXVJhvFhxXyg7z5ed50r2opK1oKAWlKxnCurpgvG05htmPT2vgMlpA5iYUhOSxqikMTJBw7RZD0oYN8Wpf5z6xahXjG26W4Qu8xo2fY5HZ7vM9wlwLQ4dbdOhDh1i860eYNJeJu2paFeTdlG0ncE2/Uv9OD/V+KHGJhrf0WillcSLZcuHntFIhBAjigZvLPz2wvRbGmYIbWlW7eDfQrA83iaa4F8atLXFBB/k0ok+E9wjQb0yalDOHFJyx5asu2reQzX/4dbY0y0+sLDuAS9UGS9pCNmLK86zZXuhxryyNaeoHiuZjxbVw0VrRgE27UzNWfdmbWCsxqisNTJjDsnYN6etGzPmwLTqm1Yw6ysSRo84XZKwLo6bF8RV5yidEmOcEDWOj9DhvvEHj37v8d3u5xr7OrSHQ7vbtKPF2Mai35jskICfmLS5oh+axmaKNjHo+9pjbRzQLJZd0padC1l2MiAYiGh8RQmWf0z+Ybm5qEZWP49EqR/r6LWDQTtbdJBFBzt0SoROj6srU9Q7p27NmcOKzuSiNbXizq76T9Wji2se8HLdBZa1MN6oa1Rt4LWKBbxaVcBLFfPFsnqubAKLympBkZ4sGrML9HhBPZY3wDdsGj78gSzdmzPuyRB8+NgMDUvTbSm6OUWDk3RDyhiQpGsS1DdOl2tcGqMuPp0TobM8OtVnHOfQsUG0xs3/HmZt034m/Y+OODubtJNivn+lzRrYXGO1lt0SUJ4LIastW6J1LAQhPnDsKxGm0WgH/z6CWwOCd1RMMN7OoR6dFjPOTFpXZahP3hyat4aX3CklGwQ/WYs83RJrEvxqq/96qwe82cJ4q8VbDsqrNrC0ZgIvVy1gSdV+vmI9WzGBORULgDp7omjOLNnA9JL1UNHEB3RfXt1VMMfn1ci8eXtODc2Zt2SMm7Js1v0zql/agDtByOiWNLom6PyE2TmuzowTAGdzUsQ4NkKdfDo8ahzm00E+HejRPhp7eLSbQ9vabNZba2yh6KcG/VjjBxrf13FqIw0RZfkQJGZLtP6KEizSQG4lrpHXTqlVPxICFRTKrop2t9gOOvlGZyispIN3OiBnjc4748qRaSVnRtWfX40urMdfrPkvt0TfbIkA79Sdd1vc9+qM92vuX6vOX2rOiqr9bs16p2q+U7XfKpuvVyxgadkEYNDACxVrCWy6ZC3iUG3Ny0OdObML9qyC9UjenFJ07s9b9+RN4M6c03Tjg7PmnzPqhowJddY3ZfVOqF5x48oYbNoELowQcEbMgEY7xTf+5LE6O8qhIxw63G4INHjyvS3azeKAvZPBgOz4tdZoP9dfedOyNw6wUeDMw8SLZQvlTcuOBgi7cbsdbDDi2yO4oAneqC3Be9j8Ro6NKCEYdnNj0R1TcMdXog+VXRC8oBYDwWAXWN7KALvAX1s84IM6Q8heUbc13HdrDsy6adli0y/VnBer9nNVDtgLyy4wp+I/VXIfKznAgxV/atlDSgaML3jj8i4+sjty9i0FZ0jevjFnD8xa/XLedVm3b8bpk7Z7ZPzuKfeylHNp0j4nZZ+dtE6LmsBxURPPcnTEQFJwYET9zjf29xCwG9F6F5PxG5vxK4ulOMxaLBs6/NsGQzj+lkarwaIsH3Ld6RDH8XYIFpv+AgmWy9WQfz6u5YMQLAkSwtLWivZWtL/OPv+ElDRKXRPmTSkakjfvLlr3VNxHyuZjNefZqvtc3UfQhVsWat+r28Dfaoy/VxkfaXxQU6sFzPqtsvFmmYA3qsbrFXpN48WqCTxbMRaVaU5VAY+Xoc6MGWUbDnxqQU3JEXw4h2pt2aMLChiWNYam6c8ZGpSmAWnkXdQnY/ZOKxFoknSdF2GcGmVhARF+gs7ygT/YnF5LtEZ6jceXaA0tsl0QrbcI6XC48U0Vv65v6dAGsqsapZAOz4Z0eNON+4E689pB+AvYMAQnQwR/1+An+Y1+SBCMVOTUuHFpzOiesvHibi3aIHhS1ZtVsR6vuwi9YYJXtMJwHeDDOuPjGuPvGn+rm6sFzBre++2aubxigGBgmcZLNZi19Xzdeq5mzqtbc2vm7KoFIOcGpiNDK1nQAcB9JWdSwULOhszt9oKFBP2WgoUP8cacOTCrrs071+TsqzJ2r7R1Wcq6NGlelFQXJoyzUjZkIx4NOvyYKB0doSM9xkG+OtAzxIFLtN7Fpp20ZSNab6nYt/1YMTbV+J6GGLc47UpAcymwbxHh8ZBZR75oguUXyT+Z0R9aTX+GP9B1n22JdrLod4oV1unIOGOqR0xdnfGGpo2RRXdy0XmwGuGaBoRVzX+1JQox9XarL25Z6PxHlfGvykp8WjVXi48CE/+wYv21ar1XMQXLNZZpEQ75Bh8OXQYsqNjAMxV3Xtl5quI/UXQeLXKonllyZxTsqQVrSk5Nyjv35OxxWRO4I+eOyjrDsvbQtDkoDSekrk+Z/ZPqqrTVM2F0i6uuMePCmDo/Qmf7rMP/FDFO9jnvhxSXcopk2PjWV1bNNLbRQLTeSntyBOwfGY2q2XfaBuxwUaWpw7NBtI639efRtmSvL8GJgOC6Jngz7Xy20wRLgnSGT+cm8C6s3ll/eM4CwVNKLgh+uurOrTO7nyP447oLfFpjfFZdif9Xs1YL+SAabrzuvF+zQTPwds0G3tChGuIcHL9Yd19AUKh7wIIawr8/pxYFoOSRrc2q+I+UPSgDqL/J5cj9JX9iyQPGlWNji5GRRf/2gndLwRuSd2/MMa4p+L2zzpVZr0fKviTlXJy0L0hakOJnJJ3T4tafYiak+DEx8+ioOjJqIsmWmL2PZ+zt0q7arLe3aTuLfq0D9pZaim9uMn5gcnotidbGBqOuES6h5EI6PJxhhwspgnW+JHSLoJdKTT6oP2+sRSO+xJ0NFh0ISPiEz/XpgriCQIWEuSNnjinYop/n1Zz5LR5e/dKNIuKcQQ/wSYsN/LPO+N9aCFVztfisZgP/qlr/rJhC+SdVE/ioZn5YVR9UrfcrpuhwwfI6IxBoDgB1JgLt2bI9v2zNKypJuh4tOY8UrOkl56GiPaVoARPy5gTW4dbYLJy5g+/11px9c5p1+IC0ui5t9E00yind4tQ1hgenzlHOsGHcECInI+/ShTOYNQI23BtsADp8L5NfF3T4djZtC8o1GjatDQZ516Y6Zn8/KJfWAjdeXF0C1kzDUutDcLQdgnFnuyi+YzzDkZ4BPXJR0kISApkKgscWHVjJzHr0mbq7oNXfUAQ3OK7bIPgfNevTuv33ugVAqYFjiHBwLHirhYEkG8a9tMV/peZKgeX5mgfAuBfVXMQOOJgnqj4wU2Na1Xuw4t5X8e4tu3eXPGCUxvCSf1vBHVzyBxXcAXm7f9a8OusgYPfMWD1S6uK01SVlNiw7ZSFgnxhTJ0QNmPVREU6vD0Wo9glSfC+f9vRoR492cGkbja0cNmupmm2mmONNNL5tMjYyqVWxQZf0y8+3TbfCmrwjBCvNbiz4UkQUbKID8Fa6QrmXwQs1R9t0nG908alb0kLcglsblzMmlh1Yxuxa5NkWZ3Grixe9vNWHbIaw+rhuAf+sm8D/1jTCXFaM1SP8/6lbjb9YgzXTP+vGp3XzHzWFX/v3msmCXMdp4C81awWy6roDLNcls+UVxrIqXLqLvFxKpFwG1zEbAXuevnNAyinwQw8WbeiJ+/IWPPldeXts3hmdtYbm3Ft0lXQwQnXG6pc2r8X3HVc94mb3qHFJVOGFIGk8L2KcGWGBgph9kseWjdd1iMtm/VtnZdUMGbbUw4FfE2MLjWaG3YzZrSG0BIXx+hdHMDQFfNHxEYUECfr5how9qOCPzyskSEIw2P1CCA4AdoVg5riVHQML8qqNIA3gXwTH8Bwg+C1dMnu75gJv1H3gldYY8vIXW6OwaRj0Il4I8QDc9hMcrV1gesUDICamVvxJlcg9Zf+ucgQYUYoOL0ZuK/hD896NRf+GvHt91uuXhll7PZN2t6TTNWF3SbkXJZ3zkjbkJwL2qTHzxJiFd3V41DzMNw7y6Xd6jWtvnWEDO9lqR8vY1qRtg3p4o3amWJc16uHGSoTJXudLCmYirMQ5i7zaVH9QWxOvvfyOWDee7HGy2DPC63c3p4yhOXtiTk2ueLNL8IHRV2r20hauWgDv180PWhA+FVNbNVaiDZfEKGus+vOqCP+e2krgXwE+rRoAm3WtkW5J/i2Qu4InR7ReWrNf1bUUQKK1rHGJZUuh9PGyxesfJXNWUcGsocORXk/KEj5oQGJ2o1CaohuT1C9tXJcixOxrU3R50uieIKTXF0bo3ChH69MijBO1FD/K4VLgoVqKH+jwYpdYNtLrHQ3ORbkkrosqsKut9Er2lm1r4xueYDiTAw2+oT/hXvVSXd+0GpJWt+U53QTBSE6+RILFQwjN4rpXJXgFF85cidZI0JGm41Zxw8i1AFnjEsuGVARkufOJqgPArOG9Hyg7yLARj5D0jy844/L2iJI7rGDfWnSH5O0BOev6rNkvo4BeOQcBGxk2gFANnJ20zogZp8Qt6HCpnf3BI1npAvb12bKRXq+shzvGr3RJXEqkknQ1a+PrfImLlpAu+Rnk1bdFXhHtSBwzDjG4YIsE6ewYXRsjKMwRKeOOnI2vG8+/gN8OPCH7Z4mIIogaHLShNkSkoKSx6s//B9lhhInH99QwaNHekluLZUvqJfVw+fOdqvtW2X6zbAGSYb9adQDwDbNGzAbwdPPLzpyK/yQy7JI3q+g+XHSQYSM5RMCegI4OuQAAEABJREFUmHcm5Ow7C+6YnD0yYw5PUrMejrd0Tcbom4YOZ3RN8DIXdDhU6pkasmGhU4SO0hsW/qCj9W91MVwWsIHdNXbS2EGjIwQbbQmW8uRPdPAHwZD7h5lcutMZsLouzgTjYcYUXCF4YRViNfJVIbjWMOh/aPktiZZYdpNg4IO6hz9X1P13axytIcdkQXNpjSFr2Ei0AHy7eMB5tSjwZD3+RDX6WC2KDHtaLYpofX8lem/Jv7sSRbQeW/TwToaWkF47fy56N+bs/gW7X97qnWP0zDndAx3eOWWdl2QdflpCnZAwjo+T6PBDYubvI8YBuiQuVfF9vJX2vavL21TW+TL1cnRBC3RZO5LlfQi83xDtRbSPQccadLJLF3n8Dd4UJ2SKd2bU3QVOKyFS8LHjdYi0EePAC4UIahCwKrWlDmFtiG/ItJAbF7HWsGzrU23WgAhAqahI6iXES+r1Tt3TAs2VugrXznSGDY3G6XXVXYgMuwodbj1VcZBhP1J2msua8OSTi5Ysa47NW2NyJtLrYVmzmWFfnzKuS5vIsK9MqividGmSLo5zaaFZDz8pYiBaH+2xZUtVXPLsgx1GxwkuhgjeLJBXexPtq+g4xQQjH7iMt84wweOy5kT2VzYI5h05NV9WhL66BLNlN7LqMMHAh3Xnb7WGZctK17stPjiWNexwhr2k7gPP1f3FNd6ssiDIsB+vR6DDZ1bdGWX7wao3teJOqnrIL+4qe+OKDtJrrqLoDBuWrTNst3/W7p11rs7Yl+fsrmlYtnNR0jorZZ+ZbFTNjovRcboqDhwVYSDPPqwDpSwhuBw452/rastPdHkS/vkA4hL0ySZneN0i1CNOQ5M0Imvem8On6j5VguZ0lpY53Vyh8VFVwRn+q6o+wzsNv/r2qC2uEetKfNlgrCb7MhmN7Et/bYFNC+VNyHKIrH01nDk+2YodFFV4w4KkXlDjAFdMqzZsehFHa1040xn242UXgCefWXKnlr0pRefesjux0BBoowrOyLyNNARadWDWglnDpq9NKeRdSK8vi3Muen6EcY6GxOxTNDpIsOS+39bRd3Mdfbn+bDDBSNVPsTkAd0eOlFQg+PacdV/eeqDsgeC5VbdJ8F9qnsiZzzS+ugQDuoTStOkmZEEzTPDfNMdSO3u71QeWt/JeBlHjr+ri3ZJW3qX0bB1yxJEM+6k6l8Qfr8eAGS3xadXI5Frkvoo3sRKZUPbvrEZHl7wRJX+YtmlEa9j09Tmndy6C9LpHxu2WtLog1+J9KQZwbgLqh85MqtPj606wJEpSmPyhNt+f65XO3Yj2JDqU6AiTzjZ55+JVEULkGJGg0VlrWlZBTD5TsBaWQTAv8rxfMRHJPqka/6ipRlljzQS3R+f6kL02Lr3aDrRL/ywEKa0I5R9WLECIF/ylxuUzvSnFXF5nyLLmCzULeK5mA2LZItPgzBGwHy05iGuyBAILgQ6/u+yMK5h35MxRWQWbviVjDsqZN2aQWCugV4IAhGqgh0bHCDZFOQvBW+ldpULwYcQb1c61eXdqb+RIKRqZMsbmnel5Xo8DwYsqHjTIfzHBn9RdQOQYHhAQgoMMm1evheA3NF5udYElLe7zdd7+wKhHwPHcug+OZ9ciwIyqj+wDIhwcT6x6EyruuDIUuA2Dvi3vDC7YgJRFe6fVVUnqmTCAKzQ6SLAIq5/qEwAir8DufgYdY9DxNl3k8KkCnQHTuJSBzO+xvPVE0VlctKCw3uBP2P6wqj6qNQoOQTEy9Frbo3bV/15oB2t25mv/QbQr00ICLYTm4gcgOvzjigLCu1NkTXNF1VyhDRpoLG5W7dd5C6mDEBbW4YtqLpz5U/rwx8MVZ3qwVUFq4GLNt6YYA9N0Q4r6J1eigwRvGhC8pc6ORD/vr6iTohMc6uLyyRFkwDdkjLsyJrJ7EDy75D5XspEgfX0IljUx0eGfI3hlPVxDlj3CogwiXHQ4OF7c4iNgi00/2sIHQaC9Hyg795R9oGHNekvCTVkFdz0grZBcCTrCMBnM68917gtqdyHalehgosMVnaLoTJd6unR1lG6GhE4b92YVNOFTeTWnaL2gN1e8XTPfqVvyqP/gCkNbgsPOub1XHyZmQxG89mSHBdpqZJq5Em1WNm0NCwircXzlwPt18681JWUf2Vgou0jf4KVrUwql8OEAFNkzej/5YyVnRtl/SO+QgYYdl7UBJCzD0sYtSUPO8gAduhTL5p8Hzhns7k50iJZXp5q8baWXDsD47UjYQfADSJDyCskAMgQh+N0WZpe35nx9CK45Gry2HSZYqngftFjguOG6ocBbPNlF+maLA45fa/XA8RKNhfXIghqfFpjNC9XR6SUP+ScIHp9zNhjBSjVsd3uiHXT03QvsEh0D/WzTeR718dk/D0vQqKw1PaMeKTjz88azZVvk1V/q6q+tlpQO/lWlfzXLh+tK7fpjXX/zWsm0dlKvqmLUBCzQ5NkFjWVNceZSL6sbwHstJvBWC+sy2fovcgwcw46ROj8KjV20p+bUxJyakDVGZ2hUijOXEfqA1m0dUtENgrfV7O6o2UUAPpKok8UEd/b5DCcIHp6kO3L2wzkLBC8oqG8IXklwnRFW4ELwp3Ub+FiL8A9bVJPgdzZCSm2/3uosa7HXnuChMUYHL4m7XJjU0Rfp76lEZyi61KLuHg10+cDumDhBYT2WpdkFtbhAL+jjCLo8ab2vd9gAbdb11lVefdWwHgnY6shmfNRqN5cyIVzeZiPm9Wk5kAdR/XhB8TbvHCEU3pOm0TAqUJs0bk3QoDijg9fuAcH76eiL9Pc0ojNN6urQFVG6yWfvjwQJBD+eoyeL5vMl9aLOAZbzgRT7G4I3CMFPFM3H8sa0guLDdlk1McXsjooT2L0lTjdGGet8KTKAvbRnPpDoIO2cj1Z0lqLzwK7D+vnWKAfgiWm6N2c+kTeeKlkvltXLVWt5BXfpSeLfILjN8v5/OMFrQ3l7Sdcq2xNkY8LHLdDYhpiE6OomwYu0+T6aI5jvlAzdnVbjtGceFvQ7GOAz1vnio4WG2jsgGP75KIOjLwju7LJ+7qN7KoxIGfdkDBAM/ywEv1RBOs8LL98QvD4Eg91XKibvLCgoEDwry2dlua1Fyrgzzuzepj3ojR5d71F/t4MEc9A9VNvuMQb9yaDTLLoQAdil6zwaEKORMRqbNqamaXrempOnBRV7admEwlpRhatxJfMDu5/xZtj/cILXVQb+H657ZfFEFmA+aYGoNprV7BWBBcM/L9BHomfqviX3JWlkgoZH2XBB7TXQuR71dBjrfMmeLCH4KOLS1SmKznDoYpu6+tTPp4EJjgR3ZpQQPLdgCMGsn2vONwSvP8GwYN6jnzfgnx9OsflOitPtMN8I2y4ULti92qYrbOphrTvBbMS65gycYNKJFmurc13qZvMGyhsi9Ockt8CBZJ+RoUfy5oKyWlS1lpYNJOyyvB8sEdr/DQSvem9rLrO0R3CD5lBaFTjqT6uGmISc0hCC+Rh0juCfQfD9KSYYYXGIz265n0O9wAUEr0WXmR0lGIZ7rGb3ZKeR+17u8gbKm+I0OEV3Zwhp2cycmlWwhODXKuobgjcUwS+XFfwzCIZ/npFk/3yPZvdmHXSvtZjdHgZdYtDF68grX/onOl0xzlF0vkOXm3SlS/0dusHnMIBgcC/8RtaEA0GQWFxSSzhBUsvrNjwM/MzHFfoELkgfKVvN1vaOLfV/9bE2H+4qjlqkqCxUQMG8XVIIwC+VjHl5c25OTc0p+OcxiIkxGhhhCro7bLjn23QuCDIYHSIYKa9FZ5hM8AUuO/qr4BxczrpGxGhUku7PqCk5C+xC5j1XNr8heP0J/qhivVM2QTDMd0meQPDTmYa8Gh2nkUiKPLrO4kAJtwx2z9aViVPXyYLDFwy3s00XWXSJyx6/j8/m++cEt6kak0HebT5UdJEgPVk0l5TNl2rOG1XzrRZHXLQs8jcOiMpmnVUPp6x5u117L+ir/EGsK8G8A5Bkz7bsD1leMd8oGS+UzOfy9FRePZGhe7N0d4KN6lYtrK6yqItNFyg6DcqX6ESIpA4TDMMF8Osuxe91uPgMFyEEj82aU3PW9JInBL9Q4QYaMN8mwcwuQss3BHeI4CVFtThHs7P0KEIv0l8tnofY1BvaymR2zzfoVOSuRMdpdPDq5nLN+QqHKxvXRrih3OAY3ZI0pTw5Pe88XPSeLphzitbzZefF4ByDHBP9sMX6qNVuHPTWBbnGgbPVHFppZ+P72uBLZ7TjBEvpA19849TF+xUbQJh7rUSLi9bCHBIkE/p5bIa7dSIyIj52temSwHaPUry4d5hOZTt49YhwzbmnyzvrrovSgCQTfGvKGp9Wd2etGQW3PYKBbwheH4IX5dX8DOvn6QkanaLbYxwcEX0vNakLNWwX7B6u2T2kA9TK0RXw2jtGvT1u8DogRjfy8oUalrZhvhNythA8t+DML/uLK7yxCOJe2ps1D4t+1OICSOQBoVlK7W02q4ZpXleyv3RG15Lg8P8aLnpogj/RW7qQHb1XMpaWzVeKBhKkeVmanlEPJun2JBcm+/nUx6ILLDoXPtmgY4h+r6vIvyXav8MEXx3lLbF9ZGedJnho0gTBMN+JeadJ8Lyi2yR4WYsrG/+FYOmjIwTLvo5gbfgbgtdEMNLfOWmalqKpCRoep1s8utal3iZ1RtZK1ImY4IP0Cd79O0awXD1jdGWcnXO/gOBhCXNkxh2fc+4ueA8U/amlyGMl3rA/v2Yt4m2hNrC0xX6t1XmrxXq7tXFEs9EuSS/+ywa8gGzG513WSuLXkfL2XvTaYENtCWrvb62GWn5Gcc4fVRXAW6lL9ELJgH6GvHosRZOy6q4Eq1r45+4u++dTbJbNhxhsvnvrbTa7aKwvwZBXAxMrCb4zYzUJfrRoC8HzeWO3+XzdWqo5BsGAECxV1rUiuKIYXz+CP6wYb5WNJsHIjmbppdhxMV7Ph7zq5nD0PdnkpOhg7ZzB7h5EO2us8yVtSHvEqWeSG7Zek+DNt9enjMEp7uB7e866o+hOKnr3lvxpJT4N/VjZeqLqPF2159ZdadvwqsbSjSKAtB4N97iTpbEw8UJ5uHVSI1qHj5uuemB8XaXZF+2i2yN41SUH/Sx45E90gvS3ssmnVUvcYHdhnh7OKfjnsWljZIzd5zU+70LvrDcsH6U32OytDyHsqjfNbdMBgi0yABB8RaJBMNgdkFYg+Oa0NSJrjszbCMPg+EF95uLRkvkYH5u0wPGiuv1si/Ny3QbklI6c2JFdwXK4Q7aOypkAqVpLYSRMcCNa/xcTXKEwwW+WLRC8uKRA8PQMQV6NhsKKsgdF+ivy6hiD/ki0jzbfXbVz/o3GOl+yo+Ni7qxNl8VV14TZM6l6pa1r0va1GeemrDW44N5e8EYW/fEFZ0KZT1tMrfDJixm6K9HsWmRezXum7i+sR4Dn9OnKl1sZ0ilamqG8W/OAv1a5NtKwZrjJVkUAABAASURBVH2OL+zMG5vmV23XsuamLRuK+HV19Wv+DZ9b/K+QPoGu8PgrSiY389INvObkaUrRmpThDY23RjmRucKhsxxOfyX67q6p3UZTK/061vkSFd0lxseQL4nSpTFDu2tuddY3ZQ1MK3A8LGuPyLt35qxxefu+vDWlxGenYM2zivajJR7JMLfqPlPh1jVyGueFmgO8WrVe1dt6eGdP1QWE4IY164L7agiW3Yr/TQRrYSEEv1exQfBLFVsIfjpH9+d5c92wBC8fIVntYdMZFqe/En130XH3N3rL+pb61GcHr7NjjDMjdFaUm7ldmDC7JNTFSfPyFF2ZM2WuypA89+u9Le+MKPlji964ckRiMwx6Wi3atGng6SqfjF5Qc5szG16qchvLZS2MRpFEt2sRaSaJ1gctvF9cKBfIttOgiVqo98qqi5KryrR1JeyLILhxh+p/y4Z031xRtd/RqzUIwE8WjcdzNCFvjkvzovtAPYXiYptOsul4xQd399V7mbfRZxK2CLrkdcCEeUEJvEofL27E4XOjED0yx+yepB5pPlQIjv+cUYOz5pA0n3K8I2ePKbiIzYA4bRh006ZloM68svVMhZsUcfFLz+V4teosDVojCMEChGpwvCrBclbgP5tgvh/jsxK1R/BdWWNMgvsmDPB5j1QXi7ddgOD9tbzaNnDOW3S4jZLB57/VIS63ZTvCoT96RifXOD5inRQxTo5yS/xzUubFSfeSFPf96pXmFttA/6x9fc5BeB5S8iVCjy5FxlZiE8rRiZXYlEr0gWpsZjUKQJFpUcaH6eaXLeDZivlczcZDshtvdV/WzSb5BJvuJ4sc8V3NNyvwOh/ykTMBH0GgNS1bd8X6Z4WAtjF7jc2aOlZUae//095vC9nuZ7rZQaPXpib47Zr9ZlnJDiyeQJKlMRnr9jgyF9XH50MkZ5p8XvcQLax21LYrfbJgvt/V6AjBgDT4+IPFHB/j0HG+eYLHvbukiVdn37gwZl0e4/59V8boqoS6Lg2/zRH6xow5NG0Ozzm355yRHKedcXl3Ut65r+g9VHSnl7xHCsasonqiaAKIOsAiPGGFk4TnK9aLVfOlmgV2X68oPDmAHBGQlWYh+IMaAR8ig9T9IZoxu0Fwm5j9VScYX/DnCB6dNkfE+OAICD7X5cMGR5hM8M4BwT8LbFf61Xbg4m130mJvb90s9bcOt947yOU2XdIUu5NvHBtRp/jGaVHzzLg6J2V3SViXpJweKbtnxr06w/1E+me4x9+NOXeQ7vp3W8EfVfDuKPp35fnY6+QKAz4cofqRMuPxMh+pk2i9qMJnpaV9qAi0l2rIvtygIOoAosOlSQpE+If1RmNxSb0EQnyQdK3RssMHUuTntXfF7RG/Su4rBMu9SWcu2YE1v+zMLXCX+sk8CMwYGqM+MaOXxyHyZJNHuB2oW2hsS40Gtd8PzWnrIMG76UkUeypuwbWfxu/0VKnDLG7g80c9quEEi060edPWqT5v2jo/Ql1j3EG7Z8K4Mqn6xtW1uknpAN23Ezn0MHybWRspPLfkyalJBQuZNPBw0ZkZTF+AWSNaLyhZC8u2NB6DWS/RHQYBvAvo8GVVcxmfquZcS5qhSOMjOc8YJlhcd1ADX6NlfxkEQ0I3CZ6TVyD4/gwTzAlSlLfEguCTFB1scOVZ5JU45++tD8GycUda5gm2USR9MrezeI7Org7P4tjTVfu5xv6eEss+3Kcjo3RCjE5KGKfH6ayUiVB9ru7ydXGaO+/2zFh9MmbfrDVAN5IZnIUC90bk7ZFFVxT4vWUXeKDMXQKnl6wZZVZnj5VdhGruLV51kV7LgQ6hHLnjKzVXhgVI18mgnOLIPBfdMIUzbDmpHJRQdIm0vRLK+i+BrGbje5stdvAoQjBu9W3dPPEF7oXpzirw1JgJWWNQ2hgQI4S/SxxuKn+04sZke+iz2r/Q/WA3CUajSLPhDhK8ZZBHb6l/9dYBpFn9rop20wPigAO0cR+iO2oe7VAnj3tYnhrleYJnxDjFukD3zu4W5+J2rwQvT/VPcnF7UNq8NcVHyEdmTIhwqEdkCJOLFjBNn7iamTcfKfDxDZi1TDwEuwCi9eKSQuKI9BEGvbRmS08BaZMAUQrAOJoZtuyXkCaGDYJX7Yn3ZRCMAAy3tKRswnUJwXdn6KYUXR8l7kysp3cdZTQIlildm2j/LASXOkYwKQP4ru45L39uFnTy/1HQBnMLxdja4kkU2zuMXV0GAvZ+Olof7HN3TZj10RFu3HVSlE6OceqF3Bop9UVJnn3RNW33TKqrMjbM+pqcfWPGGJQzb82ZtxXsUQXrjqI9rugAE8sMBOwpVf/hijez6sOskVsL5c1yymIE7LqzpMWV7pLSF3o5dxz13qkzxJmLZcsaV2N6RGjxI4jZshCyFoWU9tDmWOnKpoqf6n4PskkWqf8y3VFrofZV+JrvzKvRGe5U2yfGSek5eoLTIQb3jtxea6sttKr6tm4PWwvagneQ4O8ELSq/FQxz+4HGjzWkne1W+pvaxuQ29TtpSMNMGVcpNo1bPNKl41w6wW+bVUd4hk33KHwRm/VVSb0umeQEf3CK59SNQDqYM8fmrfF6vBm+bsTsaboDv+TWMqZW2ow1YnaVuxW9UmG8VnEAGZ33ds1tEhwujn6JBEP/S1dEEIybxxM9nFNjc8aoFBPcW7c9E4IP1t1ftw8G9nw7RLB0817nS7rNSivDcuDoi8FIGGlCLW2pv6uxme5Iv7nGL/Xk1q0tA9jBpB0tYzeb9nDV/g4d4Bq/dYwDPRMi/KiIcZyeQnVKVJ0aYx0OXBhTkOLdkoyr0hak+LUZp1/Og1mLZQ/NW6M1xuXt8QVnYsFCzJ5aYch8YukmJ4XShVVnYbXRGBie/GU2a7WsxX6zxXqjbr5dY3DTjJqSPkjN2S6ApDGSdH1WkfaLIpQ02kux2j0Yzn/rHzX6tG4gcQe70pZlaYv7ctWaX3XmFNXUij+5yM3u8GXjW79CV5lO0UbyOz0jchttVz8Ker1XNC/rRXB4EERRcyxDnUS5baQhJi6Td2UK75ZB17RfGo029Tsrxj56yBKk+AEhHX60SychDdDTIhGwkfNBikv1Wxp9SfX7hhQ3DhqsMSJFIzPGmIwCJGbfl1dTSjYUGYuyIuPJognLnl/mXv3PlRiI1sArFQN4rULLqoYQ/F7VeI/3Q5kAgvRqCQ76a64FwY2sd60Ifkc3XgHBz1TspwvGlJJ7bw4phjk0yUqle5AgHaQrlKKfNxjBmmQjEQy5jgfDdVJ6BEQ2aBSeD4K8TA74lsEQm5bxjT822Ka31NhaD/PUNs3Z1+42R+t9dY9zUeDAHzWOj9KJce4zDil+XtLonFKXJBQC9hUJAwH7mowJXJ9lwKxvLjrDCvbwojOmYI9FtC5595R9ybCnVRmzKjxNB+k1IB3cF1WtZ4OqmbQKbrpxvcbFxXBx5jJ3TeLl32vGx3UVNJQJUd5e2aRN2yUG/vonLaaMBRL9/GLdxW3MrjqPFhVPAsmpIRlzkEy99vjTP9bkvq976S50WwX6uarZlXlpMk5rwxAcD35dJmgGnwsm/IhlS1d4aYAoWZroMhm5LGPfZIFaWor/j9GI1hDhB1scrWHWh2sdfoxLJ+p28rLUgWjdJcZ9MYGr4jz7+5oEXafNGrpsSJpuyUCHG6Oy3PF2fM6SaD2laD1QamTYMGvI1LkFY15RLSgzZHzty2zW9jI9C1PWuN4qm8AKfUxSCA7qZQbwCXcVNz4Tv71mgtvkvgywC45lswPYhX7GFwaCHy9bswoGwg0c0s1pdZPOOLq43IysU5Ag/UL7RdHPTdtdP4I/P0vN8Ek1xx1HgglNiXYsWyZ4iWW3auMWQS5jY35kNNT4llagw23awaFdLG5yLaMqpHZ2iMvtciHCO8V4XA2AUH22nmFzAXR4irpmeB71VVmYtXFtVl2fNQbw9GJ7aN65vcC4s+COK3pi2dNKzjSeqMItX2U32ZyiO6/sQ50tqvC7BkSBv87qzJVKuJRIZZNCIM1WFlLCTcalkBIWa2F82GIBUncT/by4xYdKmAUBUbSQLIzmDmdmfz0/8Xw9y+FwpYcZB0NYvqfllYzYSWlqZQrav5XgXIjgWihmyzROsWxR400djmgtVZQdDW5Tv7t+KrgmBOyD9HDiw+1GPbyT2xjvfLbGhVG6OMHzn3sk2lg2vBykODLsYVlzdNYCYNbA5KwxtWDNKNjAI3kTeedTeRuYlzeeKay0aWBZGWZtSyX8nbIBrCgZ7+lQraN1Y6fcR0FVGen12hD8t7r51xYW840Eqe5BKDxSdmYUOFkYmaKBaYVUAu6qs8sa5TCi3Qwm+Kf6XUlek99QBIfHkMsmHtkIID/LCNTwCPNIiHhBRhMvuVoxUGrltpa9qR76BYPePBjVioC9lcWp13Y27WjTTk6jff1+PJedAzYybKmHHxfhwtmpUQ7Y50apM3/73C5dbzYyoEV7p1X/jDUg5wzKuQD4HqFnH8Gs7y44wH1FTy+B0PSS8ageqjKnyHnXwrK7qOK9UOHGfVDgupwils1thN4rE/B+1Qg5cKl7W9K6Egj6YenJEBqNaS+6sfiyFh+/7Zm6+1RJPVhxEU1EP1+bUr31s5zpcsw6SM813TYQsC3aZsKzh4WFjhMcHjJv6X08SrO7WoIFYYJl8JpYdiHEcTWYc9kSitabBTYtY6F+HXRR3E5Pn9jZbFTFw/XwZrQ+2eM3cpbHHY4RsLtFdCPrGKNPjLeVDUiqgWnrFm3WI1PGHRmzUQ/PWsADWe5y8nCOZubpyZzBLfvy5oKSs6TM5+oCBW5LtAZWFAn4S4lp/lvF+DCw5vBAzfYIlpILlB0Inlu1QfDUsnNfzhD93DfBWzjOiXDDjGaCtG2wdlTfsASverU3oLi9idWRdixbBrI1lVpTrG1Ejdz6O8EUP4nZW+hh1L/m9Jq2VyzFIcJ31/OF9tQzPw8IVrqOcNmyZVlTCqUXxuiiuNHYWQazTlvXpex+aWdgmgUaRA2E6/CcMyLvjtO4L4fX7UwrWA/pgaVQZ9LDfkGRgMUFxisVE3hNDyiXqcZvwY1XzY+QaFWscEtSQaOPtK6TSxtSGfEh3Sh5RmbWQkaAW7oiSd1jPKGhk55SvLeuDf9KZ6HfCQoSInJl/ux6TR9df4LXYNnpIHLngrCdD0Xrpg4X/ERjq0CHb6cnJ+4SDJjZWyfZUg8Xyz7G5J5AJzt0ise59XkeDw/p4lP3CF2uV2n6xIwBSa6aBdFaDU2bo9PmmIx1T9qclIFNGw/oBhXA4zlu8za/sJLgJXl6sUivFI1XS+r1IgFvFml5id4v0AdF48OyyahYTXyO4GVVnuGyJOhihxgxIcM9ZJEUQEx0i/LXifuHBGkSvIkmWMpNXwLB5hoho4xXjdYiEBKB1k+GZi5+rrQitTPR4T/QhbOfmAypmslsMInWsoYtGbbocLHpTj4dG2klP23oAAAH5klEQVQsgZwTMTrHrUtjPE5EGmr3Tqhr0vaAtHVDhkcmAPDhgByzuzdnANPzvBovhZS5OQKeyRNYfy5PS4r0UskAwPQbJQO6TO9CsZuQaaiyLYknZVYbHd8h5pHFjS94+LCQ1kMeXpLgENPJN47Ug5L2CJb3ZcywDJwVYSvju9drQPSGIlhuwg1p8qbTjrYtpGTaSvFCMBhELHvjwLI3CVXNttRFgF/qUL2dNutdgwFSosPbrF7bjDMcDtgXOHShS5fpuSI9feoV5TN218UbzQGHa4yO0dgETUjxIYMHUsQthdI0M6eeStPTGZqXYyzK0LNZej7HZv2axrIC2/TykgIkq36jymiOu4VkA7sLKq4MrEZcgPPon1FIAXiajs8FviP0Mt3uwea6jfUnng0Ijn9BBK/PFf4gpE2T3JwTgth3NJSAiTMPV83CtTOph39PR2tZ6fqZhqxhS+1sJ4t2DqL1AXqQGNTpYUhCHB5DdJLPw8agzmDW5+tdhfDhPWKNpGtglH34kATdontUjUrSuDSNz9B9abo/Q9OyanreeiKjAPA9N6cW5Ghhnn348yX1UskElnJ31sZmYRmaJ6O15lYjgMxeGZ33RqTMPhmzV4LXVc/12escrFeQdgyW90U/y3sQw5C3Jyb0lbiMVTiWNMwNEewFBEcDm06vkmgJmjq8NZgLI4PnJVr/TOMXYtnEw9+QTQIy8Qm5x8EWHaFxrEXH2dwFDKr1HIcD9qUOXeZSD4+ujHLDogE+96UaFOEz9sOj3AlldJzujtLEOE1Jsk0/muSDYrOTBLOel6b5WVqUo2fzbNDAywX1StEUBy6a/NmyvYgXwdwni84DJff+vHVHzh2eVMjorpRZ0x6X836vx8vtsDqCo18dgo2gp8sanHk43VpDbv25cmkyyBZSgT+vhKK1WLZk2EK5LH5srUviOyrelLKHHt+7r8ah2pMfpcchizQ72+UXfanLDhxMA9foNgfgG2Y9NMZdmm9PcFvfiSnusjBZN6N7OMWntp/I8PFAidPz83zYdxGkWYnAKzCvaM0tmLOK7iM6C78nZ9+W925O8dmRy2Ms+0/1OSPYz+D73EZ/tZvob7oQyCt5P/L25K1+dQk22kbotcmtEwGaTEvMDkfrjULj+MLr1r8MbHo7vUNxV2l0bvBZW7jEw4mOVHy8+njdJuF0ky4yedN5d4cbhF1tM661uAnZzR6fORgWpeExujNC46LcxOq+JD0U5zP5sxJs1jBotuksPaP9NjgG0wDYnZPn/ukz8/akvDNRj5senFTQet31Hhh8Xgc6TLAsEX6O4PRXiuD2rnUVa05bN95EmPJsKKuWNexayI1vpCHLmj8OlVOEcimR/o/BumYfg934gXp+LviGWZ9g8RC/s2324RfafA7scod1GQy6X4wGRxhDPfbh42I0Ps5d6SanjQeTfIIbBj0rS9JN7PGCDTxaVLMKxoNF3kB5Z8Eew0vd9g0pztS7aEFwvMOZPT67X+nvclOtKyUDFnnlBImJdtHKpA6MH/2Crw1FcDhaZ0IiXISYzE1tlkVbQ1WzHwXR+uf6JYpNy1wKGb35W31+/jDdB+No4kmcpxu8Ab2zYoK7mtTN4o5GvR26yaVBHvc4AsdjfLozShMibNBTE3xCEAY9I9mk2QQeyRMwJccYm7dGZ/mgFzLyS2PGRVr0QRb8xxPc3rU2xH+ulvI5lx4NpV6pUKFULFuy6o2CccjfCbYibR7E6V/I9kKDbXpnkw9q7qP7YMCaj9A9lU8w+ZjQGYrJFgfew+bTf9d51D/ScN0jIroVb5zbeTb0dooeSrPq1sIbf5Lk1nfkzJEZ4/qsjQQJAv48j/dQHmNyEg93AtHw82AFSVz0147gVWN2mOBmhG5CbLo12IuycVAQ/eEqWfW22qb31Nhfz+NsWnMn3VzuNKLziS4wqJuiyy1uoNHHokE2/dmh21wa5tHoKHM8IUaTkiTu+sGMoTkmIXhSlkZl1YgU9c9YfeNtCN7baqwBbxlaIvxvIHjNV3vES7r1f7rx1dp0KZiR3KIP+XxPu8TNdHj+ma4R/jpw4EL2fprsI3QbbWgxGLRYcxeb+wFerXuVDfC469FtUe7cjZxqbLJRKpmUsYB7c+akrLozZ43NmrdkjJtT1DetkHafG+V0/EiXzwrtbtPORmMNeKOgxJH52hK8lnF6DQSL9pZzPt8PnPZPA+G9jTbo3XVPjH01xJo76Y5GMGWE5wsU93zsZXJgvs7ilqFDXLrVb+TNdyUYE1PqnrR5T4bb5MuesibBvWJ6Yqw+6neYyVuadtQf2eaa4JavCcFyrb1As0M18DDZ4UxapJlEuHqw60gWMb8fxGYRYtvrCUO7auwbDCo5lBpplUiwyxTrLxFfNzjcl71px2zKeobJ+LTCnzLcanCKlzquRAasEyRkwIc7nJTvrHdByyJ/q76rrynBtH4EN/eXSYRrplX1QG+HK97bauysD9jLqKHf64Y3x4Si8sVElxBdqZjj/iZzHLbjMQHHANgVggcleI7o5UEG/Ae7QfB2X1uCw9earTksx9zQaofIsbAQW+0+so0CCfajYMDuL4Ihnbtpjy2pFILxH4l7C54SyK7uJkvrvjZLa2RQyJJhxMN1Q/5RSWNs2hid5P4bwE0p7k91ZYx66O2FpwW7OHaymGApUoYJliXCtt/xNwR/DQj+/2T3coPk8GjCAAAAAElFTkSuQmCC" alt="FFmpeg">
+          <div class="label">FFmpeg</div>
+        </div>
+        <div class="frame-col">
+          <img src="data:image/png;base64,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" alt="Canvas">
+          <div class="label">Canvas</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pixel-info">
+    中央ピクセル:<br>
+    FFmpeg: <span class="swatch" style="background:#ff1700"></span> <code>#FF1700</code> (255, 23, 0)<br>
+    Canvas: <span class="swatch" style="background:#fe0000"></span> <code>#FE0000</code> (254, 0, 0)
+  </div>
+
+  <div class="explanation">
+    <h4>発生原理: blur アルゴリズムの差とエッジ処理</h4>
+    <p>Canvas は CSS <code>filter: blur(Npx)</code> (Gaussian blur) を使用し、FFmpeg は <code>boxblur</code> を使用。</p>
+    <ul>
+      <li><strong>カーネル形状</strong>: CSS blur は Gaussian（ベル曲線型の重み付け）、FFmpeg boxblur は矩形（均等な重み付け）。同じ強度でもぼかしの広がり方が異なる</li>
+      <li><strong>エッジ処理</strong>: transform で回転+縮小されたクリップの境界で、blur の端の処理が異なり、背景（黒）との境界のにじみ幅が異なる</li>
+      <li><strong>G チャネル漏れ</strong>: 赤領域内部でも FFmpeg は G=23 を出力（YUV デコード由来）</li>
+    </ul>
+    <p>20.51% diff は主にクリップ境界のぼかし幅の差によるもの。</p>
+  </div>
+</div>
+
+<!-- ═══════════ Summary ═══════════ -->
+<div class="summary">
+  <h2>まとめ: 原因の分類</h2>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>ケース</th>
+        <th>diff</th>
+        <th>原因分類</th>
+        <th>根本原因</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>overlay-blend</td>
+        <td>100%</td>
+        <td><span class="badge badge-yuv">YUV 色空間</span></td>
+        <td>FFmpeg の blend フィルタが YUV 空間で演算するため、RGB 空間での overlay と結果が大きく乖離</td>
+      </tr>
+      <tr>
+        <td>difference</td>
+        <td>100%</td>
+        <td><span class="badge badge-yuv">YUV 色空間</span></td>
+        <td>YUV の difference は輝度差が小さくなり暗い色に。RGB difference はチャネルごとの絶対差でマゼンタに</td>
+      </tr>
+      <tr>
+        <td>transition-with-transform</td>
+        <td>39% (1f)</td>
+        <td><span class="badge badge-compositor">Compositor</span></td>
+        <td>fade out する outgoing クリップの opacity タイミング差。特定フレームで背景が赤 vs 黒に分岐</td>
+      </tr>
+      <tr>
+        <td>blend-mode-transition</td>
+        <td>100% (2f)</td>
+        <td><span class="badge badge-compositor">Compositor</span></td>
+        <td>トランジション中の blend mode + opacity 合成順序の差。Canvas 側で片方のクリップだけが描画されるフレームがある</td>
+      </tr>
+      <tr>
+        <td>crop-blend</td>
+        <td>41.67%</td>
+        <td><span class="badge badge-yuv">YUV 色空間</span></td>
+        <td>screen blend の G チャネル漏れ（YUV デコード由来）+ crop 境界のアンチエイリアス差</td>
+      </tr>
+      <tr>
+        <td>video-filter-transform</td>
+        <td>20.51%</td>
+        <td><span class="badge badge-algo">アルゴリズム差</span></td>
+        <td>CSS Gaussian blur vs FFmpeg boxblur のカーネル形状差 + transform 後の境界にじみ差</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="explanation" style="margin-top: 20px;">
+    <h4>共通のアーティファクト: YUV デコード G チャネル漏れ</h4>
+    <p>6 ケース全てに共通して、FFmpeg 側で G チャネルに 19〜23 の値が出現する。これはテストビデオの赤 (255,0,0) が YUV420p エンコード→デコードを経る際に発生する量子化誤差。純赤は YUV420p のクロマサブサンプリング (4:2:0) で色差信号が 2×2 ブロック単位に平均化されるため、デコード時に G/B チャネルが正確に 0 に復元されない。</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
