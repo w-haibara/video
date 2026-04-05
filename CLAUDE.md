@@ -86,6 +86,33 @@ Implementation and pre-merge review must each run in a separate subagent.
 
 ## Devcontainer
 
-See @.devcontainer/README.md for setup instructions. Key points:
-- Set `GITHUB_TOKEN` on host before `devcontainer up`
+All development commands (dev server, tests, etc.) run inside the devcontainer. Do not run bun or Chromium on the host.
+
+### Quick start (CLI)
+
+```bash
+export GITHUB_TOKEN="$(gh auth token)"
+devcontainer up --workspace-folder .
+devcontainer exec --workspace-folder . bash -c "cd /workspace && bun install"
+devcontainer exec --workspace-folder . bash -c "cd /workspace && bun run dev"
+# Open http://localhost:5173 in host browser
+```
+
+### Running commands
+
+```bash
+# Tests
+devcontainer exec --workspace-folder . bash -c "cd /workspace && bun run test"
+
+# Claude Code
+devcontainer exec --workspace-folder . claude --dangerously-skip-permissions
+
+# Stop
+docker stop $(docker ps -q --filter label=devcontainer.local_folder=$(pwd))
+```
+
+### Key points
+- Ports 5173 (Vite), 3000 (Backend), 6006 (Storybook) are forwarded to host via `-p` flags in `runArgs`
+- `CHROMIUM_PATH` is set automatically in the container
 - Browser tests need `xvfb-run` prefix inside container
+- See @.devcontainer/README.md for more details

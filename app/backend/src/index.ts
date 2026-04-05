@@ -10,6 +10,6 @@ const workspaceRoot = getWorkspaceRoot();
 await mkdir(workspaceRoot, { recursive: true });
 
 console.log("workspace:", workspaceRoot);
-console.log("server: http://127.0.0.1:3000");
+console.log("server: http://0.0.0.0:3000");
 
-export default { port: 3000, hostname: "127.0.0.1", fetch: app.fetch };
+export default { port: 3000, hostname: "0.0.0.0", fetch: app.fetch };

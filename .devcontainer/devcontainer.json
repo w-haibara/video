@@ -9,7 +9,7 @@
       "ZSH_IN_DOCKER_VERSION": "1.2.1"
     }
   },
-  "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "--security-opt=seccomp=unconfined"],
+  "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "--security-opt=seccomp=unconfined", "-p", "127.0.0.1:5173:5173", "-p", "127.0.0.1:3000:3000", "-p", "127.0.0.1:6006:6006"],
   "remoteUser": "alice",
   "mounts": [
     "source=video-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
@@ -20,7 +20,8 @@
     "NODE_OPTIONS": "--max-old-space-size=4096",
     "CLAUDE_CONFIG_DIR": "/home/alice/.claude",
     "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
-    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
+    "CHROMIUM_PATH": "/opt/google/chrome/chrome"
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
