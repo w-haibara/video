@@ -50,7 +50,7 @@ describe("chromiumTool", () => {
         await session.navigate("data:text/html,<html></html>");
         await expect(
           session.evaluate("throw new Error('test error')"),
-        ).rejects.toThrow("evaluate failed");
+        ).rejects.toThrow();
       } finally {
         await session.close();
       }

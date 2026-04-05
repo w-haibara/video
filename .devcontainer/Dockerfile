@@ -81,5 +81,6 @@ USER root
 RUN chmod +x /usr/local/bin/init-firewall.sh /usr/local/bin/setup-claude.sh && \
   echo "alice ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/alice-firewall && \
   echo "alice ALL=(root) NOPASSWD: /usr/bin/git config --system *" >> /etc/sudoers.d/alice-firewall && \
+  echo "alice ALL=(root) NOPASSWD: /bin/chown alice\:alice /workspace/node_modules /workspace/app/backend/node_modules /workspace/app/frontend/node_modules /workspace/app/shared/node_modules" >> /etc/sudoers.d/alice-firewall && \
   chmod 0440 /etc/sudoers.d/alice-firewall
 USER alice

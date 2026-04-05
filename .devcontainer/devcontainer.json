@@ -14,7 +14,11 @@
   "mounts": [
     "source=video-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
     "source=video-claude-config-${devcontainerId},target=/home/alice/.claude,type=volume",
-    "source=${localEnv:USERPROFILE}/.gitconfig,target=/home/alice/.gitconfig,type=bind,readonly"
+    "source=${localEnv:USERPROFILE}/.gitconfig,target=/home/alice/.gitconfig,type=bind,readonly",
+    "source=video-node-modules-root-${devcontainerId},target=/workspace/node_modules,type=volume",
+    "source=video-node-modules-backend-${devcontainerId},target=/workspace/app/backend/node_modules,type=volume",
+    "source=video-node-modules-frontend-${devcontainerId},target=/workspace/app/frontend/node_modules,type=volume",
+    "source=video-node-modules-shared-${devcontainerId},target=/workspace/app/shared/node_modules,type=volume"
   ],
   "containerEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
@@ -31,7 +35,7 @@
     "3000": { "label": "Backend (Hono)" },
     "6006": { "label": "Storybook" }
   },
-  "postCreateCommand": "/usr/local/bin/setup-claude.sh",
+  "postCreateCommand": "/usr/local/bin/setup-claude.sh && sudo chown alice:alice /workspace/node_modules /workspace/app/backend/node_modules /workspace/app/frontend/node_modules /workspace/app/shared/node_modules && cd /workspace && bun install",
   "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
   "waitFor": "postStartCommand"
 }

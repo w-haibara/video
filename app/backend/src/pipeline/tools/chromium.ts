@@ -258,15 +258,23 @@ export const chromiumTool: ChromiumTool = {
       throw err;
     }
 
-    // Discover the first page target via the /json endpoint
+    // Discover the first page target via the /json endpoint.
+    // Chromium may not have registered the page target immediately after
+    // emitting "DevTools listening", so poll with retries.
     let ws: WebSocket;
     try {
       const debugPort = new URL(browserWsUrl).port;
-      const targetsRes = await fetch(`http://127.0.0.1:${debugPort}/json`);
-      const targets: { type: string; webSocketDebuggerUrl: string }[] =
-        await targetsRes.json();
-      const pageTarget = targets.find((t) => t.type === "page");
-      if (!pageTarget) throw new Error("No page target found");
+      const jsonUrl = `http://127.0.0.1:${debugPort}/json`;
+      let pageTarget: { type: string; webSocketDebuggerUrl: string } | undefined;
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const targetsRes = await fetch(jsonUrl);
+        const targets: { type: string; webSocketDebuggerUrl: string }[] =
+          await targetsRes.json();
+        pageTarget = targets.find((t) => t.type === "page");
+        if (pageTarget) break;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      if (!pageTarget) throw new Error("No page target found after retries");
       ws = await openWebSocket(pageTarget.webSocketDebuggerUrl);
     } catch (err) {
       proc.kill();
