@@ -1,4 +1,4 @@
-import { expect } from "storybook/test";
+import { http, HttpResponse } from "msw";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import preview from "../../.storybook/preview";
@@ -23,42 +23,38 @@ const meta = preview.meta({
 });
 
 export const Default = meta.story({
-  decorators: [
-    (Story) => {
-      const client = createStoryQueryClient();
-      client.setQueryData(["jobs", "by-project", "proj-1"], {
-        jobs: [
-          mockJob({ id: "job-1", status: "completed", progress: 1.0 }),
-          mockJob({ id: "job-2", status: "processing", progress: 0.6 }),
-          mockJob({
-            id: "job-3",
-            status: "failed",
-            progress: 0.2,
-            error: "Codec not supported",
+  parameters: {
+    msw: {
+      handlers: [
+        http.get("/api/jobs/by-project/:id", () =>
+          HttpResponse.json({
+            jobs: [
+              mockJob({ id: "job-1", status: "completed", progress: 1.0 }),
+              mockJob({ id: "job-2", status: "processing", progress: 0.6 }),
+              mockJob({
+                id: "job-3",
+                status: "failed",
+                progress: 0.2,
+                error: "Codec not supported",
+              }),
+            ],
           }),
-        ],
-      });
-      return (
-        <QueryClientProvider client={client}>
-          <Story />
-        </QueryClientProvider>
-      );
+        ),
+      ],
     },
-  ],
+  },
 });
 
 export const Empty = meta.story({
-  decorators: [
-    (Story) => {
-      const client = createStoryQueryClient();
-      client.setQueryData(["jobs", "by-project", "proj-1"], { jobs: [] });
-      return (
-        <QueryClientProvider client={client}>
-          <Story />
-        </QueryClientProvider>
-      );
+  parameters: {
+    msw: {
+      handlers: [
+        http.get("/api/jobs/by-project/:id", () =>
+          HttpResponse.json({ jobs: [] }),
+        ),
+      ],
     },
-  ],
+  },
 });
 
 Default.test("renders job log heading", async ({ canvas }) => {

@@ -1,15 +1,18 @@
 import addonDocs from "@storybook/addon-docs";
 import { definePreview } from "@storybook/react-vite";
-import { sb } from "storybook/test";
+import { initialize, mswLoader } from "msw-storybook-addon";
 
 import "../src/index.css";
+import { handlers } from "../src/mocks/handlers";
 import { theme } from "../src/theme";
 
-// Mock API layer to prevent real HTTP requests in stories
-sb.mock(import("../src/api/client.ts"));
+// Start MSW in Storybook to intercept fetch calls from data-fetching hooks.
+// `onUnhandledRequest: "bypass"` lets Storybook's own asset requests pass through.
+initialize({ onUnhandledRequest: "bypass" }, handlers);
 
 export default definePreview({
   addons: [addonDocs()],
+  loaders: [mswLoader],
   decorators: [
     (Story) => {
       document.body.style.background = theme.bg;

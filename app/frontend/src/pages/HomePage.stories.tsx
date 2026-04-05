@@ -1,4 +1,4 @@
-import { expect } from "storybook/test";
+import { http, HttpResponse } from "msw";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import preview from "../../.storybook/preview";
@@ -23,42 +23,40 @@ const meta = preview.meta({
 export const Default = meta.story({});
 
 export const WithProjects = meta.story({
-  decorators: [
-    (Story) => {
-      const client = createStoryQueryClient();
-      client.setQueryData(["projects"], {
-        projects: [
-          mockProject(),
-          mockProject({
-            id: "proj-2",
-            name: "Another Project",
-            assets: [
-              mockAsset({ id: "asset-2", kind: "audio", thumbnailPath: undefined }),
+  parameters: {
+    msw: {
+      handlers: [
+        http.get("/api/projects", () =>
+          HttpResponse.json({
+            projects: [
+              mockProject(),
+              mockProject({
+                id: "proj-2",
+                name: "Another Project",
+                assets: [
+                  mockAsset({
+                    id: "asset-2",
+                    kind: "audio",
+                    thumbnailPath: undefined,
+                  }),
+                ],
+              }),
             ],
           }),
-        ],
-      });
-      return (
-        <QueryClientProvider client={client}>
-          <Story />
-        </QueryClientProvider>
-      );
+        ),
+      ],
     },
-  ],
+  },
 });
 
 export const Empty = meta.story({
-  decorators: [
-    (Story) => {
-      const client = createStoryQueryClient();
-      client.setQueryData(["projects"], { projects: [] });
-      return (
-        <QueryClientProvider client={client}>
-          <Story />
-        </QueryClientProvider>
-      );
+  parameters: {
+    msw: {
+      handlers: [
+        http.get("/api/projects", () => HttpResponse.json({ projects: [] })),
+      ],
     },
-  ],
+  },
 });
 
 Default.test("renders project list heading", async ({ canvas }) => {
