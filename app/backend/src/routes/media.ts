@@ -64,7 +64,7 @@ async function serveFileWithRange(
   }
 
   headers["Content-Length"] = String(fileSize);
-  return new Response(file, { status: 200, headers });
+  return new Response(await file.arrayBuffer(), { status: 200, headers });
 }
 
 const media = new Hono();
