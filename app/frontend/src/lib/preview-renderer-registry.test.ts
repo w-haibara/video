@@ -75,6 +75,61 @@ describe("PreviewRendererRegistry", () => {
       expect(registry.getTickStrategy("nonexistent")).toBeUndefined();
     });
 
+    test("register is idempotent by id (same id registered twice yields one entry)", () => {
+      const renderer: PreviewLayerRenderer = {
+        id: "dup",
+        zOrder: 10,
+        findActiveContent: () => null,
+        Component: dummyComponent,
+      };
+      registry.register(renderer);
+      registry.register(renderer);
+      const all = registry.all();
+      expect(all.filter((r) => r.id === "dup").length).toBe(1);
+      expect(all.length).toBe(1);
+    });
+
+    test("re-registering with updated fields replaces the original (latest wins)", () => {
+      registry.register({
+        id: "swap",
+        zOrder: 1,
+        findActiveContent: () => null,
+        Component: dummyComponent,
+      });
+      registry.register({
+        id: "swap",
+        zOrder: 99,
+        findActiveContent: () => null,
+        Component: dummyComponent,
+      });
+      const all = registry.all();
+      expect(all.length).toBe(1);
+      expect(all[0].zOrder).toBe(99);
+    });
+
+    test("registering different ids still accumulates all entries", () => {
+      registry.register({
+        id: "a",
+        zOrder: 1,
+        findActiveContent: () => null,
+        Component: dummyComponent,
+      });
+      registry.register({
+        id: "b",
+        zOrder: 2,
+        findActiveContent: () => null,
+        Component: dummyComponent,
+      });
+      registry.register({
+        id: "c",
+        zOrder: 3,
+        findActiveContent: () => null,
+        Component: dummyComponent,
+      });
+      const all = registry.all();
+      expect(all.map((r) => r.id).sort()).toEqual(["a", "b", "c"]);
+    });
+
     test("all returns a copy of renderers array", () => {
       registry.register({
         id: "r1",

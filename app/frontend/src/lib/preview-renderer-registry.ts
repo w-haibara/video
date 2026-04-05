@@ -54,6 +54,15 @@ export class PreviewRendererRegistry {
   private tickStrategies = new Map<string, PlaybackTickStrategy>();
 
   register(renderer: PreviewLayerRenderer): void {
+    // Idempotent by id: if a renderer with the same id is already registered,
+    // replace it (latest wins). This matches Map.set semantics used by other
+    // registries and prevents duplicate entries when `loadPlugins` runs more
+    // than once (e.g. module side effect + explicit call in a test setup).
+    const existing = this.renderers.findIndex((r) => r.id === renderer.id);
+    if (existing >= 0) {
+      this.renderers[existing] = renderer;
+      return;
+    }
     this.renderers.push(renderer);
   }
 
