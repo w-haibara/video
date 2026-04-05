@@ -1,21 +1,52 @@
 # CLAUDE.md
 
+## Devcontainer (required)
+
+All development commands run inside the devcontainer via `devcontainer exec`. **Do not run bun, node, or Chromium on the host.**
+
+### Initial setup
+
+```bash
+export GITHUB_TOKEN="$(gh auth token)"
+devcontainer up --workspace-folder .
+# bun install runs automatically via postCreateCommand
+```
+
+Ports 5173 (Vite), 3000 (Backend), 6006 (Storybook) are forwarded to the host. Open `http://localhost:5173` in your host browser.
+
 ## Commands
 
+All commands below are wrapped with `devcontainer exec --workspace-folder . bash -c "cd /workspace && <command>"`. For brevity, set an alias in your shell:
+
+```bash
+alias dex='devcontainer exec --workspace-folder . bash -c "cd /workspace && $*"'
+```
+
+Then invoke as `dex "bun run dev"`.
+
+### Core
+
 | Command | Purpose |
 |---------|---------|
-| `bun run dev` | Start dev server (backend + frontend) |
-| `bun run restart` | Restart dev server (kills both on failure) |
-| `bun run test` | Run all tests (includes snapshot & regression) |
-| `bun run catalog` | Start feature catalog on port 3001 |
+| `devcontainer exec --workspace-folder . bash -c "cd /workspace && bun run dev"` | Start dev server (backend + frontend) |
+| `devcontainer exec --workspace-folder . bash -c "cd /workspace && bun run restart"` | Restart dev server (kills both on failure) |
+| `devcontainer exec --workspace-folder . bash -c "cd /workspace && bun run test"` | Run all tests (includes snapshot & regression) |
+| `devcontainer exec --workspace-folder . bash -c "cd /workspace && bun run catalog"` | Start feature catalog on port 3001 |
 
-Frontend-specific (run from `app/frontend/`):
+### Frontend-specific (from `app/frontend/`)
 
 | Command | Purpose |
 |---------|---------|
-| `bun run storybook` | Start Storybook on port 6006 |
-| `bun run build-storybook` | Build static Storybook |
-| `bun run test:browser` | Run Vitest browser tests (needs `xvfb-run` in devcontainer) |
+| `devcontainer exec --workspace-folder . bash -c "cd /workspace/app/frontend && bun run storybook"` | Start Storybook on port 6006 |
+| `devcontainer exec --workspace-folder . bash -c "cd /workspace/app/frontend && bun run build-storybook"` | Build static Storybook |
+| `devcontainer exec --workspace-folder . bash -c "cd /workspace/app/frontend && xvfb-run bun run test:browser"` | Run Vitest browser tests (needs `xvfb-run`) |
+
+### Other
+
+| Command | Purpose |
+|---------|---------|
+| `devcontainer exec --workspace-folder . claude --dangerously-skip-permissions` | Run Claude Code inside container |
+| `docker stop $(docker ps -q --filter label=devcontainer.local_folder=$(pwd))` | Stop the devcontainer |
 
 ## Testing policy
 
@@ -28,11 +59,11 @@ Frontend-specific (run from `app/frontend/`):
 
 After modifying `sequence-ops` or export-related code, follow this workflow:
 
-1. Run `bun run test` — detect regressions
-2. If snapshot diff is intentional: `cd app/frontend && bun test sequence-ops.regression --update-snapshots`
-3. If export frames changed: `UPDATE_REFERENCES=1 bun test export-regression`
+1. `devcontainer exec --workspace-folder . bash -c "cd /workspace && bun run test"` — detect regressions
+2. If snapshot diff is intentional: `devcontainer exec --workspace-folder . bash -c "cd /workspace/app/frontend && bun test sequence-ops.regression --update-snapshots"`
+3. If export frames changed: `devcontainer exec --workspace-folder . bash -c "cd /workspace && UPDATE_REFERENCES=1 bun test export-regression"`
 4. Start `bun run catalog` and verify visually with playwright-cli
-5. Run `bun run test` again to confirm all pass, then commit (include `.snap` and `references/`)
+5. Run tests again to confirm all pass, then commit (include `.snap` and `references/`)
 
 ### Adding new snapshot test cases
 
@@ -42,11 +73,10 @@ After modifying `sequence-ops` or export-related code, follow this workflow:
 
 ### Preview regression testing
 
-Preview regression tests capture browser-rendered preview frames via Playwright
-and compare against reference screenshots. Requires `bun run dev` running.
+Preview regression tests capture browser-rendered preview frames via Playwright and compare against reference screenshots. Requires the dev server running.
 
-- Run: `bun test tools/preview-test/preview-regression.test.ts`
-- Update references: `UPDATE_PREVIEW_REFERENCES=1 bun test tools/preview-test/preview-regression.test.ts`
+- Run: `devcontainer exec --workspace-folder . bash -c "cd /workspace && bun test tools/preview-test/preview-regression.test.ts"`
+- Update references: `devcontainer exec --workspace-folder . bash -c "cd /workspace && UPDATE_PREVIEW_REFERENCES=1 bun test tools/preview-test/preview-regression.test.ts"`
 - Preview test page: `http://localhost:5173/preview-test?project=<id>&t=<ms>`
 - Two comparison modes:
   - **Preview regression** (tight threshold) — catches rendering changes in the browser
@@ -65,7 +95,7 @@ and compare against reference screenshots. Requires `bun run dev` running.
 
 Before merging any PR, always:
 
-1. Run `bun run test` — all tests must pass
+1. Run all tests — all must pass
 2. Verify with Playwright by accessing the dev server
 3. If snapshots were added or changed, visually confirm via the feature catalog
 
@@ -84,35 +114,9 @@ Implementation and pre-merge review must each run in a separate subagent.
 - Before starting a task, review open issues to check whether any block or affect the current task.
 - If a blocking issue is found, resolve it first before proceeding with the task.
 
-## Devcontainer
+## Key environment details
 
-All development commands (dev server, tests, etc.) run inside the devcontainer. Do not run bun or Chromium on the host.
-
-### Quick start (CLI)
-
-```bash
-export GITHUB_TOKEN="$(gh auth token)"
-devcontainer up --workspace-folder .
-devcontainer exec --workspace-folder . bash -c "cd /workspace && bun install"
-devcontainer exec --workspace-folder . bash -c "cd /workspace && bun run dev"
-# Open http://localhost:5173 in host browser
-```
-
-### Running commands
-
-```bash
-# Tests
-devcontainer exec --workspace-folder . bash -c "cd /workspace && bun run test"
-
-# Claude Code
-devcontainer exec --workspace-folder . claude --dangerously-skip-permissions
-
-# Stop
-docker stop $(docker ps -q --filter label=devcontainer.local_folder=$(pwd))
-```
-
-### Key points
-- Ports 5173 (Vite), 3000 (Backend), 6006 (Storybook) are forwarded to host via `-p` flags in `runArgs`
-- `CHROMIUM_PATH` is set automatically in the container
-- Browser tests need `xvfb-run` prefix inside container
+- `node_modules` is mounted as a Docker volume (bun hardlinks don't work on Windows bind mounts)
+- `CHROMIUM_PATH=/opt/google/chrome/chrome` is set automatically for CDP tests
+- Backend binds to `0.0.0.0:3000` so Docker port forwarding reaches it
 - See @.devcontainer/README.md for more details

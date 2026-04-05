@@ -9,7 +9,7 @@
       "ZSH_IN_DOCKER_VERSION": "1.2.1"
     }
   },
-  "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "--security-opt=seccomp=unconfined", "-p", "127.0.0.1:5173:5173", "-p", "127.0.0.1:3000:3000", "-p", "127.0.0.1:6006:6006"],
+  "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "--security-opt=seccomp=unconfined", "-p", "127.0.0.1:5173:5173", "-p", "127.0.0.1:3000:3000", "-p", "127.0.0.1:3001:3001", "-p", "127.0.0.1:6006:6006"],
   "remoteUser": "alice",
   "mounts": [
     "source=video-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
@@ -29,10 +29,11 @@
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
-  "forwardPorts": [5173, 3000, 6006],
+  "forwardPorts": [5173, 3000, 3001, 6006],
   "portsAttributes": {
     "5173": { "label": "Frontend (Vite)" },
     "3000": { "label": "Backend (Hono)" },
+    "3001": { "label": "Feature Catalog" },
     "6006": { "label": "Storybook" }
   },
   "postCreateCommand": "/usr/local/bin/setup-claude.sh && sudo chown alice:alice /workspace/node_modules /workspace/app/backend/node_modules /workspace/app/frontend/node_modules /workspace/app/shared/node_modules && cd /workspace && bun install",
