@@ -89,6 +89,67 @@ describe("InspectorEditorRegistry", () => {
       expect(registry.getEditorsFor(makeCtx())).toEqual([]);
     });
 
+    test("register is idempotent by id (same id registered twice yields one editor)", () => {
+      const plugin: InspectorEditorPlugin = {
+        id: "dup",
+        label: "Dup",
+        order: 1,
+        canHandle: () => true,
+        Component: dummyComponent,
+      };
+      registry.register(plugin);
+      registry.register(plugin);
+      const editors = registry.getEditorsFor(makeCtx());
+      expect(editors.filter((e) => e.id === "dup").length).toBe(1);
+      expect(editors.length).toBe(1);
+    });
+
+    test("re-registering with updated fields replaces the original (latest wins)", () => {
+      registry.register({
+        id: "swap",
+        label: "Original",
+        order: 1,
+        canHandle: () => true,
+        Component: dummyComponent,
+      });
+      registry.register({
+        id: "swap",
+        label: "Updated",
+        order: 1,
+        canHandle: () => true,
+        Component: dummyComponent,
+      });
+      const editors = registry.getEditorsFor(makeCtx());
+      expect(editors.length).toBe(1);
+      expect(editors[0].label).toBe("Updated");
+    });
+
+    test("registering different ids still accumulates all editors", () => {
+      registry.register({
+        id: "a",
+        label: "A",
+        order: 1,
+        canHandle: () => true,
+        Component: dummyComponent,
+      });
+      registry.register({
+        id: "b",
+        label: "B",
+        order: 2,
+        canHandle: () => true,
+        Component: dummyComponent,
+      });
+      registry.register({
+        id: "c",
+        label: "C",
+        order: 3,
+        canHandle: () => true,
+        Component: dummyComponent,
+      });
+      const editors = registry.getEditorsFor(makeCtx());
+      expect(editors.map((e) => e.id)).toEqual(["a", "b", "c"]);
+    });
+
     test("canHandle receives correct context", () => {
       const calls: InspectorEditorContext[] = [];
       registry.register({

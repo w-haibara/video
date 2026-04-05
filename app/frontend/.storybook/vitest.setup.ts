@@ -1,10 +1,9 @@
 import { beforeAll } from "vitest";
 import { setProjectAnnotations } from "@storybook/react-vite";
+// Importing ./preview has a module side effect of calling `loadPlugins([builtinPlugin])`,
+// so do NOT also call `loadPlugins` here — that would register every plugin twice.
+// See issue #140.
 import * as previewAnnotations from "./preview";
-import { loadPlugins } from "../src/lib/plugin-loader";
-import { builtinPlugin } from "../src/lib/builtin-plugin";
-
-loadPlugins([builtinPlugin]);
 
 const annotations = setProjectAnnotations([previewAnnotations]);
 
