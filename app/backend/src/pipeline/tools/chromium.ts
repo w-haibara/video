@@ -113,6 +113,14 @@ function createCdpConnection(ws: WebSocket) {
   let msgId = 0;
   const pending = new Map<number, PendingCall>();
   const eventHandlers = new Map<string, EventHandler[]>();
+  const pendingOnce = new Set<(err: Error) => void>();
+
+  function rejectAll(err: Error) {
+    for (const p of pending.values()) p.reject(err);
+    pending.clear();
+    for (const reject of pendingOnce) reject(err);
+    pendingOnce.clear();
+  }
 
   ws.addEventListener("message", (ev) => {
     const data = JSON.parse(typeof ev.data === "string" ? ev.data : "{}");
@@ -137,9 +145,11 @@ function createCdpConnection(ws: WebSocket) {
   });
 
   ws.addEventListener("error", (ev) => {
-    const err = new Error(`CDP WebSocket error: ${String(ev)}`);
-    for (const p of pending.values()) p.reject(err);
-    pending.clear();
+    rejectAll(new Error(`CDP WebSocket error: ${String(ev)}`));
+  });
+
+  ws.addEventListener("close", () => {
+    rejectAll(new Error("CDP WebSocket closed"));
   });
 
   function send(
@@ -176,15 +186,17 @@ function createCdpConnection(ws: WebSocket) {
   }
 
   function once(event: string): Promise<any> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const list = eventHandlers.get(event) ?? [];
       const handler = (params: any) => {
         const idx = list.indexOf(handler);
         if (idx >= 0) list.splice(idx, 1);
+        pendingOnce.delete(reject);
         resolve(params);
       };
       list.push(handler);
       eventHandlers.set(event, list);
+      pendingOnce.add(reject);
     });
   }
 
@@ -306,14 +318,10 @@ export const chromiumTool: ChromiumTool = {
       onProgress?: (fraction: number) => void;
     }): AsyncGenerator<Buffer> {
       for (let i = 0; i < captureOpts.totalFrames; i++) {
-        // Set frame index variable
-        await cdp.send("Runtime.evaluate", {
-          expression: `var __frameIndex = ${i};`,
-          returnByValue: true,
-        });
-        // Execute render expression to get data URL
+        // Set frame index and execute render in a single IIFE to avoid
+        // __frameIndex races when multiple captureFrames run concurrently.
         const result = await cdp.send("Runtime.evaluate", {
-          expression: captureOpts.renderExpression,
+          expression: `(async () => { var __frameIndex = ${i}; return (${captureOpts.renderExpression}); })()`,
           returnByValue: true,
           awaitPromise: true,
         });

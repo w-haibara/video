@@ -43,6 +43,32 @@ describe("chromiumTool", () => {
   );
 
   test(
+    "evaluate propagates errors from evaluated expression",
+    async () => {
+      const session = await chromiumTool.launch({ width: 320, height: 240 });
+      try {
+        await session.navigate("data:text/html,<html></html>");
+        await expect(
+          session.evaluate("throw new Error('test error')"),
+        ).rejects.toThrow("evaluate failed");
+      } finally {
+        await session.close();
+      }
+    },
+    { timeout: 10_000 },
+  );
+
+  test(
+    "close() can be called twice without error",
+    async () => {
+      const session = await chromiumTool.launch({ width: 320, height: 240 });
+      await session.close();
+      await session.close();
+    },
+    { timeout: 10_000 },
+  );
+
+  test(
     "captureFrames returns valid PNGs",
     async () => {
       const session = await chromiumTool.launch({ width: 320, height: 240 });
