@@ -91,6 +91,92 @@ Preview regression tests capture browser-rendered preview frames via Playwright 
 - Add entry to `EXPORT_TESTS` in `tools/feature-catalog/index.ts`
 - Verify frames visually in feature catalog before committing
 
+## Storybook
+
+Storybook acts as both the component catalog and an in-browser test runner (via `@storybook/addon-vitest`). It is also the primary place to exercise UI states that are hard to reach in the full app.
+
+### Structure & stack
+
+- Storybook 10.2.17 on `@storybook/react-vite`
+- Config at `app/frontend/.storybook/` (`main.ts`, `preview.ts`, `manager.ts`, `vitest.setup.ts`)
+- Story files are colocated with components as `app/frontend/src/**/*.stories.tsx`
+- Currently 20+ story files, 200+ story entries
+
+### Plugin system inside Storybook
+
+`.storybook/preview.ts` must call `loadPlugins([builtinPlugin])` at module top level (before `definePreview`). Without it, `previewRendererRegistry` and `inspectorEditorRegistry` are empty, so components that rely on dynamic renderer discovery — most importantly `PreviewPlayer` — render an empty state in stories.
+
+The same `loadPlugins([builtinPlugin])` call also exists in:
+
+- `app/frontend/src/main.tsx` (production entry)
+- `app/frontend/.storybook/vitest.setup.ts` (addon-vitest test runner entry)
+
+Registry `register` methods are idempotent and dedup by `id` with latest-wins semantics, so importing the builtin plugin from multiple entry points is safe.
+
+### Mocking with MSW
+
+All network mocking is done through [MSW](https://mswjs.io/) via `msw-storybook-addon`. **Do not use `sb.mock` or per-story `queryClient.setQueryData()` to fake API responses** — the latter conflicts with MSW because React Query will refetch and overwrite the seeded cache. (Providing a `QueryClientProvider` at the meta decorator level is still fine — components need a client in context.)
+
+- Global handlers: `app/frontend/src/mocks/handlers.ts`. Defaults return empty lists / echo-id objects so any data-fetching story avoids `Query data cannot be undefined` errors.
+- Per-story override: set `parameters.msw.handlers`. Canonical pattern:
+
+```tsx
+import { http, HttpResponse } from "msw";
+import { mockProject } from "../stories/fixtures";
+
+export const WithProjects = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        http.get("/api/projects", () =>
+          HttpResponse.json({ projects: [mockProject()] }),
+        ),
+      ],
+    },
+  },
+});
+```
+
+- addon-vitest browser tests (`bun run test:browser`) automatically pick up the same MSW handlers — no extra setup required.
+- Reference examples of per-story MSW overrides: `HomePage.stories.tsx`, `EditorPage.stories.tsx`, `JobLogPage.stories.tsx`, `AssetThumbnail.stories.tsx`.
+
+### Writing a new story
+
+1. Create `<Component>.stories.tsx` next to the component.
+2. Use the Storybook 10.x `preview.meta(...).story(...)` pattern — import `preview` from `../../.storybook/preview` (adjust depth).
+3. If the component fetches data, either rely on the default handlers in `src/mocks/handlers.ts` or add per-story overrides via `parameters.msw.handlers`.
+4. For components that need a specific project/asset shape, pass fixtures from `app/frontend/src/stories/fixtures.ts` (`mockProject`, `mockClip`, `mockAsset`, `mockJob`, `projectWithClips`, `projectWithTextOverlay`, etc.) via `args`.
+5. Add interaction tests as `StoryName.test("...", async ({ canvas }) => { ... })` blocks — they run in Playwright via addon-vitest.
+
+### Verification tooling
+
+`tools/storybook-verify/verify-all.ts` is a Playwright script that iterates every story via `index.json`, opens it in `iframe.html`, and collects:
+
+- `pageerror` events
+- `console.error` messages
+- Storybook error-overlay text
+- `#storybook-root` HTML size (to flag accidentally empty stories)
+- Full-page PNG screenshot per story
+
+Output goes to `tools/storybook-verify/report.json` and `tools/storybook-verify/screenshots/*.png` — both are gitignored.
+
+**Limitation:** it only catches JS errors and empty roots, not visual regressions. For visual issues you must read the screenshots yourself. If a whole category of stories all show unexpected empty states, suspect a loader/registry issue (e.g. a missing `loadPlugins` call).
+
+### Reference commands
+
+| Command | Purpose |
+|---------|---------|
+| `devcontainer exec --workspace-folder . bash -c "cd /workspace/app/frontend && bun run storybook"` | Start Storybook on port 6006 |
+| `devcontainer exec --workspace-folder . bash -c "cd /workspace && bun run tools/storybook-verify/verify-all.ts"` | Run bulk verify over all stories (requires Storybook running) |
+| `devcontainer exec --workspace-folder . bash -c "cd /workspace && bun run tools/storybook-verify/verify-all.ts --limit 5"` | Smoke-run first 5 stories only |
+| `devcontainer exec --workspace-folder . bash -c "cd /workspace/app/frontend && xvfb-run bun run test:browser"` | Run addon-vitest browser tests (interaction tests) |
+
+### Related context
+
+- #137 — MSW adoption as the Storybook mocking layer (replaces `sb.mock`)
+- #139 — `loadPlugins([builtinPlugin])` in `.storybook/preview.ts` (fixed empty `PreviewPlayer` in stories)
+- #140 — Registry `register` dedup (idempotent by id, latest-wins)
+
 ## PR merge checklist
 
 Before merging any PR, always:
