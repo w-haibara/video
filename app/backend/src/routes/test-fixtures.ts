@@ -73,6 +73,7 @@ import {
   makeVideoFilterTransformProject,
   makeColorCorrectionTransformProject,
   makeSpeedMultiClipProject,
+  makeCounterVideoProject,
 } from "../__fixtures__/export/make-fixture-project";
 
 const FIXTURES_ASSETS_DIR = path.resolve(
@@ -135,6 +136,7 @@ const fixtureFactories: Record<string, () => Project> = {
   "p5js-transition": makeP5jsTransitionProject,
   "p5js-flowfield": makeP5jsFlowfieldProject,
   "p5js-flowfield-multi-track": makeP5jsFlowfieldMultiTrackProject,
+  "counter-video": makeCounterVideoProject,
   "feature-showcase": makeFeatureShowcaseProject,
 };
 

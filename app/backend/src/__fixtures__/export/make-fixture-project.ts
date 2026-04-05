@@ -49,6 +49,16 @@ const p5jsFlowfieldAsset: Asset = {
   hasAudio: false,
 };
 
+const counterVideoAsset: Asset = {
+  id: "v-counter",
+  kind: "video",
+  originalPath: "assets/test-video-counter-3s.mp4",
+  durationMs: 3000,
+  width: 320,
+  height: 180,
+  hasAudio: false,
+};
+
 /** p5js asset resolved to its pre-rendered MP4 for direct FFmpeg export */
 const p5jsVideoAsset: Asset = {
   id: "p5js1",
@@ -1216,6 +1226,28 @@ export function makePipSideBySideProject(): Project {
           ],
           "t2",
         ),
+      ],
+    },
+  });
+}
+
+/** 3-second video with visible frame counter — useful for verifying playback progress. */
+export function makeCounterVideoProject(): Project {
+  return baseProject({
+    assets: [counterVideoAsset],
+    settings: { durationMs: 3000, canvasWidth: 320, canvasHeight: 180 },
+    sequence: {
+      tracks: [
+        makeTrack([
+          makeClip({
+            id: "c1",
+            assetId: "v-counter",
+            startMs: 0,
+            durationMs: 3000,
+            inMs: 0,
+            outMs: 3000,
+          }),
+        ]),
       ],
     },
   });
