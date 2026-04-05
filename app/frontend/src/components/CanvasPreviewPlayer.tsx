@@ -583,22 +583,22 @@ export function CanvasPreviewPlayer({
           background: theme.bgDark,
         }}
       >
-        {!hasMediaContent ? (
+        {!hasMediaContent && (
           <span style={{ color: theme.textMuted, fontSize: "14px" }}>No clip at playhead</span>
-        ) : (
-          <canvas
-            ref={canvasRef}
-            data-testid="preview-canvas"
-            width={canvasW}
-            height={canvasH}
-            style={{
-              aspectRatio: `${canvasW} / ${canvasH}`,
-              maxWidth: "100%",
-              maxHeight: "100%",
-              background: theme.black,
-            }}
-          />
         )}
+        <canvas
+          ref={canvasRef}
+          data-testid="preview-canvas"
+          width={canvasW}
+          height={canvasH}
+          style={{
+            aspectRatio: `${canvasW} / ${canvasH}`,
+            maxWidth: "100%",
+            maxHeight: "100%",
+            background: theme.black,
+            display: hasMediaContent ? "block" : "none",
+          }}
+        />
         {/* Hidden container for video/audio elements */}
         <div ref={videoContainerRef} style={{ display: "none" }} />
       </div>
