@@ -1,4 +1,5 @@
 import { expect } from "storybook/test";
+import { http, HttpResponse } from "msw";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import preview from "../../.storybook/preview";
@@ -23,17 +24,15 @@ const meta = preview.meta({
 });
 
 export const Default = meta.story({
-  decorators: [
-    (Story) => {
-      const client = createStoryQueryClient();
-      client.setQueryData(["projects", "proj-1"], projectWithClips);
-      return (
-        <QueryClientProvider client={client}>
-          <Story />
-        </QueryClientProvider>
-      );
+  parameters: {
+    msw: {
+      handlers: [
+        http.get("/api/projects/proj-1", () =>
+          HttpResponse.json(projectWithClips),
+        ),
+      ],
     },
-  ],
+  },
 });
 
 Default.test("renders editor layout", async ({ canvasElement }) => {

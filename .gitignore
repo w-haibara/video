@@ -9,4 +9,5 @@ storybook-static/
 coverage/
 debug-storybook.log
 tools/preview-test/.actual/
+tools/storybook-verify/report.json
 .claude/settings.local.json

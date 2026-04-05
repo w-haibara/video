@@ -1,4 +1,5 @@
-import { expect, fn } from "storybook/test";
+import { fn } from "storybook/test";
+import { http, HttpResponse } from "msw";
 import { QueryClientProvider } from "@tanstack/react-query";
 import preview from "../../.storybook/preview";
 import { createStoryQueryClient, mockAsset, mockJob } from "../stories/fixtures";
@@ -68,22 +69,22 @@ export const AudioAsset = meta.story({
 });
 
 export const Failed = meta.story({
-  decorators: [
-    (Story) => {
-      const client = createStoryQueryClient();
-      client.setQueryData(["jobs", "job-fail"], mockJob({
-        id: "job-fail",
-        status: "failed",
-        progress: 0.3,
-        error: "Import failed: unsupported codec",
-      }));
-      return (
-        <QueryClientProvider client={client}>
-          <Story />
-        </QueryClientProvider>
-      );
+  parameters: {
+    msw: {
+      handlers: [
+        http.get("/api/jobs/job-fail", () =>
+          HttpResponse.json(
+            mockJob({
+              id: "job-fail",
+              status: "failed",
+              progress: 0.3,
+              error: "Import failed: unsupported codec",
+            }),
+          ),
+        ),
+      ],
     },
-  ],
+  },
   args: {
     asset: mockAsset(),
     jobId: "job-fail",
